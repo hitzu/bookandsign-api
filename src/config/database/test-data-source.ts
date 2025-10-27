@@ -9,18 +9,18 @@ dotenv.config({
 
 export const TestDataSource = new DataSource({
   type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5433', 10),
-  username: process.env.DB_USER || 'test_user',
-  password: process.env.DB_PASS || 'test_pass',
-  database: process.env.DB_NAME || 'test_db',
+  host: process.env.TEST_DB_HOST || 'localhost',
+  port: parseInt(process.env.TEST_DB_PORT || '5433', 10),
+  username: process.env.TEST_DB_USERNAME || 'postgres',
+  password: process.env.TEST_DB_PASSWORD || 'postgres',
+  database: process.env.TEST_DB_NAME || 'bookandsign_test',
 
-  synchronize: false,
+  synchronize: true, // Para tests es mejor usar synchronize
   logging: false,
   dropSchema: true,
 
   entities: [path.join(__dirname, '../../**/entities/*.entity{.ts,.js}')],
-  migrations: [],
+  migrations: [], // Vacío para tests
 
   poolSize: 5,
 });

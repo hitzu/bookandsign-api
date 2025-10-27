@@ -7,6 +7,9 @@
   "license": "UNLICENSED",
   "scripts": {
     "dev": "nest start --watch",
+    "test": "NODE_ENV=test jest --config jest.config.ts",
+    "test:watch": "NODE_ENV=test jest --config jest.config.ts --watch",
+    "test:coverage": "NODE_ENV=test jest --config jest.config.ts --coverage",
     "db:gen": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d src/config/database/data-source.ts migration:generate src/database/migrations/Migration",
     "db:run": "ts-node ./node_modules/typeorm/cli.js -d src/database/data-sources/dev.data-source.ts migration:run",
     "db:run:test": "ts-node ./node_modules/typeorm/cli.js -d src/database/data-sources/test.data-source.ts migration:run",
@@ -38,6 +41,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
+    "@faker-js/faker": "9.9.0",
+    "@jorgebodega/typeorm-factory": "^2.1.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
