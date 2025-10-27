@@ -11,13 +11,16 @@ import { BrandsService } from './brands.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { BrandDto } from './dto/brand.dto';
+import { Logger } from '@nestjs/common';
 
 @Controller('brands')
 export class BrandsController {
+  private readonly logger = new Logger(BrandsService.name);
   constructor(private readonly brandsService: BrandsService) {}
 
   @Post()
   create(@Body() createBrandDto: CreateBrandDto) {
+    this.logger.log({ createBrandDto }, 'Creating brand since controller');
     return this.brandsService.create(createBrandDto);
   }
 

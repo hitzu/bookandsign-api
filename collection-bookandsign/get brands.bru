@@ -1,0 +1,30 @@
+meta {
+  name: get brands
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:3000/brands
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "key": "lusso",
+    "name": "Lusso Brand",
+    "logo_url": "https://example.com/logo.png",
+    "theme": {
+      "primaryColor": "#1a1a1a",
+      "secondaryColor": "#f5f5f5",
+      "fontFamily": "Inter",
+      "logoSize": "medium"
+    }
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

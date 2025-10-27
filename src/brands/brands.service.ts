@@ -4,17 +4,28 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
 import { Repository } from 'typeorm';
 import { UpdateBrandDto } from './dto/update-brand.dto';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class BrandsService {
+  private readonly logger = new Logger(BrandsService.name);
   constructor(
     @InjectRepository(Brand)
     private brandsRepository: Repository<Brand>,
   ) {}
 
   create(createBrandDto: CreateBrandDto) {
-    const brand = this.brandsRepository.create(createBrandDto);
-    return this.brandsRepository.save(brand);
+    try {
+      this.logger.log(
+        { brandName: createBrandDto.name, brandKey: createBrandDto.key },
+        'Creating brand',
+      );
+      const brand = this.brandsRepository.create(createBrandDto);
+      return this.brandsRepository.save(brand);
+    } catch (error) {
+      this.logger.error(error, 'Error creating brand');
+      throw error;
+    }
   }
 
   findAll(): Promise<Brand[]> {
