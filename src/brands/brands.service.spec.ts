@@ -5,7 +5,7 @@ import { BrandsService } from './brands.service';
 import { Brand } from './entities/brand.entity';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { BrandKey } from './brands.constants';
-import { TestDataSource } from '../config/database/test-data-source';
+import { AppDataSource as TestDataSource } from '../config/database/data-source';
 import { BrandFactory } from './entities/brand.factory';
 
 describe('BrandsService', () => {

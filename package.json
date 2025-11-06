@@ -11,13 +11,13 @@
     "test:watch": "NODE_ENV=test jest --config jest.config.ts --watch",
     "test:coverage": "NODE_ENV=test jest --config jest.config.ts --coverage",
     "db:gen": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d src/config/database/data-source.ts migration:generate src/database/migrations/Migration",
-    "db:run": "ts-node ./node_modules/typeorm/cli.js -d src/database/data-sources/dev.data-source.ts migration:run",
-    "db:run:test": "ts-node ./node_modules/typeorm/cli.js -d src/database/data-sources/test.data-source.ts migration:run",
-    "db:revert": "ts-node ./node_modules/typeorm/cli.js -d src/database/data-sources/dev.data-source.ts migration:revert",
+    "db:run": "ts-node ./node_modules/typeorm/cli.js -d src/config/database/data-source.ts migration:run",
+    "db:revert": "ts-node ./node_modules/typeorm/cli.js -d src/config/database/data-source.ts migration:revert",
     "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.1",
     "@nestjs/passport": "^11.0.5",

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -9,8 +10,18 @@ import { getLoggerConfigs } from './config/logger/logger.config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: [
+        `.env.${process.env.NODE_ENV || 'local'}`,
+        '.env.test',
+        '.env',
+      ],
+    }),
     LoggerModule.forRoot(getLoggerConfigs()),
-    TypeOrmModule.forRoot(getTypeOrmConfig()),
+    TypeOrmModule.forRootAsync({
+      useFactory: () => getTypeOrmConfig(),
+    }),
     BrandsModule,
   ],
   controllers: [AppController],
