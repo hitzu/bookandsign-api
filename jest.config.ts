@@ -12,6 +12,7 @@ const config: Config = {
   testEnvironment: 'node',
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/$1',
+    '^@factories/(.*)$': '<rootDir>/../test/factories/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/../test/jest.setup.ts'],
   transformIgnorePatterns: [

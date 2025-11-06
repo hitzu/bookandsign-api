@@ -6,11 +6,10 @@ export { AppDataSource } from './data-source';
 
 export const getTypeOrmConfig = (): TypeOrmModuleOptions => {
   const nodeEnv = process.env.NODE_ENV || 'local';
-  const isTest = nodeEnv === 'test';
   const isProd = nodeEnv === 'prod';
 
   dotenv.config({
-    path: path.join(__dirname, '../../../', isTest ? '.env.test' : `.env`),
+    path: path.join(__dirname, '../../../', `.env.${nodeEnv}`),
   });
 
   const defaults = {
@@ -30,12 +29,12 @@ export const getTypeOrmConfig = (): TypeOrmModuleOptions => {
     database: process.env.DB_NAME || defaults.database,
 
     entities: [path.join(__dirname, '../../**/entities/*.entity{.ts,.js}')],
-    migrations: isTest
-      ? []
-      : [path.join(__dirname, '../../database/migrations/**/*{.ts,.js}')],
-    synchronize: isTest,
+    migrations: [
+      path.join(__dirname, '../../database/migrations/**/*{.ts,.js}'),
+    ],
+    synchronize: false,
     logging: false,
-    dropSchema: isTest,
+    dropSchema: false,
 
     ...(isProd && {
       ssl: { rejectUnauthorized: false },

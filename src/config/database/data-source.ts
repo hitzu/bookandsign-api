@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 
 const stage = process.env.NODE_ENV || 'local';
+const isTest = stage === 'test';
 
 dotenv.config({ path: path.join(__dirname, '../../../', `.env.${stage}`) });
 
@@ -14,11 +15,14 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'bookandsign_dev',
 
-  synchronize: false,
+  synchronize: isTest,
   logging: false,
+  dropSchema: isTest,
 
   entities: [path.join(__dirname, '../../**/entities/*.entity{.ts,.js}')],
-  migrations: [path.join(__dirname, '../../database/migrations/**/*{.ts,.js}')],
+  migrations: isTest
+    ? []
+    : [path.join(__dirname, '../../database/migrations/**/*{.ts,.js}')],
   subscribers: [path.join(__dirname, '../../subscribers/**/*{.ts,.js}')],
 
   ssl: stage === 'prod' ? { rejectUnauthorized: false } : false,
