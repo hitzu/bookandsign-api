@@ -6,7 +6,7 @@ import { Brand } from './entities/brand.entity';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { BrandKey } from './brands.constants';
 import { AppDataSource as TestDataSource } from '../config/database/data-source';
-import { BrandFactory } from './entities/brand.factory';
+import { BrandFactory } from '@factories/brands/brands.factories';
 
 describe('BrandsService', () => {
   let service: BrandsService;
@@ -33,14 +33,11 @@ describe('BrandsService', () => {
     describe('Happy Path - Valid Brand Creation', () => {
       it('should create a brand with valid DTO', async () => {
         // Arrange
+        const brandData = await brandFactory.make();
         const createBrandDto: CreateBrandDto = {
-          key: BrandKey.LUSSO,
-          name: 'Lusso Brand',
-          logo_url: 'https://example.com/logo.png',
-          theme: {
-            primaryColor: '#1a1a1a',
-            secondaryColor: '#f5f5f5',
-          },
+          key: brandData.key,
+          name: brandData.name,
+          theme: brandData.theme,
         };
 
         // Act
@@ -58,10 +55,7 @@ describe('BrandsService', () => {
 
       it('should create a brand with complex theme object', async () => {
         // Arrange
-        const createBrandDto: CreateBrandDto = {
-          key: BrandKey.BRILLIPOINT,
-          name: 'Brillipoint Brand',
-          logo_url: 'https://cdn.example.com/brillipoint-logo.svg',
+        const brandData = await brandFactory.make({
           theme: {
             primaryColor: '#0066cc',
             secondaryColor: '#ffffff',
@@ -74,6 +68,11 @@ describe('BrandsService', () => {
               large: '24px',
             },
           },
+        });
+        const createBrandDto: CreateBrandDto = {
+          key: brandData.key,
+          name: brandData.name,
+          theme: brandData.theme,
         };
 
         // Act
@@ -92,10 +91,10 @@ describe('BrandsService', () => {
     describe('Boundary Value Analysis - Theme Variations', () => {
       it('should create a brand with empty theme object', async () => {
         // Arrange
+        const brandData = await brandFactory.make({ theme: {} });
         const createBrandDto: CreateBrandDto = {
-          key: BrandKey.ALETVIA,
-          name: 'Aletvia Brand',
-          logo_url: 'https://example.com/aletvia.png',
+          key: brandData.key,
+          name: brandData.name,
           theme: {},
         };
 
@@ -109,13 +108,15 @@ describe('BrandsService', () => {
 
       it('should create a brand with minimal theme properties', async () => {
         // Arrange
-        const createBrandDto: CreateBrandDto = {
-          key: BrandKey.LUSSO,
-          name: 'Minimal Brand',
-          logo_url: 'https://example.com/minimal.png',
+        const brandData = await brandFactory.make({
           theme: {
             color: '#000000',
           },
+        });
+        const createBrandDto: CreateBrandDto = {
+          key: brandData.key,
+          name: brandData.name,
+          theme: brandData.theme,
         };
 
         // Act
@@ -134,13 +135,11 @@ describe('BrandsService', () => {
         'should create a brand with key: %s',
         async (brandKey) => {
           // Arrange
+          const brandData = await brandFactory.make({ key: brandKey });
           const createBrandDto: CreateBrandDto = {
-            key: brandKey,
-            name: `${brandKey} Brand`,
-            logo_url: `https://example.com/${brandKey}.png`,
-            theme: {
-              primaryColor: '#000000',
-            },
+            key: brandData.key,
+            name: brandData.name,
+            theme: brandData.theme,
           };
 
           // Act
@@ -156,11 +155,15 @@ describe('BrandsService', () => {
     describe('State-Based Testing - Database Persistence', () => {
       it('should persist brand to database', async () => {
         // Arrange
-        const createBrandDto: CreateBrandDto = {
+        const brandData = await brandFactory.make({
           key: BrandKey.LUSSO,
           name: 'Persistent Brand',
-          logo_url: 'https://example.com/persistent.png',
           theme: { primaryColor: '#ff0000' },
+        });
+        const createBrandDto: CreateBrandDto = {
+          key: brandData.key,
+          name: brandData.name,
+          theme: brandData.theme,
         };
 
         // Act
@@ -257,11 +260,15 @@ describe('BrandsService', () => {
   describe('Integration Tests - Service + Repository', () => {
     it('should create and then find all brands', async () => {
       // Arrange
-      const createBrandDto: CreateBrandDto = {
+      const brandData = await brandFactory.make({
         key: BrandKey.LUSSO,
         name: 'Integration Test Brand',
-        logo_url: 'https://example.com/integration.png',
         theme: { primaryColor: '#00ff00' },
+      });
+      const createBrandDto: CreateBrandDto = {
+        key: brandData.key,
+        name: brandData.name,
+        theme: brandData.theme,
       };
 
       // Act

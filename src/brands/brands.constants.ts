@@ -1,5 +1,5 @@
 export enum BrandKey {
-  BRILLIPOINT = 'brillipoint',
-  LUSSO = 'lusso',
-  ALETVIA = 'aletvia',
+  BRILLIPOINT = 'Brillipoint',
+  LUSSO = 'Lusso Recepciones',
+  ALETVIA = 'Aletvia Glow and Hair',
 }
