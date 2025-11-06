@@ -1,4 +1,4 @@
-import { TestDataSource } from '../src/config/database/test-data-source';
+import { AppDataSource as TestDataSource } from '../src/config/database/data-source';
 
 beforeAll(async () => {
   await TestDataSource.initialize();
