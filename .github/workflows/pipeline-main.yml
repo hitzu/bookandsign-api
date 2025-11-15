@@ -1,16 +1,3 @@
-name: pipeline-main
-on:
-  push:
-    branches: [main]
-  workflow_dispatch: {}
-
-concurrency:
-  group: pipeline-main
-  cancel-in-progress: false
-
-permissions:
-  contents: read
-
 jobs:
   migrate:
     name: migrate
@@ -33,10 +20,13 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
+      - name: Enable Corepack and activate pnpm (replaces pnpm/action-setup)
+        run: |
+          corepack enable
+          corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+          pnpm --version
+          which pnpm
+        shell: bash
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
