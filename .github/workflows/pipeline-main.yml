@@ -17,18 +17,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      NODE_VERSION: 20
+      NODE_VERSION: 22
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node + pnpm cache
+      - name: Setup Node (+ pnpm cache)
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
-      - name: Enable corepack
-        run: corepack enable
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Install deps
         run: pnpm install --frozen-lockfile
@@ -49,20 +51,22 @@ jobs:
     environment: production
     timeout-minutes: 15
     env:
-      NODE_VERSION: 20
+      NODE_VERSION: 22
       NODE_ENV: prod
-      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }} # service_role solo en CI
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }} # service_role SOLO en CI
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node + pnpm cache
+      - name: Setup Node (+ pnpm cache)
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
-      - name: Enable corepack
-        run: corepack enable
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Install deps
         run: pnpm install --frozen-lockfile
