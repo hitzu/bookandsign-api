@@ -23,7 +23,6 @@ jobs:
     env:
       NODE_VERSION: 22
       PNPM_VERSION: 9
-      NODE_ENV: production
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
     steps:
       - name: Checkout
@@ -48,10 +47,16 @@ jobs:
         run: pnpm run build
 
       - name: migrations:status (before)
+        env:
+          NODE_ENV: production
         run: pnpm run db:status
 
       - name: migrations:run
+        env:
+          NODE_ENV: production
         run: pnpm run db:run
 
       - name: migrations:status (after)
+        env:
+          NODE_ENV: production
         run: pnpm run db:status
