@@ -15,6 +15,19 @@ if (fs.existsSync(envPath)) {
 const url = process.env.SUPABASE_DB_URL;
 const isProduction = stage === 'production' || stage === 'prod';
 
+// Debug logging (only in non-test environments)
+if (!isTest) {
+  console.log('[data-source] Debug info:');
+  console.log(`  NODE_ENV: ${stage}`);
+  console.log(`  SUPABASE_DB_URL defined: ${!!url}`);
+  console.log(`  SUPABASE_DB_URL length: ${url ? url.length : 0}`);
+  console.log(
+    `  SUPABASE_DB_URL preview: ${url ? url.substring(0, 30) + '...' : 'undefined'}`,
+  );
+  console.log(`  Using URL connection: ${!!url}`);
+  console.log(`  Using individual params: ${!url}`);
+}
+
 // When using a connection URL, TypeORM should use it instead of individual parameters
 // Only provide individual parameters when URL is not available
 const baseConfig = url

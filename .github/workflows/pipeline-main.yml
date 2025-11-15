@@ -46,17 +46,36 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: Debug - Check SUPABASE_DB_URL
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          echo "Checking SUPABASE_DB_URL..."
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "❌ SUPABASE_DB_URL is EMPTY or NOT SET"
+            exit 1
+          else
+            echo "✅ SUPABASE_DB_URL is SET"
+            echo "Length: ${#SUPABASE_DB_URL} characters"
+            echo "First 20 chars: ${SUPABASE_DB_URL:0:20}..."
+            echo "Contains 'postgres': $([ -z "${SUPABASE_DB_URL#*postgres}" ] && echo 'NO' || echo 'YES')"
+            echo "Contains '@': $([ -z "${SUPABASE_DB_URL#*@}" ] && echo 'NO' || echo 'YES')"
+          fi
+
       - name: migrations:status (before)
         env:
           NODE_ENV: production
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: pnpm run db:status
 
       - name: migrations:run
         env:
           NODE_ENV: production
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: pnpm run db:run
 
       - name: migrations:status (after)
         env:
           NODE_ENV: production
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: pnpm run db:status
