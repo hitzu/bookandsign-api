@@ -49,14 +49,17 @@ jobs:
       - name: migrations:status (before)
         env:
           NODE_ENV: production
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: pnpm run db:status
 
       - name: migrations:run
         env:
           NODE_ENV: production
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: pnpm run db:run
 
       - name: migrations:status (after)
         env:
           NODE_ENV: production
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: pnpm run db:status
