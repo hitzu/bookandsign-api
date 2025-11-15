@@ -20,37 +20,61 @@ jobs:
       NODE_VERSION: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node + pnpm cache
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - run: npm run lint
-      - run: npm test --passWithNoTests
-      - run: npm run build
+          cache: pnpm
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Test
+        run: pnpm run test --passWithNoTests
+
+      - name: Build
+        run: pnpm run build
 
   migrate:
     name: migrate
     needs: quality
     runs-on: ubuntu-latest
+    environment: production
     timeout-minutes: 15
-    environment: production # WHY: para usar Environment Secrets y poder protegerlo
     env:
       NODE_VERSION: 20
-      NODE_ENV: prod # WHY: fuerza SSL y config prod en tu DataSource
-      # Map genérico -> variable que tu código ya consume
-      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      NODE_ENV: prod
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }} # service_role solo en CI
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node + pnpm cache
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - run: npm run build
+          cache: pnpm
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
       - name: migrations:status (before)
-        run: npm run db:status
+        run: pnpm run db:status
+
       - name: migrations:run
-        run: npm run db:run
+        run: pnpm run db:run
+
       - name: migrations:status (after)
-        run: npm run db:status
+        run: pnpm run db:status
