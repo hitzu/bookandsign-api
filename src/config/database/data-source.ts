@@ -7,7 +7,10 @@ const isTest = stage === 'test';
 
 dotenv.config({ path: path.join(__dirname, '../../../', `.env.${stage}`) });
 
+const url = process.env.DATABASE_URL;
+
 export const AppDataSource = new DataSource({
+  url,
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432', 10),

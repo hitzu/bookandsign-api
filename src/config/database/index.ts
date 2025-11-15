@@ -22,6 +22,7 @@ export const getTypeOrmConfig = (): TypeOrmModuleOptions => {
 
   return {
     type: 'postgres',
+    url: process.env.DATABASE_URL,
     host: process.env.DB_HOST || defaults.host,
     port: parseInt(process.env.DB_PORT || String(defaults.port), 10),
     username: process.env.DB_USERNAME || defaults.username,

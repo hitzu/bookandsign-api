@@ -1,0 +1,56 @@
+# .github/workflows/pipeline-main.yml
+name: pipeline-main
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: pipeline-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NODE_VERSION: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm test --passWithNoTests
+      - run: npm run build
+
+  migrate:
+    name: migrate
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production # WHY: para usar Environment Secrets y poder protegerlo
+    env:
+      NODE_VERSION: 20
+      NODE_ENV: prod # WHY: fuerza SSL y config prod en tu DataSource
+      # Map genérico -> variable que tu código ya consume
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - name: migrations:status (before)
+        run: npm run db:status
+      - name: migrations:run
+        run: npm run db:run
+      - name: migrations:status (after)
+        run: npm run db:status
