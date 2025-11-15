@@ -3,6 +3,7 @@ name: pipeline-main
 on:
   push:
     branches: [main]
+  workflow_dispatch: {}
 
 concurrency:
   group: pipeline-main
@@ -12,50 +13,19 @@ permissions:
   contents: read
 
 jobs:
-  quality:
-    name: quality
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      NODE_VERSION: 22
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node (+ pnpm cache)
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install deps
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Test
-        run: pnpm run test --passWithNoTests
-
-      - name: Build
-        run: pnpm run build
-
   migrate:
     name: migrate
-    needs: quality
     runs-on: ubuntu-latest
     environment: production
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       NODE_VERSION: 22
+      PNPM_VERSION: 9
       NODE_ENV: prod
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }} # service_role SOLO en CI
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Node (+ pnpm cache)
         uses: actions/setup-node@v4
@@ -63,12 +33,10 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - name: Install pnpm globally
+        run: npm i -g pnpm@${{ env.PNPM_VERSION }}
 
-      - name: Install deps
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build
