@@ -12,6 +12,8 @@ export const getTypeOrmConfig = (): TypeOrmModuleOptions => {
     path: path.join(__dirname, '../../../', `.env.${nodeEnv}`),
   });
 
+  const url = process.env.SUPABASE_DB_URL;
+
   const defaults = {
     host: 'localhost',
     port: 5432,
@@ -22,7 +24,7 @@ export const getTypeOrmConfig = (): TypeOrmModuleOptions => {
 
   return {
     type: 'postgres',
-    url: process.env.DATABASE_URL,
+    url,
     host: process.env.DB_HOST || defaults.host,
     port: parseInt(process.env.DB_PORT || String(defaults.port), 10),
     username: process.env.DB_USERNAME || defaults.username,

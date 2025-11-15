@@ -1,23 +1,40 @@
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import * as fs from 'fs';
 
 const stage = process.env.NODE_ENV || 'local';
 const isTest = stage === 'test';
 
-dotenv.config({ path: path.join(__dirname, '../../../', `.env.${stage}`) });
+// Try to load .env file if it exists, but don't fail if it doesn't
+const envPath = path.join(__dirname, '../../../', `.env.${stage}`);
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
 
-const url = process.env.DATABASE_URL;
+const url = process.env.SUPABASE_DB_URL;
+const isProduction = stage === 'production' || stage === 'prod';
+
+// When using a connection URL, TypeORM should use it instead of individual parameters
+// Only provide individual parameters when URL is not available
+const baseConfig = url
+  ? {
+      type: 'postgres' as const,
+      url,
+      ssl: isProduction ? { rejectUnauthorized: false } : false,
+    }
+  : {
+      type: 'postgres' as const,
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432', 10),
+      username: process.env.DB_USERNAME || 'postgres',
+      password: process.env.DB_PASSWORD || 'postgres',
+      database: process.env.DB_NAME || 'bookandsign_dev',
+      ssl: isProduction ? { rejectUnauthorized: false } : false,
+    };
 
 export const AppDataSource = new DataSource({
-  url,
-  type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_NAME || 'bookandsign_dev',
-
+  ...baseConfig,
   synchronize: isTest,
   logging: false,
   dropSchema: isTest,
@@ -28,11 +45,10 @@ export const AppDataSource = new DataSource({
     : [path.join(__dirname, '../../database/migrations/**/*{.ts,.js}')],
   subscribers: [path.join(__dirname, '../../subscribers/**/*{.ts,.js}')],
 
-  ssl: stage === 'prod' ? { rejectUnauthorized: false } : false,
-  poolSize: stage === 'prod' ? 20 : 5,
+  poolSize: isProduction ? 20 : 5,
 
   extra: {
-    max: stage === 'prod' ? 20 : 5,
+    max: isProduction ? 20 : 5,
     connectionTimeoutMillis: 2000,
   },
 });
