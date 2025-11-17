@@ -50,9 +50,19 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          echo "Checking SUPABASE_DB_URL..."
+          echo "=== Debug: SUPABASE_DB_URL ==="
+          echo "Job environment: production"
+          echo "Secret value from secrets.SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL != '' && 'SET (hidden)' || 'EMPTY' }}"
+          echo ""
+          echo "Checking environment variable..."
           if [ -z "$SUPABASE_DB_URL" ]; then
             echo "❌ SUPABASE_DB_URL is EMPTY or NOT SET"
+            echo ""
+            echo "⚠️  TROUBLESHOOTING:"
+            echo "1. Verify the secret 'SUPABASE_DB_URL' exists in the 'production' environment"
+            echo "2. Go to: Settings > Environments > production > Secrets and variables"
+            echo "3. Make sure 'SUPABASE_DB_URL' is added as a secret (not a variable)"
+            echo "4. If using repository secrets instead, remove 'environment: production' from the job"
             exit 1
           else
             echo "✅ SUPABASE_DB_URL is SET"

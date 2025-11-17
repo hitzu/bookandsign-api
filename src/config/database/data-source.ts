@@ -30,11 +30,17 @@ if (!isTest) {
 
 // When using a connection URL, TypeORM should use it instead of individual parameters
 // Only provide individual parameters when URL is not available
+// For Supabase, we need to ensure SSL is properly configured
 const baseConfig = url
   ? {
       type: 'postgres' as const,
       url,
-      ssl: isProduction ? { rejectUnauthorized: false } : false,
+      // Supabase requires SSL connections in production
+      ssl: isProduction
+        ? {
+            rejectUnauthorized: false,
+          }
+        : false,
     }
   : {
       type: 'postgres' as const,
@@ -60,8 +66,18 @@ export const AppDataSource = new DataSource({
 
   poolSize: isProduction ? 20 : 5,
 
+  // Connection pool and timeout settings
+  // Increased timeout for external connections (Supabase)
   extra: {
     max: isProduction ? 20 : 5,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: isProduction ? 10000 : 2000, // 10s for production (Supabase), 2s for local
+    idleTimeoutMillis: 30000,
+    // Additional SSL configuration for Supabase if needed
+    ...(isProduction &&
+      url && {
+        ssl: {
+          rejectUnauthorized: false,
+        },
+      }),
   },
 });
