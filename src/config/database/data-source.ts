@@ -6,7 +6,6 @@ import * as fs from 'fs';
 const stage = process.env.NODE_ENV || 'local';
 const isTest = stage === 'test';
 
-// Try to load .env file if it exists, but don't fail if it doesn't
 const envPath = path.join(__dirname, '../../../', `.env.${stage}`);
 if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
@@ -15,27 +14,10 @@ if (fs.existsSync(envPath)) {
 const url = process.env.SUPABASE_DB_URL;
 const isProduction = stage === 'production' || stage === 'prod';
 
-// Debug logging (only in non-test environments)
-if (!isTest) {
-  console.log('[data-source] Debug info:');
-  console.log(`  NODE_ENV: ${stage}`);
-  console.log(`  SUPABASE_DB_URL defined: ${!!url}`);
-  console.log(`  SUPABASE_DB_URL length: ${url ? url.length : 0}`);
-  console.log(
-    `  SUPABASE_DB_URL preview: ${url ? url.substring(0, 30) + '...' : 'undefined'}`,
-  );
-  console.log(`  Using URL connection: ${!!url}`);
-  console.log(`  Using individual params: ${!url}`);
-}
-
-// When using a connection URL, TypeORM should use it instead of individual parameters
-// Only provide individual parameters when URL is not available
-// For Supabase, we need to ensure SSL is properly configured
 const baseConfig = url
   ? {
       type: 'postgres' as const,
       url,
-      // Supabase requires SSL connections in production
       ssl: isProduction
         ? {
             rejectUnauthorized: false,
@@ -66,18 +48,10 @@ export const AppDataSource = new DataSource({
 
   poolSize: isProduction ? 20 : 5,
 
-  // Connection pool and timeout settings
-  // Increased timeout for external connections (Supabase)
   extra: {
     max: isProduction ? 20 : 5,
-    connectionTimeoutMillis: isProduction ? 10000 : 2000, // 10s for production (Supabase), 2s for local
+    connectionTimeoutMillis: isProduction ? 10000 : 2000,
     idleTimeoutMillis: 30000,
-    // Additional SSL configuration for Supabase if needed
-    ...(isProduction &&
-      url && {
-        ssl: {
-          rejectUnauthorized: false,
-        },
-      }),
+    ssl: isProduction ? { rejectUnauthorized: false } : false,
   },
 });

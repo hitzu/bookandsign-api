@@ -50,26 +50,17 @@ jobs:
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
-          echo "=== Debug: SUPABASE_DB_URL ==="
-          echo "Job environment: production"
-          echo "Secret value from secrets.SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL != '' && 'SET (hidden)' || 'EMPTY' }}"
-          echo ""
-          echo "Checking environment variable..."
           if [ -z "$SUPABASE_DB_URL" ]; then
-            echo "❌ SUPABASE_DB_URL is EMPTY or NOT SET"
+            echo "SUPABASE_DB_URL is EMPTY or NOT SET"
             echo ""
-            echo "⚠️  TROUBLESHOOTING:"
+            echo "TROUBLESHOOTING:"
             echo "1. Verify the secret 'SUPABASE_DB_URL' exists in the 'production' environment"
             echo "2. Go to: Settings > Environments > production > Secrets and variables"
             echo "3. Make sure 'SUPABASE_DB_URL' is added as a secret (not a variable)"
             echo "4. If using repository secrets instead, remove 'environment: production' from the job"
             exit 1
           else
-            echo "✅ SUPABASE_DB_URL is SET"
-            echo "Length: ${#SUPABASE_DB_URL} characters"
-            echo "First 20 chars: ${SUPABASE_DB_URL:0:20}..."
-            echo "Contains 'postgres': $([ -z "${SUPABASE_DB_URL#*postgres}" ] && echo 'NO' || echo 'YES')"
-            echo "Contains '@': $([ -z "${SUPABASE_DB_URL#*@}" ] && echo 'NO' || echo 'YES')"
+            echo "SUPABASE_DB_URL is SET"
           fi
 
       - name: migrations:status (before)
