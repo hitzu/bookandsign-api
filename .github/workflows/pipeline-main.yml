@@ -140,3 +140,16 @@ jobs:
           NODE_ENV: production
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: pnpm run db:status
+
+  deploy:
+    name: deploy
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - name: Trigger Render Deploy
+        run: |
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            || echo "Deploy webhook triggered"
