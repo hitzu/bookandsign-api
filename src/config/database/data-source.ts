@@ -1,20 +1,41 @@
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import * as fs from 'fs';
 
 const stage = process.env.NODE_ENV || 'local';
 const isTest = stage === 'test';
 
-dotenv.config({ path: path.join(__dirname, '../../../', `.env.${stage}`) });
+const envPath = path.join(__dirname, '../../../', `.env.${stage}`);
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
+
+const url = process.env.SUPABASE_DB_URL;
+const isProduction = stage === 'production' || stage === 'prod';
+
+const baseConfig = url
+  ? {
+      type: 'postgres' as const,
+      url,
+      ssl: isProduction
+        ? {
+            rejectUnauthorized: false,
+          }
+        : false,
+    }
+  : {
+      type: 'postgres' as const,
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432', 10),
+      username: process.env.DB_USERNAME || 'postgres',
+      password: process.env.DB_PASSWORD || 'postgres',
+      database: process.env.DB_NAME || 'bookandsign_dev',
+      ssl: isProduction ? { rejectUnauthorized: false } : false,
+    };
 
 export const AppDataSource = new DataSource({
-  type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_NAME || 'bookandsign_dev',
-
+  ...baseConfig,
   synchronize: isTest,
   logging: false,
   dropSchema: isTest,
@@ -25,11 +46,12 @@ export const AppDataSource = new DataSource({
     : [path.join(__dirname, '../../database/migrations/**/*{.ts,.js}')],
   subscribers: [path.join(__dirname, '../../subscribers/**/*{.ts,.js}')],
 
-  ssl: stage === 'prod' ? { rejectUnauthorized: false } : false,
-  poolSize: stage === 'prod' ? 20 : 5,
+  poolSize: isProduction ? 20 : 5,
 
   extra: {
-    max: stage === 'prod' ? 20 : 5,
-    connectionTimeoutMillis: 2000,
+    max: isProduction ? 20 : 5,
+    connectionTimeoutMillis: isProduction ? 10000 : 2000,
+    idleTimeoutMillis: 30000,
+    ssl: isProduction ? { rejectUnauthorized: false } : false,
   },
 });
