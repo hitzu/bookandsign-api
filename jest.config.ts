@@ -18,6 +18,10 @@ const config: Config = {
   transformIgnorePatterns: [
     'node_modules/(?!(@faker-js/faker|@jorgebodega/typeorm-factory)/)',
   ],
+  // Run tests serially to avoid database deadlocks
+  maxWorkers: 1,
+  // Increase test timeout for database operations
+  testTimeout: 10000,
 };
 
 export default config;

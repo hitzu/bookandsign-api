@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: http://localhost:3000/brands
+  url: {{base_url}}/brands
   body: json
   auth: inherit
+}
+
+headers {
+  authorization: Bearer {{token}}
 }
 
 settings {
