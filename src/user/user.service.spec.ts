@@ -214,8 +214,8 @@ describe('UserService', () => {
         // Assert
         expect(result.password).not.toBe(plainPassword);
         expect(result.password.length).toBeGreaterThan(50); // bcrypt hash length
-        expect(result.comparePassword(plainPassword)).toBe(true);
-        expect(result.comparePassword('wrongpassword')).toBe(false);
+        expect(await result.comparePassword(plainPassword)).toBe(true);
+        expect(await result.comparePassword('wrongpassword')).toBe(false);
       });
 
       it('should persist user to database', async () => {
@@ -285,7 +285,7 @@ describe('UserService', () => {
 
         // Assert
         expect(result).toBeDefined();
-        expect(result.comparePassword('1234')).toBe(true);
+        expect(await result.comparePassword('1234')).toBe(true);
       });
 
       it('should handle long passwords', async () => {
@@ -306,7 +306,7 @@ describe('UserService', () => {
 
         // Assert
         expect(result).toBeDefined();
-        expect(result.comparePassword(longPassword)).toBe(true);
+        expect(await result.comparePassword(longPassword)).toBe(true);
       });
 
       it('should handle passwords with special characters', async () => {
@@ -327,7 +327,7 @@ describe('UserService', () => {
 
         // Assert
         expect(result).toBeDefined();
-        expect(result.comparePassword(specialPassword)).toBe(true);
+        expect(await result.comparePassword(specialPassword)).toBe(true);
       });
     });
 

@@ -75,17 +75,27 @@ describe('TokenService', () => {
 
         // Assert
         // Verify first call (access token)
-        expect(signAsyncSpy).toHaveBeenNthCalledWith(1, {
-          sub: user.id,
-          email: user.email,
-          type: TOKEN_TYPE.ACCESS,
-        });
+        expect(signAsyncSpy).toHaveBeenNthCalledWith(
+          1,
+          {
+            sub: user.id,
+            email: user.email,
+            type: TOKEN_TYPE.ACCESS,
+            id: user.id,
+          },
+          { expiresIn: '60d' },
+        );
         // Verify second call (refresh token)
-        expect(signAsyncSpy).toHaveBeenNthCalledWith(2, {
-          sub: user.id,
-          email: user.email,
-          type: TOKEN_TYPE.REFRESH,
-        });
+        expect(signAsyncSpy).toHaveBeenNthCalledWith(
+          2,
+          {
+            sub: user.id,
+            email: user.email,
+            type: TOKEN_TYPE.REFRESH,
+            id: user.id,
+          },
+          { expiresIn: '365d' },
+        );
       });
 
       it('should persist access token to database', async () => {
@@ -332,8 +342,30 @@ describe('TokenService', () => {
       it('should propagate database errors during token deletion', async () => {
         // Arrange
         const user = await userFactory.create();
-        const invalidRepository = {
+        jest
+          .spyOn(jwtService, 'signAsync')
+          .mockResolvedValueOnce('access-token')
+          .mockResolvedValueOnce('refresh-token');
+
+        const mockTransactionalManager = {
           delete: jest.fn().mockRejectedValue(new Error('Database error')),
+        };
+
+        const invalidRepository = {
+          create: jest.fn().mockReturnValue({}),
+          manager: {
+            transaction: jest
+              .fn()
+              .mockImplementation(
+                (
+                  callback: (
+                    manager: typeof mockTransactionalManager,
+                  ) => Promise<unknown>,
+                ) => {
+                  return callback(mockTransactionalManager);
+                },
+              ),
+          },
         } as unknown as Repository<Token>;
 
         const invalidService = new TokenService(invalidRepository, jwtService);
@@ -352,10 +384,26 @@ describe('TokenService', () => {
           .mockResolvedValueOnce('access-token')
           .mockResolvedValueOnce('refresh-token');
 
-        const invalidRepository = {
+        const mockTransactionalManager = {
           delete: jest.fn().mockResolvedValue(undefined),
-          create: jest.fn().mockReturnValue({}),
           save: jest.fn().mockRejectedValue(new Error('Save failed')),
+        };
+
+        const invalidRepository = {
+          create: jest.fn().mockReturnValue({}),
+          manager: {
+            transaction: jest
+              .fn()
+              .mockImplementation(
+                (
+                  callback: (
+                    manager: typeof mockTransactionalManager,
+                  ) => Promise<unknown>,
+                ) => {
+                  return callback(mockTransactionalManager);
+                },
+              ),
+          },
         } as unknown as Repository<Token>;
 
         const invalidService = new TokenService(invalidRepository, jwtService);

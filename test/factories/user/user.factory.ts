@@ -30,7 +30,7 @@ export class UserFactory extends Factory<User> {
    */
   async makeWithPassword(password: string): Promise<User> {
     const user = await this.make();
-    user.hashPassword(password);
+    await user.hashPassword(password);
     return user;
   }
 

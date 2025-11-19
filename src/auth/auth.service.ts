@@ -49,7 +49,7 @@ export class AuthService {
       if (!user) {
         throw new NotFoundException(EXCEPTION_RESPONSE.USER_NOT_FOUND);
       }
-      if (!user.comparePassword(password)) {
+      if (!(await user.comparePassword(password))) {
         throw new UnauthorizedException(
           EXCEPTION_RESPONSE.LOGIN_BAD_CREDENTIAL,
         );
