@@ -13,6 +13,20 @@ import {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
+
+  // Enable CORS
+  const corsOrigin = process.env.CORS_ORIGIN;
+  const allowedOrigins = corsOrigin
+    ? corsOrigin.split(',').map((origin) => origin.trim())
+    : true; // Allow all origins in local if not specified
+
+  app.enableCors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
   app.use((req, res, next) => {
     req.id = uuidv4();
     next();
@@ -48,4 +62,4 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+void bootstrap();
