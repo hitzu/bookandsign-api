@@ -4,6 +4,11 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from 'nestjs-pino';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  DocumentBuilder,
+  SwaggerDocumentOptions,
+  SwaggerModule,
+} from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -12,6 +17,35 @@ async function bootstrap() {
     req.id = uuidv4();
     next();
   });
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Book and Sign API')
+    .setDescription('Book and Sign API description')
+    .addBearerAuth(
+      {
+        name: 'Authorization',
+        description: 'Please enter token',
+        scheme: 'Bearer',
+        type: 'http',
+        in: 'Header',
+        bearerFormat: 'Bearer',
+      },
+      'access-token',
+    )
+    .setVersion('0.1')
+    .addServer('/')
+    .build();
+
+  const swaggerOptions: SwaggerDocumentOptions = {
+    operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
+  };
+
+  const document = SwaggerModule.createDocument(
+    app,
+    swaggerConfig,
+    swaggerOptions,
+  );
+  SwaggerModule.setup('api', app, document);
+
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

@@ -7,6 +7,9 @@ import { BrandsModule } from './brands/brands.module';
 import { getTypeOrmConfig } from './config/database';
 import { LoggerModule } from 'nestjs-pino';
 import { getLoggerConfigs } from './config/logger/logger.config';
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
+import { TokenModule } from './token/token.module';
 
 @Module({
   imports: [
@@ -23,6 +26,9 @@ import { getLoggerConfigs } from './config/logger/logger.config';
       useFactory: () => getTypeOrmConfig(),
     }),
     BrandsModule,
+    AuthModule,
+    UserModule,
+    TokenModule,
   ],
   controllers: [AppController],
   providers: [AppService],
