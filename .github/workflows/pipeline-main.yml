@@ -28,6 +28,7 @@ jobs:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_NAME: bookandsign_test
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
     services:
       postgres:
         image: postgres:17-alpine
@@ -72,6 +73,7 @@ jobs:
           DB_USERNAME: ${{ env.DB_USERNAME }}
           DB_PASSWORD: ${{ env.DB_PASSWORD }}
           DB_NAME: ${{ env.DB_NAME }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: pnpm run test
 
   migrate:
