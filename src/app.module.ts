@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
@@ -10,6 +11,7 @@ import { getLoggerConfigs } from './config/logger/logger.config';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { TokenModule } from './token/token.module';
+import { AuthGuard } from './auth/auth.guard';
 
 @Module({
   imports: [
@@ -31,6 +33,12 @@ import { TokenModule } from './token/token.module';
     TokenModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+  ],
 })
 export class AppModule {}

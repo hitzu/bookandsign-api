@@ -10,21 +10,29 @@ import { SignupDto } from './dto/signup.dto';
 import { LoginOutputDto } from './dto/login-output.dto';
 import { LoginDto } from './dto/login.dto';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
+import { Public } from './decorators/public.decorator';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({
     description: 'User created successfully',
   })
   async signup(@Body() signupDto: SignupDto) {
-    return this.authService.signup(signupDto);
+    try {
+      return this.authService.signup(signupDto);
+    } catch (error) {
+      console.log(error, 'Error signing up');
+      throw error;
+    }
   }
 
+  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({

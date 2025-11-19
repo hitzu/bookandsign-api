@@ -11,7 +11,7 @@ enum ErrorMessages {
   AUTHORIZATION_FAILED = 'AUTHORIZATION_FAILED',
   ALREADY_VERIFIED_EMAIL = 'ALREADY_VERIFIED_EMAIL',
   ACCESS_DENIED = 'ACCESS_DENIED',
-
+  GENERATE_TOKEN_ERROR = 'GENERATE_TOKEN_ERROR',
   // Add more error messages as needed
 }
 
@@ -67,5 +67,9 @@ export const EXCEPTION_RESPONSE: Record<
   [ErrorMessages.ACCESS_DENIED]: {
     code: 13,
     message: 'access denied',
+  },
+  [ErrorMessages.GENERATE_TOKEN_ERROR]: {
+    code: 14,
+    message: 'error generating token',
   },
 };

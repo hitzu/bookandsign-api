@@ -10,6 +10,10 @@ post {
   auth: inherit
 }
 
+headers {
+  Authorization: Bearer {{token}}
+}
+
 body:json {
   {
     "key": "Lusso Recepciones",

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Token } from './entities/token.entity';
@@ -7,9 +7,13 @@ import { User } from '../user/entities/user.entity';
 import { TOKEN_TYPE } from '../common/types/token-type';
 import { TOKEN_CONFIG } from '../config/token/token.config';
 import { accessAndRefreshTokenDto } from './dto/access-refresh-token.dto';
+import { DecodedTokenDto } from './dto/decode-token.dto';
+import { Logger } from '@nestjs/common';
+import { EXCEPTION_RESPONSE } from 'src/config/errors/exception-response.config';
 
 @Injectable()
 export class TokenService {
+  private readonly logger = new Logger(TokenService.name);
   constructor(
     @InjectRepository(Token)
     private readonly tokenRepository: Repository<Token>,
@@ -18,11 +22,24 @@ export class TokenService {
 
   private async generateJwtToken(
     user: User,
-    expiresIn: string,
+    expiresIn: number,
     type: TOKEN_TYPE,
   ): Promise<string> {
-    const payload = { sub: user.id, email: user.email, type };
-    return this.jwtService.signAsync(payload);
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      type,
+      id: user.id,
+    };
+
+    try {
+      return this.jwtService.signAsync(payload, { expiresIn: `${expiresIn}d` });
+    } catch (error) {
+      this.logger.error(error, 'Error generating JWT token');
+      throw new InternalServerErrorException(
+        EXCEPTION_RESPONSE.GENERATE_TOKEN_ERROR,
+      );
+    }
   }
 
   public async generateAuthTokens(
@@ -30,7 +47,7 @@ export class TokenService {
   ): Promise<accessAndRefreshTokenDto> {
     const accessToken = await this.generateJwtToken(
       user,
-      `${TOKEN_CONFIG.EXP.accessTokenExp}d`,
+      TOKEN_CONFIG.EXP.accessTokenExp,
       TOKEN_TYPE.ACCESS,
     );
     await this.tokenRepository.delete({ user: { id: user.id } });
@@ -55,5 +72,15 @@ export class TokenService {
     await this.tokenRepository.save(refreshTokenEntity);
 
     return { accessToken, refreshToken };
+  }
+
+  public async verifyToken(token: string): Promise<any> {
+    return this.jwtService.verifyAsync(token, {
+      secret: process.env.JWT_SECRET,
+    });
+  }
+
+  public decodeToken(token: string): Promise<DecodedTokenDto> {
+    return this.jwtService.decode(token);
   }
 }

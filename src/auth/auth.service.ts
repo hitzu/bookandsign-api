@@ -9,8 +9,9 @@ import { SignupDto } from './dto/signup.dto';
 import { EXCEPTION_RESPONSE } from 'src/config/errors/exception-response.config';
 import { Logger } from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
-import { LoginOutputDto } from './dto/login-output.dto';
+import { LoginOutputDto, userInfo } from './dto/login-output.dto';
 import { TokenService } from '../token/token.service';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class AuthService {
@@ -20,7 +21,7 @@ export class AuthService {
     private readonly tokenService: TokenService,
   ) {}
 
-  public async signup(signupDto: SignupDto) {
+  public async signup(signupDto: SignupDto): Promise<LoginOutputDto> {
     try {
       const { email } = signupDto;
       const existingUser = await this.userService.findUserByEmail(email);
@@ -31,7 +32,9 @@ export class AuthService {
 
       return {
         accessAndRefreshToken: tokens,
-        userInfo: user,
+        userInfo: plainToInstance(userInfo, user, {
+          excludeExtraneousValues: true,
+        }),
       };
     } catch (error) {
       this.logger.error(error, 'Error signing up');
@@ -56,7 +59,9 @@ export class AuthService {
 
       return {
         accessAndRefreshToken: tokens,
-        userInfo: user,
+        userInfo: plainToInstance(userInfo, user, {
+          excludeExtraneousValues: true,
+        }),
       };
     } catch (error) {
       this.logger.error(error, 'Error logging in');
