@@ -2,8 +2,12 @@ import { AppDataSource as TestDataSource } from '../src/config/database/data-sou
 
 // Global flag to prevent multiple initializations across test suites
 declare global {
-  // eslint-disable-next-line no-var
   var __TEST_DB_INITIALIZED__: boolean | undefined;
+}
+
+// Set JWT_SECRET for tests if not already set
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'test-jwt-secret-for-unit-tests';
 }
 
 beforeAll(async () => {
