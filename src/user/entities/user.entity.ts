@@ -22,11 +22,11 @@ export class User extends BaseTimeEntity {
   @OneToMany(() => Token, (token) => token.user)
   tokens?: Token[];
 
-  hashPassword(password: string) {
-    this.password = bcrypt.hashSync(password, 10);
+  async hashPassword(password: string): Promise<void> {
+    this.password = await bcrypt.hash(password, 10);
   }
 
-  comparePassword(password: string): boolean {
-    return bcrypt.compareSync(password, this.password);
+  async comparePassword(password: string): Promise<boolean> {
+    return await bcrypt.compare(password, this.password);
   }
 }

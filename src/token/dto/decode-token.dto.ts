@@ -4,6 +4,6 @@ export class DecodedTokenDto {
   sub: number;
   email: string;
   type: TOKEN_TYPE;
-  exp: string;
+  exp: number;
   id: number;
 }

@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsNotEmpty } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class accessAndRefreshTokenDto {
+export class AccessAndRefreshTokenDto {
   @IsNotEmpty()
   @Expose()
   @ApiProperty()
@@ -14,7 +15,7 @@ export class accessAndRefreshTokenDto {
   refreshToken: string;
 }
 
-export class userInfo {
+export class UserInfo {
   @Expose()
   @ApiProperty()
   id: number;
@@ -43,9 +44,11 @@ export class userInfo {
 export class LoginOutputDto {
   @Expose()
   @ApiProperty()
-  accessAndRefreshToken: accessAndRefreshTokenDto;
+  @Type(() => AccessAndRefreshTokenDto)
+  accessAndRefreshToken: AccessAndRefreshTokenDto;
 
   @Expose()
   @ApiProperty()
-  userInfo: userInfo;
+  @Type(() => UserInfo)
+  userInfo: UserInfo;
 }

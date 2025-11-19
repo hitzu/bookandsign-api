@@ -12,6 +12,7 @@ enum ErrorMessages {
   ALREADY_VERIFIED_EMAIL = 'ALREADY_VERIFIED_EMAIL',
   ACCESS_DENIED = 'ACCESS_DENIED',
   GENERATE_TOKEN_ERROR = 'GENERATE_TOKEN_ERROR',
+  JWT_SECRET_NOT_FOUND = 'JWT_SECRET_NOT_FOUND',
   // Add more error messages as needed
 }
 
@@ -50,11 +51,11 @@ export const EXCEPTION_RESPONSE: Record<
   },
   [ErrorMessages.INVALID_TOKEN]: {
     code: 9,
-    message: '',
+    message: 'invalid token',
   },
   [ErrorMessages.BAD_TOKEN_FORMAT]: {
     code: 10,
-    message: '',
+    message: 'token format is invalid',
   },
   [ErrorMessages.AUTHORIZATION_FAILED]: {
     code: 11,
@@ -71,5 +72,9 @@ export const EXCEPTION_RESPONSE: Record<
   [ErrorMessages.GENERATE_TOKEN_ERROR]: {
     code: 14,
     message: 'error generating token',
+  },
+  [ErrorMessages.JWT_SECRET_NOT_FOUND]: {
+    code: 15,
+    message: 'JWT_SECRET is not found',
   },
 };

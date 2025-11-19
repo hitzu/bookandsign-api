@@ -5,11 +5,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from '../user/user.service';
-import { SignupDto } from './dto/signup.dto';
+import { SignupDto } from '../user/dto/signup.dto';
 import { EXCEPTION_RESPONSE } from 'src/config/errors/exception-response.config';
 import { Logger } from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
-import { LoginOutputDto, userInfo } from './dto/login-output.dto';
+import { LoginOutputDto, UserInfo } from './dto/login-output.dto';
 import { TokenService } from '../token/token.service';
 import { plainToInstance } from 'class-transformer';
 
@@ -32,7 +32,7 @@ export class AuthService {
 
       return {
         accessAndRefreshToken: tokens,
-        userInfo: plainToInstance(userInfo, user, {
+        userInfo: plainToInstance(UserInfo, user, {
           excludeExtraneousValues: true,
         }),
       };
@@ -59,7 +59,7 @@ export class AuthService {
 
       return {
         accessAndRefreshToken: tokens,
-        userInfo: plainToInstance(userInfo, user, {
+        userInfo: plainToInstance(UserInfo, user, {
           excludeExtraneousValues: true,
         }),
       };

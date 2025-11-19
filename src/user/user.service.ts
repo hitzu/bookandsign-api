@@ -27,7 +27,7 @@ export class UserService {
     try {
       this.logger.log({ signupDto }, 'Creating new user');
       const user = this.userRepository.create(signupDto);
-      user.hashPassword(signupDto.password);
+      await user.hashPassword(signupDto.password);
       return this.userRepository.save(user);
     } catch (error) {
       this.logger.error(error, 'Error creating new user');

@@ -7,14 +7,14 @@ declare global {
 }
 
 beforeAll(async () => {
-  // Prevent multiple initializations that cause deadlocks when tests run in parallel
   if (!global.__TEST_DB_INITIALIZED__ && !TestDataSource.isInitialized) {
     try {
       await TestDataSource.initialize();
       global.__TEST_DB_INITIALIZED__ = true;
     } catch (error) {
       // If initialization fails (e.g., deadlock), wait a bit and retry once
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('deadlock')) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
         if (!TestDataSource.isInitialized) {
