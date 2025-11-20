@@ -6,7 +6,10 @@ import {
   Patch,
   Param,
   Delete,
+<<<<<<< HEAD
   Query,
+=======
+>>>>>>> 9278f96 (feat: products functionality created)
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';

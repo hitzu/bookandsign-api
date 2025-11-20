@@ -10,11 +10,11 @@ export class CreateBrandDto {
 
   @IsString()
   @IsOptional()
-  logo_url: string | null;
+  logoUrl: string | null;
 
   @IsString()
   @IsOptional()
-  phone_number: string | null;
+  phoneNumber: string | null;
 
   @IsString()
   @IsOptional()
