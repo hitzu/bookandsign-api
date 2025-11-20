@@ -1,10 +1,6 @@
 import { Brand } from '../../brands/entities/brand.entity';
 import { BaseTimeEntity } from '../../common/entities/base-time.entity';
-<<<<<<< HEAD
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-=======
-import { Column, Entity, ManyToOne } from 'typeorm';
->>>>>>> 9278f96 (feat: products functionality created)
 import { PRODUCT_STATUS } from '../types/products-status.types';
 
 @Entity('products')
