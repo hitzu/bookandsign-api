@@ -2,7 +2,7 @@ import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { Entity, Column, OneToMany } from 'typeorm';
 import { USER_ROLES } from '../../common/types/user-roles.type';
 import * as bcrypt from 'bcrypt';
-import { Token } from '../../token/entities/token.entity';
+import { Token } from '../../tokens/entities/token.entity';
 
 @Entity('users')
 export class User extends BaseTimeEntity {

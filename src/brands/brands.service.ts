@@ -37,10 +37,22 @@ export class BrandsService {
   }
 
   update(id: number, updateBrandDto: UpdateBrandDto) {
-    return `This action updates a #${id} brand, ${JSON.stringify(updateBrandDto)}`;
+    try {
+      this.logger.log({ id, updateBrandDto }, 'Updating brand');
+      return this.brandsRepository.update(id, updateBrandDto);
+    } catch (error) {
+      this.logger.error(error, 'Error updating brand');
+      throw error;
+    }
   }
 
   remove(id: number) {
-    return `This action removes a #${id} brand`;
+    try {
+      this.logger.log({ id }, 'Removing brand');
+      return this.brandsRepository.softDelete(id);
+    } catch (error) {
+      this.logger.error(error, 'Error removing brand');
+      throw error;
+    }
   }
 }

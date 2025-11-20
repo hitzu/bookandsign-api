@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Token } from './entities/token.entity';
 import { Repository } from 'typeorm';
-import { User } from '../user/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 import { TOKEN_TYPE } from '../common/types/token-type';
 import { TOKEN_CONFIG } from '../config/token/token.config';
 import { AccessAndRefreshTokenDto } from './dto/access-refresh-token.dto';

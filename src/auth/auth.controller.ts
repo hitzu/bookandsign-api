@@ -6,7 +6,7 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { SignupDto } from '../user/dto/signup.dto';
+import { SignupDto } from '../users/dto/signup.dto';
 import { LoginOutputDto } from './dto/login-output.dto';
 import { LoginDto } from './dto/login.dto';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';

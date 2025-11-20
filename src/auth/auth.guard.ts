@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
-import { TokenService } from '../token/token.service';
-import { DecodedTokenDto } from '../token/dto/decode-token.dto';
+import { TokenService } from '../tokens/token.service';
+import { DecodedTokenDto } from '../tokens/dto/decode-token.dto';
 import { IS_PUBLIC_KEY } from './decorators/public.decorator';
 
 interface AuthenticatedRequest extends Request {

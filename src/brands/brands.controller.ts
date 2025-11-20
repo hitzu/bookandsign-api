@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { BrandsService } from './brands.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
@@ -13,7 +14,7 @@ import { UpdateBrandDto } from './dto/update-brand.dto';
 import { BrandDto } from './dto/brand.dto';
 import { Logger } from '@nestjs/common';
 import { AuthUser } from '../auth/decorators/auth-user.decorator';
-import { DecodedTokenDto } from '../token/dto/decode-token.dto';
+import { DecodedTokenDto } from '../tokens/dto/decode-token.dto';
 
 @Controller('brands')
 export class BrandsController {
@@ -50,8 +51,11 @@ export class BrandsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateBrandDto: UpdateBrandDto) {
-    return this.brandsService.update(+id, updateBrandDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateBrandDto: UpdateBrandDto,
+  ) {
+    return this.brandsService.update(id, updateBrandDto);
   }
 
   @Delete(':id')
