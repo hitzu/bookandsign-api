@@ -1,16 +1,4 @@
-import { IsEnum, IsString, IsObject } from 'class-validator';
-import { BrandKey } from '../brands.constants';
+import { PartialType } from '@nestjs/swagger';
+import { CreateBrandDto } from './create-brand.dto';
 
-export class UpdateBrandDto {
-  @IsEnum(BrandKey)
-  key!: BrandKey;
-
-  @IsString()
-  name!: string;
-
-  @IsString()
-  logo_url!: string;
-
-  @IsObject()
-  theme!: Record<string, any>;
-}
+export class UpdateBrandDto extends PartialType(CreateBrandDto) {}

@@ -9,13 +9,13 @@ export class CreateBrandDto {
   name!: string;
 
   @IsString()
-  logo_url!: string;
+  logo_url: string | null;
 
   @IsString()
-  phone_number!: string;
+  phone_number: string | null;
 
   @IsString()
-  email!: string;
+  email: string | null = null;
 
   @IsObject()
   theme!: Record<string, any>;

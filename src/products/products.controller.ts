@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -21,8 +22,21 @@ export class ProductsController {
   }
 
   @Get()
-  findAll() {
+  findAll(@Query() query: { brandId: number }) {
+    if (query.brandId) {
+      return this.productsService.findWithFilters(
+        {
+          brandId: query.brandId,
+        },
+        { brand: true },
+      );
+    }
     return this.productsService.findAll();
+  }
+
+  @Get('status')
+  findProductsStatus() {
+    return this.productsService.findProductsStatus();
   }
 
   @Get(':id')
