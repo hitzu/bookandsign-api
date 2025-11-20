@@ -7,9 +7,11 @@ import { Product } from '../../products/entities/product.entity';
 export class Brand extends BaseTimeEntity {
   @Column('enum', { enum: BrandKey }) key!: BrandKey;
   @Column('text') name!: string;
-  @Column('text', { name: 'logo_url' }) logoUrl!: string;
-  @Column('text', { name: 'phone_number' }) phoneNumber!: string;
-  @Column('text') email!: string;
+  @Column('text', { name: 'logo_url', nullable: true })
+  logoUrl: string | null = null;
+  @Column('text', { name: 'phone_number', nullable: true })
+  phoneNumber: string | null = null;
+  @Column('text', { nullable: true }) email: string | null = null;
   @Column('jsonb', { default: () => `'{}'::jsonb` }) theme!: Record<
     string,
     any

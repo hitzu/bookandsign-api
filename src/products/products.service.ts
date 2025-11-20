@@ -1,10 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsRelations, FindOptionsWhere, Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { Logger } from '@nestjs/common';
+import { PRODUCT_STATUS } from './types/products-status.types';
+import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
+import { plainToInstance } from 'class-transformer';
+import { ProductDto } from './dto/product.dto';
 
 @Injectable()
 export class ProductsService {
@@ -26,29 +30,48 @@ export class ProductsService {
     }
   }
 
-  findAll() {
+  async findAll() {
     try {
       this.logger.log('Finding all products');
-      return this.productsRepository.find();
+      const products = await this.productsRepository.find();
+      return plainToInstance(ProductDto, products, {
+        excludeExtraneousValues: true,
+      });
     } catch (error) {
       this.logger.error(error, 'Error finding all products');
       throw error;
     }
   }
 
-  findWithFilters(filters: FindOptionsWhere<Product>) {
+  async findWithFilters(
+    filters: FindOptionsWhere<Product>,
+    relations: FindOptionsRelations<Product>,
+  ) {
     try {
-      return this.productsRepository.find({ where: filters });
+      const products = await this.productsRepository.find({
+        where: filters,
+        relations,
+      });
+      return plainToInstance(ProductDto, products, {
+        excludeExtraneousValues: true,
+      });
     } catch (error) {
       this.logger.error(error, 'Error finding all products by brand id');
       throw error;
     }
   }
 
-  findOne(id: number) {
+  async findOne(id: number) {
     try {
       this.logger.log({ id }, 'Finding one product');
-      return this.productsRepository.findOne({ where: { id } });
+      const product = await this.productsRepository.findOne({ where: { id } });
+      if (!product) {
+        throw new NotFoundException(EXCEPTION_RESPONSE.PRODUCT_NOT_FOUND);
+      }
+      // return product;
+      return plainToInstance(ProductDto, product, {
+        excludeExtraneousValues: true,
+      });
     } catch (error) {
       this.logger.error(error, 'Error finding one product');
       throw error;
@@ -71,6 +94,15 @@ export class ProductsService {
       return this.productsRepository.softDelete(id);
     } catch (error) {
       this.logger.error(error, 'Error removing product');
+      throw error;
+    }
+  }
+
+  findProductsStatus() {
+    try {
+      return Object.values(PRODUCT_STATUS);
+    } catch (error) {
+      this.logger.error(error, 'Error finding products by status');
       throw error;
     }
   }

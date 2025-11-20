@@ -1,0 +1,31 @@
+meta {
+  name: create product
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/products
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "name": "Premium Leather Wallet",
+    "description": "Handcrafted Italian leather wallet with RFID blocking technology",
+    "price": 89.99,
+    "discount_percentage": 0,
+    "status": "active",
+    "brandId": 1
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

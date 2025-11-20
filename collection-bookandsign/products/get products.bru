@@ -1,17 +1,17 @@
 meta {
-  name: get brands
+  name: get products
   type: http
-  seq: 3
+  seq: 5
 }
 
 get {
-  url: {{base_url}}/brands
+  url: {{base_url}}/products
   body: json
   auth: inherit
 }
 
 headers {
-  authorization: Bearer {{token}}
+  Authorization: Bearer {{token}}
 }
 
 settings {
