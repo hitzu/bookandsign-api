@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
-=======
-import { IsEnum, IsNumber, IsString } from 'class-validator';
->>>>>>> 9278f96 (feat: products functionality created)
 import { PRODUCT_STATUS } from '../types/products-status.types';
 
 export class CreateProductDto {
