@@ -1,4 +1,4 @@
-import { IsEnum, IsNumber, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { PRODUCT_STATUS } from '../types/products-status.types';
 
 export class CreateProductDto {
@@ -6,17 +6,23 @@ export class CreateProductDto {
   name!: string;
 
   @IsString()
+  @IsOptional()
   description: string | null = null;
 
   @IsString()
-  image_url: string | null = null;
+  @IsOptional()
+  imageUrl: string | null = null;
 
   @IsNumber()
   price!: number;
 
   @IsNumber()
-  discount_percentage: number | null = null;
+  @IsOptional()
+  discountPercentage: number | null = null;
 
   @IsEnum(PRODUCT_STATUS)
   status: PRODUCT_STATUS = PRODUCT_STATUS.DRAFT;
+
+  @IsNumber()
+  brandId!: number;
 }
