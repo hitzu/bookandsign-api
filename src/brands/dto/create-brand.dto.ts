@@ -8,6 +8,15 @@ export class CreateBrandDto {
   @IsString()
   name!: string;
 
+  @IsString()
+  logo_url!: string;
+
+  @IsString()
+  phone_number!: string;
+
+  @IsString()
+  email!: string;
+
   @IsObject()
   theme!: Record<string, any>;
 }

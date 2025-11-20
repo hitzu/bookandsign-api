@@ -2,7 +2,7 @@ import type { FactorizedAttrs } from '@jorgebodega/typeorm-factory';
 import { DataSource } from 'typeorm';
 import { faker } from '@faker-js/faker';
 import { Factory } from '@jorgebodega/typeorm-factory';
-import { User } from '../../../src/user/entities/user.entity';
+import { User } from '../../../src/users/entities/user.entity';
 import { USER_ROLES } from '../../../src/common/types/user-roles.type';
 
 export class UserFactory extends Factory<User> {

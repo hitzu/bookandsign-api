@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { TOKEN_TYPE } from '../../common/types/token-type';
 import { BaseTimeEntity } from '../../common/entities/base-time.entity';
-import { User } from '../../user/entities/user.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity({ name: 'token' })
 export class Token extends BaseTimeEntity {

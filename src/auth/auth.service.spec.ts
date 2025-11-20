@@ -8,11 +8,11 @@ import {
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
-import { UserService } from '../user/user.service';
-import { TokenService } from '../token/token.service';
-import { User } from '../user/entities/user.entity';
-import { Token } from '../token/entities/token.entity';
-import { SignupDto } from '../user/dto/signup.dto';
+import { UserService } from '../users/user.service';
+import { TokenService } from '../tokens/token.service';
+import { User } from '../users/entities/user.entity';
+import { Token } from '../tokens/entities/token.entity';
+import { SignupDto } from '../users/dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { AppDataSource as TestDataSource } from '../config/database/data-source';
 import { UserFactory } from '../../test/factories/user/user.factory';

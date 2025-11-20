@@ -4,13 +4,13 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { UserService } from '../user/user.service';
-import { SignupDto } from '../user/dto/signup.dto';
+import { UserService } from '../users/user.service';
+import { SignupDto } from '../users/dto/signup.dto';
 import { EXCEPTION_RESPONSE } from 'src/config/errors/exception-response.config';
 import { Logger } from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import { LoginOutputDto, UserInfo } from './dto/login-output.dto';
-import { TokenService } from '../token/token.service';
+import { TokenService } from '../tokens/token.service';
 import { plainToInstance } from 'class-transformer';
 
 @Injectable()

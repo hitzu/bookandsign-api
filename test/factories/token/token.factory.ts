@@ -2,9 +2,9 @@ import type { FactorizedAttrs } from '@jorgebodega/typeorm-factory';
 import { DataSource } from 'typeorm';
 import { faker } from '@faker-js/faker';
 import { Factory } from '@jorgebodega/typeorm-factory';
-import { Token } from '../../../src/token/entities/token.entity';
+import { Token } from '../../../src/tokens/entities/token.entity';
 import { TOKEN_TYPE } from '../../../src/common/types/token-type';
-import { User } from '../../../src/user/entities/user.entity';
+import { User } from '../../../src/users/entities/user.entity';
 
 export class TokenFactory extends Factory<Token> {
   protected entity = Token;
