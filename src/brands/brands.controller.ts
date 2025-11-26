@@ -22,9 +22,14 @@ export class BrandsController {
   constructor(private readonly brandsService: BrandsService) {}
 
   @Post()
-  create(@Body() createBrandDto: CreateBrandDto) {
-    this.logger.log({ createBrandDto }, 'Creating brand since controller');
-    return this.brandsService.create(createBrandDto);
+  async create(@Body() createBrandDto: CreateBrandDto) {
+    try {
+      this.logger.log({ createBrandDto }, 'Creating brand since controller');
+      return this.brandsService.create(createBrandDto);
+    } catch (error) {
+      this.logger.error(error, 'Error creating brand since controller');
+      throw error;
+    }
   }
 
   @Get()

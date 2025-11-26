@@ -1,11 +1,11 @@
 meta {
-  name: get product by id
+  name: get products status
   type: http
-  seq: 4
+  seq: 7
 }
 
 get {
-  url: {{base_url}}/products/4
+  url: {{base_url}}/products/statuses
   body: json
   auth: inherit
 }

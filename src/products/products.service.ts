@@ -2,13 +2,19 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsRelations, FindOptionsWhere, Repository } from 'typeorm';
+import {
+  FindOptionsRelations,
+  FindOptionsWhere,
+  ILike,
+  Repository,
+} from 'typeorm';
 import { Product } from './entities/product.entity';
 import { Logger } from '@nestjs/common';
 import { PRODUCT_STATUS } from './types/products-status.types';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { plainToInstance } from 'class-transformer';
 import { ProductDto } from './dto/product.dto';
+import { FindProductsQueryDto } from './dto/find-products-query.dto';
 
 @Injectable()
 export class ProductsService {
@@ -33,7 +39,9 @@ export class ProductsService {
   async findAll() {
     try {
       this.logger.log('Finding all products');
-      const products = await this.productsRepository.find();
+      const products = await this.productsRepository.find({
+        relations: ['brand'],
+      });
       return plainToInstance(ProductDto, products, {
         excludeExtraneousValues: true,
       });
@@ -44,12 +52,19 @@ export class ProductsService {
   }
 
   async findWithFilters(
-    filters: FindOptionsWhere<Product>,
+    filters: FindProductsQueryDto,
     relations: FindOptionsRelations<Product>,
   ) {
     try {
+      const where: FindOptionsWhere<Product> = {};
+      if (filters.brandId) {
+        where.brandId = Number(filters.brandId);
+      }
+      if (filters.term) {
+        where.name = ILike(`%${filters.term}%`);
+      }
       const products = await this.productsRepository.find({
-        where: filters,
+        where,
         relations,
       });
       return plainToInstance(ProductDto, products, {
