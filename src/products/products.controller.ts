@@ -7,10 +7,12 @@ import {
   Param,
   Delete,
   Query,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { FindProductsQueryDto } from './dto/find-products-query.dto';
 
 @Controller('products')
 export class ProductsController {
@@ -22,19 +24,18 @@ export class ProductsController {
   }
 
   @Get()
-  findAll(@Query() query: { brandId: number }) {
-    if (query.brandId) {
-      return this.productsService.findWithFilters(
-        {
-          brandId: query.brandId,
-        },
-        { brand: true },
-      );
+  findAll(
+    @Query(new ValidationPipe({ transform: true }))
+    query: FindProductsQueryDto,
+  ) {
+    if (query.brandId || query.term) {
+      return this.productsService.findWithFilters(query, { brand: true });
     }
+
     return this.productsService.findAll();
   }
 
-  @Get('status')
+  @Get('statuses')
   findProductsStatus() {
     return this.productsService.findProductsStatus();
   }

@@ -23,8 +23,13 @@ export class BrandsController {
 
   @Post()
   create(@Body() createBrandDto: CreateBrandDto) {
-    this.logger.log({ createBrandDto }, 'Creating brand since controller');
-    return this.brandsService.create(createBrandDto);
+    try {
+      this.logger.log({ createBrandDto }, 'Creating brand since controller');
+      return this.brandsService.create(createBrandDto);
+    } catch (error) {
+      this.logger.error(error, 'Error creating brand since controller');
+      throw error;
+    }
   }
 
   @Get()

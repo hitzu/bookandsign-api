@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
@@ -14,17 +14,18 @@ export class BrandsService {
     private brandsRepository: Repository<Brand>,
   ) {}
 
-  create(createBrandDto: CreateBrandDto) {
+  async create(createBrandDto: CreateBrandDto) {
     try {
       this.logger.log(
         { brandName: createBrandDto.name, brandKey: createBrandDto.key },
         'Creating brand',
       );
       const brand = this.brandsRepository.create(createBrandDto);
-      return this.brandsRepository.save(brand);
+      const savedBrand = await this.brandsRepository.save(brand);
+      return savedBrand;
     } catch (error) {
       this.logger.error(error, 'Error creating brand');
-      throw error;
+      throw new BadRequestException(`${(error as Error).message}`);
     }
   }
 
