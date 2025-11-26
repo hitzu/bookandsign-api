@@ -58,7 +58,7 @@ export class ProductsService {
     try {
       const where: FindOptionsWhere<Product> = {};
       if (filters.brandId) {
-        where.brandId = filters.brandId;
+        where.brandId = Number(filters.brandId);
       }
       if (filters.term) {
         where.name = ILike(`%${filters.term}%`);

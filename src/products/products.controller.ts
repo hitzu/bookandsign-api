@@ -25,7 +25,7 @@ export class ProductsController {
 
   @Get()
   findAll(
-    @Query(new ValidationPipe({ transform: true }))
+    @Query(new ValidationPipe())
     query: FindProductsQueryDto,
   ) {
     if (query.brandId || query.term) {

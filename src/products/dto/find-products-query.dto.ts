@@ -1,9 +1,9 @@
-import { IsOptional, IsNumberString, IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class FindProductsQueryDto {
   @IsOptional()
-  @IsNumberString()
-  brandId?: number;
+  @IsString()
+  brandId?: string;
 
   @IsOptional()
   @IsString()
