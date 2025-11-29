@@ -55,4 +55,4 @@ import { PromotionsModule } from './promotions/promotions.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
