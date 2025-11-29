@@ -14,7 +14,8 @@ export class CreateProductDto {
   imageUrl: string | null = null;
 
   @IsNumber()
-  price!: number;
+  @IsOptional()
+  price: number | null = null;
 
   @IsNumber()
   @IsOptional()

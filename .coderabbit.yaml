@@ -5,5 +5,10 @@ reviews:
   collapse_walkthrough: true
   sequence_diagrams: false
   poem: false
+  path_instructions:
+    - path: 'src/**/*.service.ts'
+      instructions: |
+        Ensure that for every modified service file, there is a corresponding test file (*.service.spec.ts) in the same directory.
+        If a test file does not exist or is not updated, please request the developer to add or update tests to cover the new or modified functionality.
   path_filters:
     - '!collection-bookandsign/**'

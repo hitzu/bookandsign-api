@@ -13,6 +13,7 @@ import { UserModule } from './users/user.module';
 import { TokenModule } from './tokens/token.module';
 import { AuthGuard } from './auth/auth.guard';
 import { ProductsModule } from './products/products.module';
+import { PackagesModule } from './packages/packages.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ProductsModule } from './products/products.module';
     UserModule,
     TokenModule,
     ProductsModule,
+    PackagesModule,
   ],
   controllers: [AppController],
   providers: [

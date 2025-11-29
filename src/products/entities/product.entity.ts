@@ -11,8 +11,8 @@ export class Product extends BaseTimeEntity {
   description: string | null = null;
   @Column('text', { name: 'image_url', nullable: true })
   imageUrl: string | null = null;
-  @Column('float')
-  price!: number;
+  @Column('float', { nullable: true })
+  price: number | null = null;
   @Column('float', { name: 'discount_percentage', nullable: true })
   discountPercentage: number | null = null;
   @Column('enum', { enum: PRODUCT_STATUS, default: PRODUCT_STATUS.DRAFT })

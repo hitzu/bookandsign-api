@@ -1,0 +1,24 @@
+meta {
+  name: get packages with filters (brandId)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{base_url}}/packages?brandId=2
+  body: json
+  auth: inherit
+}
+
+params:query {
+  brandId: 2
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

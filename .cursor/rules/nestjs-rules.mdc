@@ -554,7 +554,7 @@ import { UserSettingsEntity } from './user-settings.entity.ts';
 
 @Entity({ name: 'users' })
 @UseDto(UserDto)
-export class UserEntity extends AbstractEntity<UserDto, UserDtoOptions> {
+export class UserEntity extends BaseTimeEntity {
   @Column({ nullable: true, type: 'varchar' })
   firstName!: string | null;
 
@@ -592,7 +592,7 @@ export class UserEntity extends AbstractEntity<UserDto, UserDtoOptions> {
 
 ### Entity Best Practices
 
-1. **Extend `AbstractEntity` for common fields (id, createdAt, updatedAt)**
+1. **Extend `BaseTimeEntity` for common fields (id, createdAt, updatedAt)**
 2. **Use `@UseDto()` decorator to link entity with its DTO**
 3. **Use explicit column types: `type: 'varchar'`, `type: 'enum'`**
 4. **Use definite assignment assertion (`!`) for all properties**
