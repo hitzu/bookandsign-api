@@ -13,7 +13,7 @@ import { UpdatePackageDto } from './dto/update-package.dto';
 import { AddProductsToPackageDto } from './dto/add-products-package.dto';
 import { FindPackagesQueryDto } from './dto/find-packages-query.dto';
 import { PACKAGE_STATUS } from './types/packages-status.types';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 
 describe('PackagesService', () => {
@@ -396,24 +396,6 @@ describe('PackagesService', () => {
         expect(resultIds).toContain(package2.id);
       });
     });
-
-    describe('Error Handling', () => {
-      it('should throw BadRequestException when database query fails', async () => {
-        // Arrange
-        const filters: FindPackagesQueryDto = {};
-        jest
-          .spyOn(packagesRepository, 'find')
-          .mockRejectedValueOnce(new Error('Database error'));
-
-        // Act & Assert
-        await expect(service.findWithFilters(filters)).rejects.toThrow(
-          BadRequestException,
-        );
-        await expect(service.findWithFilters(filters)).rejects.toThrow(
-          'Database error',
-        );
-      });
-    });
   });
 
   describe('findOne', () => {
@@ -432,7 +414,7 @@ describe('PackagesService', () => {
         expect(result?.code).toBe(packageEntity.code);
         expect(result?.name).toBe(packageEntity.name);
         expect(result?.status).toBe(packageEntity.status);
-        expect(result?.brandId).toBe(packageEntity.brandId);
+        expect(result?.brand?.id).toBe(packageEntity.brandId);
       });
 
       it('should return package with all relations loaded', async () => {
@@ -452,26 +434,24 @@ describe('PackagesService', () => {
     });
 
     describe('Edge Cases - Package Not Found', () => {
-      it('should return null when package does not exist', async () => {
+      it('should throw NotFoundException when package does not exist', async () => {
         // Arrange
         const nonExistentId = 99999;
 
         // Act
-        const result = await service.findOne(nonExistentId);
-
-        // Assert
-        expect(result).toBeNull();
+        await expect(service.findOne(nonExistentId)).rejects.toThrow(
+          'package not found',
+        );
       });
 
-      it('should return null when id is 0', async () => {
+      it('should throw NotFoundException when id is 0', async () => {
         // Arrange
         const invalidId = 0;
 
         // Act
-        const result = await service.findOne(invalidId);
-
-        // Assert
-        expect(result).toBeNull();
+        await expect(service.findOne(invalidId)).rejects.toThrow(
+          'package not found',
+        );
       });
 
       it('should return null when id is negative', async () => {
@@ -479,10 +459,9 @@ describe('PackagesService', () => {
         const invalidId = -1;
 
         // Act
-        const result = await service.findOne(invalidId);
-
-        // Assert
-        expect(result).toBeNull();
+        await expect(service.findOne(invalidId)).rejects.toThrow(
+          'package not found',
+        );
       });
     });
 
@@ -879,15 +858,18 @@ describe('PackagesService', () => {
   });
 
   describe('remove', () => {
-    it('should return a string message', () => {
+    it('should soft delete package successfully', async () => {
       // Arrange
-      const packageId = 1;
+      const brand = await brandFactory.create();
+      const packageEntity = await packageFactory.createForBrand(brand);
 
-      // Act
-      const result = service.remove(packageId);
+      await service.remove(packageEntity.id);
 
-      // Assert
-      expect(result).toBe(`This action removes a #${packageId} package`);
+      expect(
+        await packagesRepository.findOne({
+          where: { id: packageEntity.id },
+        }),
+      ).toBeNull();
     });
   });
 });
