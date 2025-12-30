@@ -1,17 +1,13 @@
 meta {
-  name: get products with filters (brandId)
+  name: get package statuses
   type: http
-  seq: 6
+  seq: 10
 }
 
 get {
-  url: {{base_url}}/products?brandId=1
+  url: {{base_url}}/packages/statuses
   body: json
   auth: inherit
-}
-
-params:query {
-  brandId: 1
 }
 
 headers {

@@ -1,0 +1,32 @@
+meta {
+  name: create package
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/packages
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "brandId": 2,
+    "code": "Social Glow",
+    "name": "Basic Package",
+    "description": "Paquete para maquillajes sociales",
+    "basePrice": 1200,
+    "discount": 15,
+    "status": "draft"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

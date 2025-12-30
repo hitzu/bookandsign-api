@@ -1,0 +1,35 @@
+meta {
+  name: add products to package
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{base_url}}/packages/1/products/bulk
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "products": [
+      {
+        "productId": 4,
+        "quantity": 1   
+      },
+      {
+        "productId": 6,
+        "quantity": 1
+      }
+    ]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
