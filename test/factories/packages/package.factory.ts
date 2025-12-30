@@ -18,11 +18,8 @@ export class PackageFactory extends Factory<Package> {
 
   protected attrs(): FactorizedAttrs<Package> {
     return {
-      code: faker.string.alphanumeric({ length: 10, casing: 'upper' }),
       name: faker.commerce.productName(),
-      description: faker.commerce.productDescription(),
       basePrice: faker.number.float({ min: 1, max: 100000, fractionDigits: 2 }),
-      discount: faker.number.float({ min: 0, max: 100, fractionDigits: 2 }),
       status: faker.helpers.arrayElement<PACKAGE_STATUS>(
         Object.values(PACKAGE_STATUS),
       ),

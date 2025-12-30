@@ -9,7 +9,7 @@ alwaysApply: false
 ## File Organization
 
 - Clear file suffixes indicating purpose: `.model.ts`, `.service.ts`, `.controller.ts`, `.module.ts`, etc
-- File names in camelCase
+- File names in kebab-case
 - File extensions match content: `.ts`, `.spec.ts`, `.d.ts`
 
 ## Import order
@@ -83,7 +83,7 @@ import { userService } from '../../services';
 ## Naming Conventions
 
 - Classes/Interfaces: PascalCase
-- Variables/Functions: camelCase
+- Variables/Functions: lower-case leading with word-boundary caps (e.g., `getUserById`, `createUser`)
 - Constants/Enums: UPPER_SNAKE_CASE
 - Private members: prefix with `_`
 - Boolean variables: prefix with `is`, `has`, `should`
@@ -140,12 +140,7 @@ export class UserNotFoundError extends NotFoundError {
 - Clear TODO format: `// TODO(@username): description`
 
 ```typescript
-/**
- * Retrieves a user by ID.
- * @param {number} id - The user ID
- * @throws {ValidationError} If ID is invalid
- * @returns {Promise<User>} The found user
- */
+/** Public API (exported): Creates a user (params/returns/throws documented). */ export async function createUser(/* ... */) {}
 ```
 
 ## Testing
