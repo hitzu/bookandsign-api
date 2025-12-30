@@ -15,6 +15,7 @@ import { PackageProduct } from './entities/package-product.entity';
 import { FindPackagesQueryDto } from './dto/find-packages-query.dto';
 import { PackageResponseDto } from './dto/package-response.dto';
 import { plainToInstance } from 'class-transformer';
+import { PACKAGE_STATUS } from './types/packages-status.types';
 
 @Injectable()
 export class PackagesService {
@@ -46,7 +47,6 @@ export class PackagesService {
       if (!packages) {
         throw new NotFoundException(EXCEPTION_RESPONSE.PACKAGE_NOT_FOUND);
       }
-      this.logger.log({ packages }, 'Packages found adsadasdasd');
       return plainToInstance(PackageResponseDto, packages, {
         excludeExtraneousValues: true,
       });
@@ -77,12 +77,19 @@ export class PackagesService {
     }
   }
 
-  findOne(id: number) {
+  async findOne(id: number): Promise<PackageResponseDto | null> {
     try {
       this.logger.log({ id }, 'Finding package');
-      return this.packagesRepository.findOne({
+      const foundPackage = await this.packagesRepository.findOne({
         where: { id },
         relations: ['brand', 'packageProducts', 'packageProducts.product'],
+      });
+      if (!foundPackage) {
+        throw new NotFoundException(EXCEPTION_RESPONSE.PACKAGE_NOT_FOUND);
+      }
+
+      return plainToInstance(PackageResponseDto, foundPackage, {
+        excludeExtraneousValues: true,
       });
     } catch (error) {
       this.logger.error(error, 'Error finding package');
@@ -101,7 +108,13 @@ export class PackagesService {
   }
 
   remove(id: number) {
-    return `This action removes a #${id} package`;
+    try {
+      this.logger.log({ id }, 'Removing package');
+      return this.packagesRepository.softDelete(id);
+    } catch (error) {
+      this.logger.error(error, 'Error removing package');
+      throw error;
+    }
   }
 
   async addProductsToPackage(
@@ -137,6 +150,15 @@ export class PackagesService {
       };
     } catch (error) {
       this.logger.error(error, 'Error adding products to package');
+      throw error;
+    }
+  }
+
+  findPackagesStatus() {
+    try {
+      return Object.values(PACKAGE_STATUS);
+    } catch (error) {
+      this.logger.error(error, 'Error finding packages by status');
       throw error;
     }
   }

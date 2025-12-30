@@ -1,11 +1,11 @@
 meta {
-  name: delete product
+  name: get package statuses
   type: http
-  seq: 9
+  seq: 10
 }
 
-delete {
-  url: {{base_url}}/packages/1
+get {
+  url: {{base_url}}/packages/statuses
   body: json
   auth: inherit
 }

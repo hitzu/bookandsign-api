@@ -5,7 +5,7 @@ meta {
 }
 
 patch {
-  url: {{base_url}}/products/1
+  url: {{base_url}}/packages/1
   body: json
   auth: inherit
 }
@@ -16,10 +16,10 @@ headers {
 
 body:json {
   {
-    "name": "Premium Leather Wallet",
-    "description": "Handcrafted Italian leather wallet with RFID blocking technology",
-    "price": 89.99,
-    "discountPercentage": 28,
+    "name": "Social Glow",
+    "description": "Social Glow",
+    "basePrice": 1200,
+    "discount": 10,
     "status": "active"
   }
 }

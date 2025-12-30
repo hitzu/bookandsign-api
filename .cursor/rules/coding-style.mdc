@@ -3,14 +3,17 @@ description: Describes the patterns used for all typescript (ts) files.
 globs: **/*.ts
 alwaysApply: false
 ---
+
 # General TypeScript Coding Style
 
 ## File Organization
-- Clear file suffixes indicating purpose: `.model.ts`, `.service.ts`, `.controller.ts`, `.module.ts`, etc
-- File names in camelCase
-- File extensions match content: `.ts`, `.spec.ts`, `.d.ts`
+
+- Files and directories in kebab-case (lowercase words separated by hyphens): `src/auth/`, `src/user-profiles/`, `src/common/types/`
+- Clear file suffixes indicating purpose (kebab-case): `user.model.ts`, `user.service.ts`, `auth.controller.ts`, `users.module.ts`, `create-user.dto.ts`
+- File extensions match content: `user.service.ts`, `user.service.spec.ts`, `my-types.d.ts`
 
 ## Import order
+
 It is very important to correctly order the import statements. They should always follow this order:
 
 1. Type imports - External modules
@@ -70,6 +73,7 @@ import { userService } from '../../services';
 ```
 
 ## Type Safety
+
 - Do not use `any` types
 - Use precise types for parameters and returns
 - Prefer interfaces for object types
@@ -77,8 +81,9 @@ import { userService } from '../../services';
 - Use generics for reusable type patterns
 
 ## Naming Conventions
+
 - Classes/Interfaces: PascalCase
-- Variables/Functions: camelCase
+- Variables/Functions: lower-case leading with word-boundary caps (e.g., `getUserById`, `createUser`)
 - Constants/Enums: UPPER_SNAKE_CASE
 - Private members: prefix with `_`
 - Boolean variables: prefix with `is`, `has`, `should`
@@ -87,6 +92,7 @@ import { userService } from '../../services';
 - Error suffixes: `Error`
 
 ## Functions
+
 - Single responsibility
 - Clear descriptive names
 - Default to `async/await` for promises
@@ -97,7 +103,7 @@ import { userService } from '../../services';
 ```typescript
 async function getUserById(
   id: number,
-  options: GetUserOptions = {}
+  options: GetUserOptions = {},
 ): Promise<User> {
   if (!id) {
     throw new ValidationError('ID is required');
@@ -111,6 +117,7 @@ async function getUserById(
 ```
 
 ## Error Handling
+
 - Use custom error classes extending from errors defined in [errors.ts](mdc:utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/lib/shared/src/errors.ts)
 - Descriptive error messages
 - Proper error propagation
@@ -127,27 +134,25 @@ export class UserNotFoundError extends NotFoundError {
 ```
 
 ## Comments & Documentation
-- JSDoc for public APIs
-- Inline comments for complex logic
+
+- Internal code should be self-documenting: rely on clear naming, small functions, and good design (avoid inline comments)
+- Public-facing functions, modules, and exported interfaces MUST include concise JSDoc (purpose, params, returns, thrown errors)
 - Clear TODO format: `// TODO(@username): description`
 
 ```typescript
-/**
- * Retrieves a user by ID.
- * @param {number} id - The user ID
- * @throws {ValidationError} If ID is invalid
- * @returns {Promise<User>} The found user
- */
+/** Public API (exported): Creates a user (params/returns/throws documented). */ export async function createUser(/* ... */) {}
 ```
 
 ## Testing
-- Test file next to source: `file.ts` → `file.spec.ts`
+
+- Test file next to source: `my-service.service.ts` → `my-service.service.spec.ts`
 - Descriptive test names
 - Arrange-Act-Assert pattern
 - Mock external dependencies
 - Test edge cases and errors
 
 ## Best Practices
+
 - Immutable by default
 - Pure functions where possible
 - Early validation of inputs
