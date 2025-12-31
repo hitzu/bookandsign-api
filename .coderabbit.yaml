@@ -12,3 +12,4 @@ reviews:
         If a test file does not exist or is not updated, please request the developer to add or update tests to cover the new or modified functionality.
   path_filters:
     - '!collection-bookandsign/**'
+    - '!src/database/migrations/**'

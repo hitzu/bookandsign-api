@@ -52,7 +52,7 @@ export class PackagesService {
       });
     } catch (error) {
       this.logger.error(error, 'Error finding all packages');
-      throw new BadRequestException(`${(error as Error).message}`);
+      throw new BadRequestException(EXCEPTION_RESPONSE.PACKAGE_NOT_FOUND);
     }
   }
 
@@ -73,7 +73,7 @@ export class PackagesService {
       });
     } catch (error) {
       this.logger.error(error, 'Error finding packages with filters');
-      throw new BadRequestException(`${(error as Error).message}`);
+      throw new BadRequestException(EXCEPTION_RESPONSE.PACKAGE_NOT_FOUND);
     }
   }
 

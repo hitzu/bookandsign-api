@@ -1,0 +1,28 @@
+meta {
+  name: create term
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/terms
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "title": "Alcance del paquete",
+    "content": "Incluye para la quinceañera: maquillaje profesional, peinado el día del evento y pestañas en tira uso del día, depilación/diseño de ceja, maquillaje de escote y uñas en gel. Colocación de corona/tiara incluida si se realiza dentro del tiempo programado.",
+    "scope": "package"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

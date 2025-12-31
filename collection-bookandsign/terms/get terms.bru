@@ -1,0 +1,31 @@
+meta {
+  name: get terms
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{base_url}}/terms?scope=package&q=NO in
+  body: json
+  auth: inherit
+}
+
+params:query {
+  scope: package
+  q: NO in
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "packagesId": [2,3,4,5]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

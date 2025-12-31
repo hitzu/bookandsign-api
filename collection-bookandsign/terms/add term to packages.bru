@@ -1,0 +1,26 @@
+meta {
+  name: add term to packages
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/terms/3/packages/bulk
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "packagesId": [2,3,4,5]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -34,6 +34,10 @@ export class PackageResponseDto {
   status!: PACKAGE_STATUS;
 
   @Expose()
+  @IsNumber()
+  brandId!: number;
+
+  @Expose()
   @Type(() => BrandDto)
   brand!: BrandDto;
 
