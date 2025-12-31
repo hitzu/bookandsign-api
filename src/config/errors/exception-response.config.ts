@@ -15,6 +15,10 @@ enum ErrorMessages {
   JWT_SECRET_NOT_FOUND = 'JWT_SECRET_NOT_FOUND',
   PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND',
   PACKAGE_NOT_FOUND = 'PACKAGE_NOT_FOUND',
+  TERM_NOT_FOUND = 'TERM_NOT_FOUND',
+  PACKAGE_TERM_NOT_FOUND = 'PACKAGE_TERM_NOT_FOUND',
+  TERM_CODE_ALREADY_EXISTS = 'TERM_CODE_ALREADY_EXISTS',
+  BRAND_NOT_FOUND = 'BRAND_NOT_FOUND',
   // Add more error messages as needed
 }
 
@@ -86,5 +90,21 @@ export const EXCEPTION_RESPONSE: Record<
   [ErrorMessages.PACKAGE_NOT_FOUND]: {
     code: 17,
     message: 'package not found',
+  },
+  [ErrorMessages.TERM_NOT_FOUND]: {
+    code: 18,
+    message: 'term not found',
+  },
+  [ErrorMessages.PACKAGE_TERM_NOT_FOUND]: {
+    code: 19,
+    message: 'package term association not found',
+  },
+  [ErrorMessages.TERM_CODE_ALREADY_EXISTS]: {
+    code: 20,
+    message: 'term code already exists',
+  },
+  [ErrorMessages.BRAND_NOT_FOUND]: {
+    code: 21,
+    message: 'brand not found',
   },
 };

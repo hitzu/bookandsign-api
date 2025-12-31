@@ -5,6 +5,7 @@ import { Brand } from './entities/brand.entity';
 import { Repository } from 'typeorm';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { Logger } from '@nestjs/common';
+import { EXCEPTION_RESPONSE } from 'src/config/errors/exception-response.config';
 
 @Injectable()
 export class BrandsService {
@@ -25,7 +26,7 @@ export class BrandsService {
       return savedBrand;
     } catch (error) {
       this.logger.error(error, 'Error creating brand');
-      throw new BadRequestException(`${(error as Error).message}`);
+      throw new BadRequestException(EXCEPTION_RESPONSE.BRAND_NOT_FOUND);
     }
   }
 

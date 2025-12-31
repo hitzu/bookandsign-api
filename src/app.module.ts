@@ -14,6 +14,7 @@ import { TokenModule } from './tokens/token.module';
 import { AuthGuard } from './auth/auth.guard';
 import { ProductsModule } from './products/products.module';
 import { PackagesModule } from './packages/packages.module';
+import { TermsModule } from './terms/terms.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { PackagesModule } from './packages/packages.module';
     TokenModule,
     ProductsModule,
     PackagesModule,
+    TermsModule,
   ],
   controllers: [AppController],
   providers: [
