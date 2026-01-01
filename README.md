@@ -1,98 +1,57 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+[
+{ "title": "Alcance del paquete (Bride / Bridal)", "content": "Incluye para la novia: maquillaje nupcial profesional, peinado nupcial y pestañas en tira uso del día, depilación/diseño de ceja, maquillaje de escote, uñas en gel. Colocación de velo/tiara incluida si se realiza dentro del tiempo programado." },
+{ "title": "Definiciones de servicio (Bride / Bridal)", "content": "a) Maquillaje convencional: preparación de piel, corrección, base acorde al tipo de rostro, sellado, dimensión (rubor/bronzer/iluminador), sombras 1–3 tonos, delineado básico y labial. b) Peinado nupcial: suelto/semirecogido/recogido sin estructuras internas volumétricas (donas XL, postizos). c) Pestañas: tira para uso temporal. d) Cejas: perfilado suave con navaja cosmética. e) Maquillaje de escote: aplicación en zonas visibles (clavículas/escote) para unificar tono. Puede transferir; usar prenda protectora y evitar fricción. f) Uñas en gel: de domingo a viernes según disponibilidad; recomendado máximo 7 días antes del evento." },
+{ "title": "Condiciones y tiempos (Bride / Bridal)", "content": "La novia debe presentarse con rostro limpio y cabello completamente seco/limpio/desenredado. Tiempos referenciales: maquillaje 120 min, peinado 150 min, gel 90 min. El detalle se confirma según el cronograma." },
+{ "title": "No incluidos / extras y cargos (Bride / Bridal)", "content": "Cabello extralargo/abundante o peinados de alta complejidad pueden requerir tiempo/cargo adicional. Uñas con nail art o refuerzo, aplicación extra de uñas, técnicas semipermanentes (pestañas pelo a pelo), postizos integrales, prueba de maquillaje y peinado, servicio a domicilio y traslados entre sedes se cotizan aparte si se requieren." },
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+{ "title": "Alcance del paquete (Bride / Eternal)", "content": "Incluye para la novia: prueba de maquillaje y peinado, maquillaje nupcial profesional, peinado nupcial y pestañas en tira uso del día, depilación/diseño de ceja, maquillaje de escote, uñas acrílicas y kit de retoque. Colocación de velo/tiara incluida si se realiza dentro del tiempo programado." },
+{ "title": "Definiciones de servicio (Bride / Eternal)", "content": "a) Maquillaje convencional (...). b) Peinado nupcial (...). c) Pestañas (...). d) Cejas (...). e) Maquillaje de escote (...). f) Uñas acrílicas: domingo a viernes según agenda, recomendado máximo 7 días antes del evento. g) Kit de retoque: se entrega el día del evento; productos sujetos a disponibilidad. h) Pruebas: 1 de maquillaje y 1 de peinado en fecha previa (dom–vie); cambios de concepto completos se cotizan aparte." },
+{ "title": "Condiciones y tiempos (Bride / Eternal)", "content": "Rostro limpio y cabello completamente seco/limpio/desenredado. Tiempos referenciales: maquillaje 120 min, peinado 150 min, acrílicas 90 min. Detalle final conforme al cronograma." },
+{ "title": "No incluidos / extras y cargos (Bride / Eternal)", "content": "Cabello extralargo/abundante o peinados de alta complejidad, nail art/refuerzo, aplicaciones extra, técnicas semipermanentes, postizos integrales y traslados se cotizan aparte si se requieren." },
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+{ "title": "Alcance del paquete (Bride / Queen Bride)", "content": "Incluye para la novia: prueba de maquillaje y peinado, maquillaje nupcial profesional, peinado nupcial, pestañas en tira, depilación/diseño de ceja, maquillaje de escote, uñas acrílicas incluyendo manicura, kit de retoque y bata." },
+{ "title": "Definiciones de servicio (Bride / Queen Bride)", "content": "a) Maquillaje con aerógrafo (...). b) Peinado nupcial (...). c) Pestañas (...). d) Cejas (...). e) Maquillaje de escote (...). f) Uñas acrílicas incluyendo manicura (dom–vie, recomendado ≤7 días). g) Kit de retoque (entrega día del evento). h) Pruebas (1+1 en fecha previa, dom–vie). i) Bata (entrega al iniciar arreglo)." },
+{ "title": "Condiciones y tiempos (Bride / Queen Bride)", "content": "Rostro limpio y cabello completamente seco/limpio/desenredado. Tiempos referenciales: maquillaje 120 min, peinado 150 min, acrílicas 90 min. Se confirma en el cronograma." },
+{ "title": "No incluidos / extras y cargos (Bride / Queen Bride)", "content": "Cabello extralargo/abundante o peinados de alta complejidad pueden requerir cargo adicional. Traslados y sedes múltiples se cotizan conforme a metodología vigente." },
 
-## Description
+{ "title": "Alcance (Social)", "content": "Incluye 1 maquillaje y peinado social por persona según el número de paquetes contratados. Maquillaje social: preparación de piel, corrección, base acorde, sellado, dimensionado (rubor/bronzer/iluminador), depilación y diseño de ceja, sombras básicas (1–3 tonos), delineado básico, rímel, pestañas en tira y labial. El cliente debe presentarse con rostro limpio y avisar alergias previamente. Peinado social: suelto/semirecogido/recogido con herramientas térmicas, pasadores y fijadores, acabado pulido de duración media-alta. Incluye colocación básica de pasadores/ligas. No incluye alta complejidad ni estructuras internas ni extensiones." },
+{ "title": "Condiciones y cargos por incumplimiento (Social)", "content": "Presentarse a la hora acordada con rostro limpio (sin maquillaje/rímel/labial) y cabello limpio, completamente seco y desenredado. Si no se cumple o excede lo incluido, pueden generarse cargos adicionales o ajustes al alcance; si no se autorizan, se hará versión simplificada dentro del tiempo disponible o se reprogramará con cargos de cambio aplicables." },
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+{ "title": "Alcance del paquete (XV / Star)", "content": "Incluye para la quinceañera: maquillaje profesional, peinado el día del evento y pestañas en tira, depilación/diseño de ceja, maquillaje de escote y uñas en gel. Colocación de corona/tiara incluida si se realiza dentro del tiempo programado." },
+{ "title": "Definiciones de servicio (XV / Star)", "content": "a) Maquillaje convencional (...). b) Peinado suelto/semirecogido/recogido sin estructuras internas con postizos. c) Pestañas: tira temporal. d) Cejas: perfilado suave. e) Maquillaje de escote: en zonas visibles; puede transferir a telas claras, usar prenda protectora y evitar fricción. f) Uñas en gel: dom–vie según agenda; recomendado ≤7 días, límite 1 día antes." },
+{ "title": "Condiciones y tiempos (XV / Star)", "content": "Rostro limpio y cabello completamente seco/limpio/desenredado. Tiempos referenciales: maquillaje 120 min, peinado 150 min, gel 90 min. Se confirma según cronograma." },
+{ "title": "No incluidos / extras y cargos (XV / Star)", "content": "Cabello extralargo/abundante o peinados de alta complejidad pueden requerir tiempo/cargo adicional. Nail art/refuerzo, aplicaciones extra, técnicas semipermanentes, postizos integrales, servicio a domicilio y traslados se cotizan aparte si se requieren." },
 
-## Project setup
+{ "title": "Alcance del paquete (XV / Magic)", "content": "Incluye para la quinceañera: prueba de maquillaje y peinado, maquillaje profesional, peinado el día del evento y pestañas en tira, depilación/diseño de ceja, maquillaje de escote, uñas en gel y kit de retoque." },
+{ "title": "Definiciones de servicio (XV / Magic)", "content": "a) Maquillaje convencional (...). b) Peinado (...). c) Pestañas (...). d) Cejas (...). e) Maquillaje de escote (...). f) Uñas en gel (dom–vie, recomendado ≤7 días, límite 1 día). g) Kit de retoque (entrega día del evento). h) Pruebas: 1 de maquillaje y 1 de peinado (dom–vie); cambios de concepto completos se cotizan aparte." },
+{ "title": "Condiciones y tiempos (XV / Magic)", "content": "Rostro limpio y cabello completamente seco/limpio/desenredado. Tiempos referenciales: maquillaje 120 min, peinado 150 min, gel 90 min. Se confirma según cronograma." },
+{ "title": "No incluidos / extras y cargos (XV / Magic)", "content": "Cabello extralargo/abundante o peinados de alta complejidad, nail art/refuerzo, aplicaciones extra, técnicas semipermanentes, postizos integrales, servicio a domicilio y traslados se cotizan aparte si se requieren." },
 
-```bash
-$ pnpm install
-```
+{ "title": "Alcance del paquete (XV / Little Queen)", "content": "Incluye para la quinceañera: prueba de maquillaje y peinado, maquillaje profesional, peinado el día del evento y pestañas en tira, depilación/diseño de ceja, maquillaje de escote, uñas acrílicas incluyendo manicura, kit de retoque y bata." },
+{ "title": "Definiciones de servicio (XV / Little Queen)", "content": "a) Maquillaje con aerógrafo (...). b) Peinado (...). c) Pestañas (...). d) Cejas (...). e) Maquillaje de escote (...). f) Uñas acrílicas (dom–vie, recomendado ≤7 días, límite 1 día). g) Kit de retoque (entrega día del evento). h) Pruebas: 1 de maquillaje y 1 de peinado (dom–vie). i) Bata (entrega al iniciar arreglo)." },
+{ "title": "Condiciones y tiempos (XV / Little Queen)", "content": "Rostro limpio y cabello completamente seco/limpio/desenredado. Tiempos referenciales: maquillaje 120 min, peinado 150 min, acrílicas 90 min. Se confirma según cronograma." },
+{ "title": "No incluidos / extras y cargos (XV / Little Queen)", "content": "Cabello extralargo/abundante o peinados de alta complejidad pueden requerir tiempo/cargo adicional. Nail art/refuerzo, aplicaciones extra, técnicas semipermanentes, postizos integrales, servicio a domicilio y traslados se cotizan aparte si se requieren." },
 
-## Compile and run the project
+{ "title": "Alcance del paquete (Glitter Bar / Pop)", "content": "FaceGem para el festejado/a, glitter en varios tonos, tatuajes temporales, cristalería y pintura facial. Duración del servicio: 1 hora. Personal asignado: 2 maquillistas." },
+{ "title": "Definiciones de servicio (Glitter Bar / Pop)", "content": "a) FaceGem: pieza(s) adhesiva(s) facial(es) decorativa(s). b) Glitter: aplicación cosmética en zonas permitidas. c) Tatuajes temporales: calcomanías corporales de corta duración. d) Cristalería facial: diseño con strass autoadhesivo. e) Pintura facial: pintura cosmética segura para piel." },
+{ "title": "Condiciones y tiempos (Glitter Bar / Pop)", "content": "Servicio continuo de 1 hora. Montaje/desmontaje: 30–45 minutos adicionales (no descuentan tiempo). Requiere área y condiciones conforme a las reglas de espacio y seguridad del evento." },
+{ "title": "No incluidos / extras y cargos (Glitter Bar / Pop)", "content": "No incluye pausas del evento (el tiempo no se detiene) ni servicios fuera del listado. Sedes múltiples/traslados y requerimientos especiales se cotizan aparte." },
 
-```bash
-# development
-$ pnpm run start
+{ "title": "Alcance del paquete (Glitter Bar / Glow)", "content": "FaceGem para el festejado/a, glitter, tatuajes temporales, cristalería y pintura facial, y Glitter Tattoo. Duración del servicio: 2 horas. Personal: 2 maquillistas." },
+{ "title": "Definiciones de servicio (Glitter Bar / Glow)", "content": "a) FaceGem (...). b) Glitter (...). c) Tatuajes temporales (...). d) Cristalería facial (...). e) Pintura facial (...). f) Glitter Tattoo: tatuaje con adhesivo cosmético y glitter sobre plantilla." },
+{ "title": "Condiciones y tiempos (Glitter Bar / Glow)", "content": "Servicio continuo de 2 horas. Montaje/desmontaje: 30–45 minutos (no descuentan tiempo). Área conforme a requisitos de seguridad." },
+{ "title": "No incluidos / extras y cargos (Glitter Bar / Glow)", "content": "No incluye pausas, servicios fuera del listado ni personal extra. Sedes múltiples/traslados y requerimientos especiales se cotizan aparte." },
 
-# watch mode
-$ pnpm run start:dev
+{ "title": "Alcance del paquete (Glitter Bar / Queen)", "content": "FaceGem para el festejado/a, glitter, tatuajes temporales, cristalería y pintura facial, Glitter Tattoo, extensiones de cabello glitter, pinta pelo en varios colores y montaje con silla de director estilo beauty. Duración: 2 horas. Personal: 2 maquillistas." },
+{ "title": "Definiciones de servicio (Glitter Bar / Queen)", "content": "a) FaceGem (...). b) Glitter (...). c) Tatuajes temporales (...). d) Cristalería facial (...). e) Pintura facial (...). f) Glitter Tattoo (...). g) Extensiones de cabello glitter (colocación temporal). h) Pinta pelo en varios colores (sprays/cremas temporales). i) Silla de director estilo beauty (uso operativo del proveedor)." },
+{ "title": "Condiciones y tiempos (Glitter Bar / Queen)", "content": "Servicio continuo de 2 horas. Montaje/desmontaje: 30–45 minutos (no descuentan tiempo). Área conforme a requisitos de seguridad." },
+{ "title": "No incluidos / extras y cargos (Glitter Bar / Queen)", "content": "No incluye pausas, servicios fuera del listado ni personal adicional. Sedes múltiples, traslados y requerimientos especiales se cotizan aparte." },
 
-# production mode
-$ pnpm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+{ "title": "Alcance del BrilliSpot (si aplica al paquete)", "content": "Esquinero fotográfico con estructura/backdrop decorativo, iluminación auxiliar y tablet para toma de fotografías por los asistentes. Si se bonifica, no modifica horas ni personal del paquete principal." },
+{ "title": "Requisitos de espacio y montaje (BrilliSpot)", "content": "Área libre mínima de 1.5 × 1.5 m, toma de corriente cercana y piso nivelado. Montaje y desmontaje dentro del mismo tiempo de montaje del Glitter Bar. Accesos y maniobras gestionados por el cliente (cargos del venue al costo con comprobante)." },
+{ "title": "Operación y seguridad (BrilliSpot)", "content": "El BrilliSpot es autogestionado por los invitados (no incluye fotógrafo ni impresiones). Se colocarán tapetes/estabilizadores y canalización de cables (gaffer) cuando sea necesario. Conducta o riesgo faculta a suspender temporalmente hasta restablecer condiciones." },
+{ "title": "Entrega del enlace (BrilliSpot)", "content": "Dentro de los 7 días naturales posteriores al evento se enviará al cliente un enlace con las fotografías tomadas durante la prestación del servicio." },
+{ "title": "Ventana de disponibilidad (BrilliSpot)", "content": "El enlace permanecerá disponible 30 días naturales posteriores al evento; vencido el plazo, el enlace dejará de funcionar y los archivos podrán eliminarse de forma definitiva." },
+{ "title": "Privacidad y autorizaciones (BrilliSpot)", "content": "El uso de imágenes por el proveedor para portafolio/redes se rige por autorización expresa del cliente. La entrega se limita a uso personal; no implica cesión de derechos para fines comerciales sin autorización previa." },
+{ "title": "Alcances y exclusiones (BrilliSpot)", "content": "No incluye servicio de fotógrafo/impresión, múltiples sedes, traslados fuera de la sede contratada, diseño personalizado del backdrop ni props. Estos conceptos pueden cotizarse como extras; traslados/viáticos aplican conforme a metodología vigente." }
+]
