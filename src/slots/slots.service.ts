@@ -34,6 +34,23 @@ export class SlotsService {
     private slotsRepository: Repository<Slot>,
   ) {}
 
+  async getById(id: number) {
+    try {
+      const slot = await this.slotsRepository.findOneBy({ id });
+      console.log('asdasdasdsz', slot);
+
+      if (!slot) {
+        throw new NotFoundException(EXCEPTION_RESPONSE.SLOT_NOT_AVAILABLE);
+      }
+      return plainToInstance(SlotAvailabilityDto, slot, {
+        excludeExtraneousValues: true,
+      });
+    } catch (error) {
+      this.logger.error(error, 'Error holding slot');
+      throw new NotFoundException(EXCEPTION_RESPONSE.SLOT_NOT_AVAILABLE);
+    }
+  }
+
   async getAvailabilityByDate(date: string): Promise<SlotAvailabilityDto[]> {
     const slots = await this.slotsRepository.find({
       where: { eventDate: date },
@@ -66,17 +83,14 @@ export class SlotsService {
   }
 
   async hold(holdSlotDto: HoldSlotDto): Promise<SlotDto> {
+    if (
+      holdSlotDto.period !== SLOT_PERIOD.MORNING &&
+      holdSlotDto.period !== SLOT_PERIOD.AFTERNOON &&
+      holdSlotDto.period !== SLOT_PERIOD.EVENING
+    ) {
+      throw new UnprocessableEntityException(EXCEPTION_RESPONSE.INVALID_PERIOD);
+    }
     try {
-      if (
-        holdSlotDto.period !== SLOT_PERIOD.MORNING &&
-        holdSlotDto.period !== SLOT_PERIOD.AFTERNOON &&
-        holdSlotDto.period !== SLOT_PERIOD.EVENING
-      ) {
-        throw new UnprocessableEntityException(
-          EXCEPTION_RESPONSE.INVALID_PERIOD,
-        );
-      }
-
       const slotToSave = this.slotsRepository.create({
         eventDate: holdSlotDto.eventDate,
         period: holdSlotDto.period,
@@ -92,6 +106,7 @@ export class SlotsService {
         excludeExtraneousValues: true,
       });
     } catch (error) {
+      this.logger.error(error, 'Error holding slot');
       if (isUniqueViolation(error)) {
         throw new ConflictException(EXCEPTION_RESPONSE.SLOT_NOT_AVAILABLE);
       }

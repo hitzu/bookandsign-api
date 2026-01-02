@@ -1,0 +1,31 @@
+meta {
+  name: create note (400 - invalid scope)
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{base_url}}/notes
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "scope": "invalid",
+    "targetId": 1,
+    "kind": "internal",
+    "content": "Invalid scope"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+

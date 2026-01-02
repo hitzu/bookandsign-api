@@ -3,6 +3,7 @@ import { Entity, Column, OneToMany } from 'typeorm';
 import { USER_ROLES } from '../../common/types/user-roles.type';
 import * as bcrypt from 'bcrypt';
 import { Token } from '../../tokens/entities/token.entity';
+import { Slot } from '../../slots/entities/slot.entity';
 
 @Entity('users')
 export class User extends BaseTimeEntity {
@@ -21,6 +22,9 @@ export class User extends BaseTimeEntity {
 
   @OneToMany(() => Token, (token) => token.user)
   tokens?: Token[];
+
+  @OneToMany(() => Slot, (slot) => slot.user)
+  slots?: Slot[];
 
   async hashPassword(password: string): Promise<void> {
     this.password = await bcrypt.hash(password, 10);

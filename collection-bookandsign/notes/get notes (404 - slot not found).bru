@@ -1,0 +1,22 @@
+meta {
+  name: get notes (404 - slot not found)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/notes/slot/999999
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+

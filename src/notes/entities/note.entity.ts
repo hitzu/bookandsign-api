@@ -1,8 +1,12 @@
-import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { Column, Entity, Index } from 'typeorm';
+
+import { BaseTimeEntity } from '../../common/entities/base-time.entity';
+import { UseDto } from '../../common/dto/use-dto.decorator';
+import { NoteDto } from '../dto/note.dto';
 import { NOTE_KIND } from '../types/note-kind.types';
 import { NOTE_SCOPE } from '../types/note-scope.types';
 
+@UseDto(NoteDto)
 @Entity('notes')
 @Index(['scope', 'targetId', 'createdAt'])
 export class Note extends BaseTimeEntity {

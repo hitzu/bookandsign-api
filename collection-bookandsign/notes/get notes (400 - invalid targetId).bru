@@ -1,0 +1,22 @@
+meta {
+  name: get notes (400 - invalid targetId)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{base_url}}/notes/slot/abc
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+

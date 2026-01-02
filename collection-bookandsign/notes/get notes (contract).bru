@@ -1,0 +1,22 @@
+meta {
+  name: get notes (contract)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/notes/contract/123
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+

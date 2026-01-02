@@ -6,10 +6,11 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { AbstractDto } from '../../common/dto/abstract.dto';
 import { SLOT_PERIOD } from '../types/slot-period.types';
 import { SLOT_STATUS } from '../types/slot-status.types';
 
-export class SlotAvailabilitySlotDto {
+export class SlotAvailabilitySlotDto extends AbstractDto {
   @Expose()
   @IsNumber()
   id!: number;
@@ -25,20 +26,20 @@ export class SlotAvailabilitySlotDto {
   @Expose()
   @IsOptional()
   @IsString()
-  leadEmail!: string | null;
+  leadEmail: string | null = null;
 
   @Expose()
   @IsOptional()
   @IsString()
-  leadPhone!: string | null;
+  leadPhone: string | null = null;
 
   @Expose()
   @IsOptional()
   @IsNumber()
-  contractId!: number | null;
+  contractId: number | null = null;
 }
 
-export class SlotAvailabilityDto {
+export class SlotAvailabilityDto extends AbstractDto {
   @Expose()
   @IsEnum(SLOT_PERIOD)
   period!: SLOT_PERIOD;
@@ -50,5 +51,5 @@ export class SlotAvailabilityDto {
   @Expose()
   @IsOptional()
   @Type(() => SlotAvailabilitySlotDto)
-  slot!: SlotAvailabilitySlotDto | null;
+  slot: SlotAvailabilitySlotDto | null = null;
 }

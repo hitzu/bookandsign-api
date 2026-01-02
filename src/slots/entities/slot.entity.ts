@@ -1,14 +1,17 @@
 import { BaseTimeEntity } from '../../common/entities/base-time.entity';
-import { Column, Entity, Index, JoinColumn, OneToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { SLOT_PERIOD } from '../types/slot-period.types';
 import { SLOT_STATUS } from '../types/slot-status.types';
 import { User } from '../../users/entities/user.entity';
+import { SlotDto } from '../dto/slot.dto';
+import { UseDto } from '../../common/dto/use-dto.decorator';
 
 @Entity('slots')
 @Index(['eventDate', 'period'], {
   unique: true,
   where: '"deleted_at" IS NULL',
 })
+@UseDto(SlotDto)
 export class Slot extends BaseTimeEntity {
   @Column('date', { name: 'event_date' })
   eventDate!: string;
@@ -34,7 +37,7 @@ export class Slot extends BaseTimeEntity {
   @Column('text', { name: 'lead_phone', nullable: true })
   leadPhone: string | null = null;
 
-  @OneToOne(() => User, (user) => user.id)
+  @ManyToOne(() => User, (user) => user.slots)
   @JoinColumn({ name: 'author_id' })
   user!: User;
 }

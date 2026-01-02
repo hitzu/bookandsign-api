@@ -1,0 +1,31 @@
+meta {
+  name: create note (contract)
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{base_url}}/notes
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "scope": "contract",
+    "targetId": 123,
+    "kind": "internal",
+    "content": "Waiting for signed contract"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+

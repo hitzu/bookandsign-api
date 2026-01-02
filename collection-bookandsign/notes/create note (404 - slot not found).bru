@@ -1,0 +1,31 @@
+meta {
+  name: create note (404 - slot not found)
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{base_url}}/notes
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "scope": "slot",
+    "targetId": 999999,
+    "kind": "internal",
+    "content": "Should fail because slot does not exist"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+

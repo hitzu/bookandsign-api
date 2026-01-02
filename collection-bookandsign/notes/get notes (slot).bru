@@ -1,0 +1,22 @@
+meta {
+  name: get notes (slot)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/notes/slot/1
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+
