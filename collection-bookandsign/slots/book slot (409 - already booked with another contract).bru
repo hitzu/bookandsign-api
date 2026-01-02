@@ -1,0 +1,26 @@
+meta {
+  name: book slot (409 - already booked with another contract)
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{base_url}}/slots/1/book
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "contractId": 2
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,11 +1,11 @@
 meta {
-  name: get product by id
+  name: cancel slot
   type: http
-  seq: 4
+  seq: 10
 }
 
-get {
-  url: {{base_url}}/products/7
+delete {
+  url: {{base_url}}/slots/3
   body: json
   auth: inherit
 }

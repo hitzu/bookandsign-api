@@ -10,7 +10,7 @@ import { TokenService } from '../tokens/token.service';
 import { DecodedTokenDto } from '../tokens/dto/decode-token.dto';
 import { IS_PUBLIC_KEY } from './decorators/public.decorator';
 
-interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request {
   user: DecodedTokenDto;
 }
 

@@ -1,0 +1,40 @@
+import { BaseTimeEntity } from '../../common/entities/base-time.entity';
+import { Column, Entity, Index, JoinColumn, OneToOne } from 'typeorm';
+import { SLOT_PERIOD } from '../types/slot-period.types';
+import { SLOT_STATUS } from '../types/slot-status.types';
+import { User } from '../../users/entities/user.entity';
+
+@Entity('slots')
+@Index(['eventDate', 'period'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
+export class Slot extends BaseTimeEntity {
+  @Column('date', { name: 'event_date' })
+  eventDate!: string;
+
+  @Column('enum', { enum: SLOT_PERIOD })
+  period!: SLOT_PERIOD;
+
+  @Column('enum', { enum: SLOT_STATUS, default: SLOT_STATUS.HELD })
+  status: SLOT_STATUS = SLOT_STATUS.HELD;
+
+  @Column('integer', { name: 'author_id' })
+  authorId!: number;
+
+  @Column('integer', { name: 'contract_id', nullable: true })
+  contractId: number | null = null;
+
+  @Column('text', { name: 'lead_name' })
+  leadName!: string;
+
+  @Column('text', { name: 'lead_email', nullable: true })
+  leadEmail: string | null = null;
+
+  @Column('text', { name: 'lead_phone', nullable: true })
+  leadPhone: string | null = null;
+
+  @OneToOne(() => User, (user) => user.id)
+  @JoinColumn({ name: 'author_id' })
+  user!: User;
+}

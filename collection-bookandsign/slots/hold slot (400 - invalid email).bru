@@ -1,0 +1,29 @@
+meta {
+  name: hold slot (400 - invalid email)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/slots/hold
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "eventDate": "2026-01-15",
+    "period": "morning",
+    "leadName": "Test Lead",
+    "leadEmail": "not-an-email"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
