@@ -1,0 +1,31 @@
+meta {
+  name: create note (400 - invalid kind)
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{base_url}}/notes
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "scope": "slot",
+    "targetId": 1,
+    "kind": "invalid",
+    "content": "Invalid kind"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+

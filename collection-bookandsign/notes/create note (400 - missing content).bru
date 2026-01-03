@@ -1,0 +1,30 @@
+meta {
+  name: create note (400 - missing content)
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{base_url}}/notes
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "scope": "slot",
+    "targetId": 1,
+    "kind": "internal"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+

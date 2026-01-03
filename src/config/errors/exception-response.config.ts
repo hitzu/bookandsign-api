@@ -19,6 +19,10 @@ enum ErrorMessages {
   PACKAGE_TERM_NOT_FOUND = 'PACKAGE_TERM_NOT_FOUND',
   TERM_CODE_ALREADY_EXISTS = 'TERM_CODE_ALREADY_EXISTS',
   BRAND_NOT_FOUND = 'BRAND_NOT_FOUND',
+  SLOT_NOT_FOUND = 'SLOT_NOT_FOUND',
+  SLOT_NOT_AVAILABLE = 'SLOT_NOT_AVAILABLE',
+  SLOT_ALREADY_BOOKED = 'SLOT_ALREADY_BOOKED',
+  INVALID_PERIOD = 'INVALID_PERIOD',
   // Add more error messages as needed
 }
 
@@ -106,5 +110,21 @@ export const EXCEPTION_RESPONSE: Record<
   [ErrorMessages.BRAND_NOT_FOUND]: {
     code: 21,
     message: 'brand not found',
+  },
+  [ErrorMessages.SLOT_NOT_FOUND]: {
+    code: 22,
+    message: 'slot not found',
+  },
+  [ErrorMessages.SLOT_NOT_AVAILABLE]: {
+    code: 23,
+    message: 'slot not available for that date/period',
+  },
+  [ErrorMessages.SLOT_ALREADY_BOOKED]: {
+    code: 24,
+    message: 'slot is already booked with another contract',
+  },
+  [ErrorMessages.INVALID_PERIOD]: {
+    code: 25,
+    message: 'invalid period',
   },
 };

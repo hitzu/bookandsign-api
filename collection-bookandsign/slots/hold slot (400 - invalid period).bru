@@ -1,0 +1,28 @@
+meta {
+  name: hold slot (400 - invalid period)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/slots/hold
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "eventDate": "2026-01-15",
+    "period": "night",
+    "leadName": "Test Lead"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

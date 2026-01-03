@@ -1,0 +1,30 @@
+meta {
+  name: hold slot
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/slots/hold
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "eventDate": "2026-01-15",
+    "period": "morning",
+    "leadName": "Test Lead",
+    "leadEmail": "test.lead@example.com",
+    "leadPhone": "2221101495"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

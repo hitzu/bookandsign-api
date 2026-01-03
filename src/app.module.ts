@@ -15,6 +15,8 @@ import { AuthGuard } from './auth/auth.guard';
 import { ProductsModule } from './products/products.module';
 import { PackagesModule } from './packages/packages.module';
 import { TermsModule } from './terms/terms.module';
+import { SlotsModule } from './slots/slots.module';
+import { NotesModule } from './notes/notes.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { TermsModule } from './terms/terms.module';
     ProductsModule,
     PackagesModule,
     TermsModule,
+    SlotsModule,
+    NotesModule,
   ],
   controllers: [AppController],
   providers: [

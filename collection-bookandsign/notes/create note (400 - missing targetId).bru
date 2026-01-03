@@ -1,0 +1,30 @@
+meta {
+  name: create note (400 - missing targetId)
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{base_url}}/notes
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "scope": "slot",
+    "kind": "internal",
+    "content": "Missing targetId"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+
