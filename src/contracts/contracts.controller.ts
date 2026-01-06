@@ -1,0 +1,130 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  ValidationPipe,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
+
+import { AuthUser } from '../auth/decorators/auth-user.decorator';
+import { DecodedTokenDto } from '../tokens/dto/decode-token.dto';
+import { ContractsService } from './contracts.service';
+import { AddItemDto } from './dto/add-item.dto';
+import { AddPaymentDto } from './dto/add-payment.dto';
+import { ContractDetailDto } from './dto/contract-detail.dto';
+import { CreateContractFromSlotsDto } from './dto/create-contract-from-slots.dto';
+import { PaymentDto } from './dto/payment.dto';
+import { UpdateItemDto } from './dto/update-item.dto';
+import { ContractDto } from './dto/contract.dto';
+
+@Controller('contracts')
+@ApiTags('contracts')
+@ApiBearerAuth('access-token')
+export class ContractsController {
+  constructor(private readonly contractsService: ContractsService) {}
+
+  @Post()
+  @ApiBody({ type: CreateContractFromSlotsDto })
+  @ApiOkResponse({ type: ContractDetailDto })
+  async create(
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: CreateContractFromSlotsDto,
+  ): Promise<ContractDto> {
+    return await this.contractsService.createContract(dto);
+  }
+
+  @Get(':id')
+  @ApiOkResponse({ type: ContractDetailDto })
+  async get(@Param('id') id: string): Promise<ContractDetailDto> {
+    return await this.contractsService.getDetail(Number(id));
+  }
+
+  @Post(':id/items')
+  @ApiBody({ type: AddItemDto })
+  @ApiOkResponse({ type: ContractDetailDto })
+  addItem(
+    @Param('id') id: string,
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: AddItemDto,
+  ): void {
+    this.contractsService.addItem(Number(id), dto);
+  }
+
+  @Patch(':id/items/:itemId')
+  @ApiBody({ type: UpdateItemDto })
+  @ApiOkResponse({ type: ContractDetailDto })
+  async updateItem(
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: UpdateItemDto,
+    @AuthUser() user: DecodedTokenDto,
+  ): Promise<ContractDetailDto> {
+    return await this.contractsService.updateItemQuantity(
+      Number(id),
+      Number(itemId),
+      dto,
+      user.id,
+    );
+  }
+
+  @Delete(':id/items/:itemId')
+  @ApiOkResponse({ type: ContractDetailDto })
+  async removeItem(
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
+    @AuthUser() user: DecodedTokenDto,
+  ): Promise<ContractDetailDto> {
+    return await this.contractsService.removeItem(
+      Number(id),
+      Number(itemId),
+      user.id,
+    );
+  }
+
+  @Post(':id/payments')
+  @ApiBody({ type: AddPaymentDto })
+  @ApiOkResponse({ type: ContractDetailDto })
+  async addPayment(
+    @Param('id') id: string,
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: AddPaymentDto,
+    @AuthUser() user: DecodedTokenDto,
+  ): Promise<ContractDetailDto> {
+    return await this.contractsService.addPayment(Number(id), dto, user.id);
+  }
+
+  @Get(':id/payments')
+  @ApiOkResponse({ type: PaymentDto, isArray: true })
+  async listPayments(@Param('id') id: string): Promise<PaymentDto[]> {
+    const payments = await this.contractsService.listPayments(Number(id));
+    return plainToInstance(PaymentDto, payments, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  @Post(':id/cancel')
+  @ApiOkResponse({ type: ContractDetailDto })
+  async cancel(@Param('id') id: string): Promise<ContractDetailDto> {
+    return await this.contractsService.cancel(Number(id));
+  }
+
+  @Post(':id/reopen')
+  @ApiOkResponse({ type: ContractDetailDto })
+  async reopen(
+    @Param('id') id: string,
+    @AuthUser() user: DecodedTokenDto,
+  ): Promise<ContractDetailDto> {
+    return await this.contractsService.reopen(Number(id), user.id);
+  }
+}

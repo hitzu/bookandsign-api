@@ -1,4 +1,4 @@
-import { IsEnum, IsNumber, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Expose } from 'class-transformer';
 import { NOTE_KIND } from '../types/note-kind.types';
 import { NOTE_SCOPE } from '../types/note-scope.types';
@@ -20,6 +20,12 @@ export class NoteDto {
   @IsEnum(NOTE_SCOPE)
   scope!: NOTE_SCOPE;
 
+  @Expose()
   @IsNumber()
   targetId!: number;
+
+  @Expose()
+  @IsNumber()
+  @IsOptional()
+  createdBy: number | null = null;
 }

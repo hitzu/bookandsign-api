@@ -10,6 +10,8 @@ import { CreateNoteDto } from './dto/create-note.dto';
 import { Note } from './entities/note.entity';
 import { NotesService } from './notes.service';
 import { NOTE_SCOPE } from './types/note-scope.types';
+import { NOTE_KIND } from './types/note-kind.types';
+import { SlotsService } from '../slots/slots.service';
 
 describe('NotesService', () => {
   let service: NotesService;
@@ -17,9 +19,22 @@ describe('NotesService', () => {
   let slotFactory: SlotFactory;
 
   beforeEach(async () => {
+    const slotsServiceMock = {
+      getById: jest.fn(async (id: number) => {
+        if (id === 999999) {
+          throw new NotFoundException(EXCEPTION_RESPONSE.SLOT_NOT_FOUND);
+        }
+        return;
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         NotesService,
+        {
+          provide: SlotsService,
+          useValue: slotsServiceMock,
+        },
         {
           provide: getRepositoryToken(Note),
           useValue: TestDataSource.getRepository(Note),
@@ -40,19 +55,26 @@ describe('NotesService', () => {
     it('should throw NotFoundException when slot does not exist', async () => {
       const dto: CreateNoteDto = { content: 'Hello' };
       await expect(
-        service.createForTarget(NOTE_SCOPE.SLOT, 999999, dto, null),
+        service.createForTarget({
+          scope: NOTE_SCOPE.SLOT,
+          targetId: 999999,
+          content: dto.content,
+          kind: NOTE_KIND.INTERNAL,
+          createdBy: null,
+        } as any),
       ).rejects.toEqual(new NotFoundException(EXCEPTION_RESPONSE.SLOT_NOT_FOUND));
     });
 
     it('should create a slot note with createdBy', async () => {
       const slot = await slotFactory.create();
       const dto: CreateNoteDto = { content: 'Se envió PDF de paquetes' };
-      const result = await service.createForTarget(
-        NOTE_SCOPE.SLOT,
-        slot.id,
-        dto,
-        23,
-      );
+      const result = await service.createForTarget({
+        scope: NOTE_SCOPE.SLOT,
+        targetId: slot.id,
+        content: dto.content,
+        kind: NOTE_KIND.INTERNAL,
+        createdBy: 23,
+      } as any);
       expect(result.id).toBeDefined();
       expect(result.createdBy).toBe(23);
       expect(result.content).toBe(dto.content);
@@ -60,12 +82,13 @@ describe('NotesService', () => {
 
     it('should create a contract note without validating contract existence', async () => {
       const dto: CreateNoteDto = { content: 'Contract note' };
-      const result = await service.createForTarget(
-        NOTE_SCOPE.CONTRACT,
-        123,
-        dto,
-        null,
-      );
+      const result = await service.createForTarget({
+        scope: NOTE_SCOPE.CONTRACT,
+        targetId: 123,
+        content: dto.content,
+        kind: NOTE_KIND.INTERNAL,
+        createdBy: null,
+      } as any);
       expect(result.id).toBeDefined();
       expect(result.scope).toBe(NOTE_SCOPE.CONTRACT);
       expect(result.targetId).toBe(123);
@@ -75,8 +98,20 @@ describe('NotesService', () => {
   describe('findTimelineByTarget', () => {
     it('should return notes ordered by createdAt asc', async () => {
       const slot = await slotFactory.create();
-      await service.createForTarget(NOTE_SCOPE.SLOT, slot.id, { content: 'First' }, null);
-      await service.createForTarget(NOTE_SCOPE.SLOT, slot.id, { content: 'Second' }, null);
+      await service.createForTarget({
+        scope: NOTE_SCOPE.SLOT,
+        targetId: slot.id,
+        content: 'First',
+        kind: NOTE_KIND.INTERNAL,
+        createdBy: null,
+      } as any);
+      await service.createForTarget({
+        scope: NOTE_SCOPE.SLOT,
+        targetId: slot.id,
+        content: 'Second',
+        kind: NOTE_KIND.INTERNAL,
+        createdBy: null,
+      } as any);
       const notes = await service.findTimelineByTarget(NOTE_SCOPE.SLOT, slot.id);
       expect(notes).toHaveLength(2);
       expect(notes[0]?.content).toBe('First');
@@ -97,7 +132,13 @@ describe('NotesService', () => {
 
     it('should persist notes in repository', async () => {
       const slot = await slotFactory.create();
-      await service.createForTarget(NOTE_SCOPE.SLOT, slot.id, { content: 'Hello' }, null);
+      await service.createForTarget({
+        scope: NOTE_SCOPE.SLOT,
+        targetId: slot.id,
+        content: 'Hello',
+        kind: NOTE_KIND.INTERNAL,
+        createdBy: null,
+      } as any);
       const persisted = await notesRepository.find({
         where: { scope: NOTE_SCOPE.SLOT, targetId: slot.id },
       });

@@ -1,5 +1,7 @@
-import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+
+import { BaseTimeEntity } from '../../common/entities/base-time.entity';
+import { Contract } from '../../contracts/entities/contract.entity';
 import { SLOT_PERIOD } from '../types/slot-period.types';
 import { SLOT_STATUS } from '../types/slot-status.types';
 import { User } from '../../users/entities/user.entity';
@@ -40,4 +42,11 @@ export class Slot extends BaseTimeEntity {
   @ManyToOne(() => User, (user) => user.slots)
   @JoinColumn({ name: 'author_id' })
   user!: User;
+
+  @ManyToOne(() => Contract, (contract) => contract.slots, {
+    nullable: true,
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'contract_id' })
+  contract?: Contract | null;
 }
