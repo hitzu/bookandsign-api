@@ -8,6 +8,7 @@ import { Note } from '../notes/entities/note.entity';
 import { NOTE_SCOPE } from '../notes/types/note-scope.types';
 import { SlotFactory } from '../../test/factories/slots/slot.factory';
 import { UserFactory } from '../../test/factories/user/user.factory';
+import { ContractFactory } from '../../test/factories/contracts/contract.factory';
 import { BookSlotDto } from './dto/book-slot.dto';
 import { HoldSlotDto } from './dto/hold-slot.dto';
 import { Slot } from './entities/slot.entity';
@@ -21,6 +22,7 @@ describe('SlotsService', () => {
   let notesRepository: Repository<Note>;
   let slotFactory: SlotFactory;
   let userFactory: UserFactory;
+  let contractFactory: ContractFactory;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -42,6 +44,7 @@ describe('SlotsService', () => {
     notesRepository = module.get<Repository<Note>>(getRepositoryToken(Note));
     slotFactory = new SlotFactory(TestDataSource);
     userFactory = new UserFactory(TestDataSource);
+    contractFactory = new ContractFactory(TestDataSource);
   });
 
   describe('getAvailabilityByDate', () => {
@@ -128,10 +131,11 @@ describe('SlotsService', () => {
         status: SLOT_STATUS.HELD,
         contractId: null,
       });
-      const dto: BookSlotDto = { contractId: 999 };
+      const contract = await contractFactory.create();
+      const dto: BookSlotDto = { contractId: contract.id };
       const result = await service.book(slot.id, dto);
       expect(result.status).toBe(SLOT_STATUS.BOOKED);
-      expect(result.contractId).toBe(999);
+      expect(result.contractId).toBe(contract.id);
     });
 
     it('should throw NotFoundException when slot does not exist', async () => {
@@ -148,6 +152,14 @@ describe('SlotsService', () => {
       expect(result).toEqual({ ok: true });
       const found = await slotsRepository.findOne({ where: { id: slot.id } });
       expect(found).toBeNull();
+    });
+
+    it('should throw ConflictException when slot is attached to a contract', async () => {
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.BOOKED,
+        contractId: 123,
+      });
+      await expect(service.cancel(slot.id)).rejects.toBeInstanceOf(ConflictException);
     });
 
     it('should throw NotFoundException when slot does not exist', async () => {
@@ -189,7 +201,7 @@ describe('SlotsService', () => {
         contractId,
         status: SLOT_STATUS.BOOKED,
       });
-      await service.cancel(slot.id);
+      await slotsRepository.softDelete(slot.id);
       const result = await service.findActiveByContractId(contractId);
       expect(result).toHaveLength(0);
     });

@@ -1,21 +1,23 @@
 meta {
-  name: get packages with filters (brandId)
+  name: update slot
   type: http
-  seq: 6
+  seq: 12
 }
 
-get {
-  url: {{base_url}}/packages?brandId=1
+patch {
+  url: {{base_url}}/slots/13/lead-info
   body: json
   auth: inherit
 }
 
-params:query {
-  brandId: 1
-}
-
 headers {
   Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "leadName": "testing 1"
+  }
 }
 
 settings {

@@ -17,6 +17,7 @@ import { PackagesModule } from './packages/packages.module';
 import { TermsModule } from './terms/terms.module';
 import { SlotsModule } from './slots/slots.module';
 import { NotesModule } from './notes/notes.module';
+import { ContractsModule } from './contracts/contracts.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { NotesModule } from './notes/notes.module';
     TermsModule,
     SlotsModule,
     NotesModule,
+    ContractsModule,
   ],
   controllers: [AppController],
   providers: [

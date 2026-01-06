@@ -1,17 +1,13 @@
 meta {
-  name: get packages with filters (brandId)
+  name: get contract detail
   type: http
-  seq: 6
+  seq: 2
 }
 
 get {
-  url: {{base_url}}/packages?brandId=1
-  body: json
+  url: {{base_url}}/contracts/1
+  body: none
   auth: inherit
-}
-
-params:query {
-  brandId: 1
 }
 
 headers {

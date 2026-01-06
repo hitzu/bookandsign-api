@@ -1,6 +1,8 @@
-import { Expose, Type } from 'class-transformer';
+import { Expose } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsEmail,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -51,5 +53,31 @@ export class SlotAvailabilityDto extends AbstractDto {
   @Expose()
   @IsOptional()
   @Type(() => SlotAvailabilitySlotDto)
-  slot: SlotAvailabilitySlotDto | null = null;
+  slot?: SlotAvailabilitySlotDto | null;
+
+  @Expose()
+  @IsNumber()
+  id!: number;
+
+  @Expose()
+  @IsString()
+  eventDate!: string;
+
+  @Expose()
+  @IsNumber()
+  authorId!: number;
+
+  @Expose()
+  @IsString()
+  leadName!: string;
+
+  @Expose()
+  @IsEmail()
+  @IsOptional()
+  leadEmail: string | null = null;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  leadPhone: string | null = null;
 }

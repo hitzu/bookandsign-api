@@ -1,4 +1,10 @@
-import { IsEnum, IsNumber, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { PRODUCT_STATUS } from '../types/products-status.types';
 import { Expose, Type } from 'class-transformer';
 import { BrandDto } from '../../brands/dto/brand.dto';
@@ -35,6 +41,15 @@ export class ProductDto {
   @Expose()
   @IsNumber()
   brandId!: number;
+
+  @Expose()
+  @IsBoolean()
+  isPromotional!: boolean;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  promotionalText?: string | null = null;
 
   @Expose()
   @Type(() => BrandDto)

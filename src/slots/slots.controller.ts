@@ -31,12 +31,25 @@ import { Slot } from './entities/slot.entity';
 import { SlotsService } from './slots.service';
 import { AuthUser } from '../auth/decorators/auth-user.decorator';
 import { DecodedTokenDto } from '../tokens/dto/decode-token.dto';
+import { UpdateLeadInfoSlotDto } from './dto/updateLeadInfoSlot.dto';
+import { SlotDto } from './dto/slot.dto';
 
 @Controller('slots')
 @ApiTags('slots')
 @ApiBearerAuth('access-token')
 export class SlotsController {
   constructor(private readonly slotsService: SlotsService) {}
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get slot by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Slot id' })
+  @ApiOkResponse({ description: 'Slot found successfully', type: Slot })
+  @ApiNotFoundResponse({
+    description: EXCEPTION_RESPONSE.SLOT_NOT_FOUND.message,
+  })
+  getById(@Param('id') id: string) {
+    return this.slotsService.getById(+id);
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get slot availability for a date' })
@@ -73,7 +86,7 @@ export class SlotsController {
   @ApiOperation({ summary: 'Book a held slot (attach contractId)' })
   @ApiParam({ name: 'id', type: Number, description: 'Slot id' })
   @ApiBody({ type: BookSlotDto })
-  @ApiOkResponse({ description: 'Slot booked successfully', type: Slot })
+  @ApiOkResponse({ description: 'Slot booked successfully', type: SlotDto })
   @ApiNotFoundResponse({
     description: EXCEPTION_RESPONSE.SLOT_NOT_FOUND.message,
   })
@@ -93,5 +106,20 @@ export class SlotsController {
   })
   cancel(@Param('id') id: string) {
     return this.slotsService.cancel(+id);
+  }
+
+  @Patch(':id/lead-info')
+  @ApiOperation({ summary: 'Update a slot' })
+  @ApiParam({ name: 'id', type: Number, description: 'Slot id' })
+  @ApiBody({ type: UpdateLeadInfoSlotDto })
+  @ApiOkResponse({ description: 'Slot updated successfully', type: Slot })
+  @ApiNotFoundResponse({
+    description: EXCEPTION_RESPONSE.SLOT_NOT_FOUND.message,
+  })
+  updateLeadInfo(
+    @Param('id') id: string,
+    @Body() leadInfo: UpdateLeadInfoSlotDto,
+  ) {
+    return this.slotsService.updateLeadInfoSlot(+id, leadInfo);
   }
 }

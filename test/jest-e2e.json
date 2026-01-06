@@ -3,6 +3,14 @@
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/../src/$1",
+    "^@factories/(.*)$": "<rootDir>/factories/$1"
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(@faker-js/faker|@jorgebodega/typeorm-factory|uuid)/)"
+  ],
+  "maxWorkers": 1,
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   }
