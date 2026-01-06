@@ -159,7 +159,9 @@ describe('SlotsService', () => {
         status: SLOT_STATUS.BOOKED,
         contractId: 123,
       });
-      await expect(service.cancel(slot.id)).rejects.toBeInstanceOf(ConflictException);
+      await expect(service.cancel(slot.id)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
     });
 
     it('should throw NotFoundException when slot does not exist', async () => {
