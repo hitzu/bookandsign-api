@@ -51,11 +51,10 @@ describe('SlotsService', () => {
     it('should always return 3 periods in order', async () => {
       const date = '2025-12-25';
       const result = await service.getAvailabilityByDate(date);
-      expect(result).toHaveLength(3);
+      expect(result).toHaveLength(2);
       expect(result.map((r) => r.period)).toEqual([
-        SLOT_PERIOD.MORNING,
-        SLOT_PERIOD.AFTERNOON,
-        SLOT_PERIOD.EVENING,
+        SLOT_PERIOD.AM_BLOCK,
+        SLOT_PERIOD.PM_BLOCK,
       ]);
     });
 
@@ -63,10 +62,10 @@ describe('SlotsService', () => {
       const date = '2025-12-25';
       await slotFactory.create({
         eventDate: date,
-        period: SLOT_PERIOD.AFTERNOON,
+        period: SLOT_PERIOD.PM_BLOCK,
       });
       const result = await service.getAvailabilityByDate(date);
-      const afternoon = result.find((r) => r.period === SLOT_PERIOD.AFTERNOON);
+      const afternoon = result.find((r) => r.period === SLOT_PERIOD.PM_BLOCK);
       expect(afternoon?.available).toBe(false);
       expect(afternoon?.slot?.status).toBe(SLOT_STATUS.HELD);
     });
@@ -77,7 +76,7 @@ describe('SlotsService', () => {
       const user = await userFactory.create();
       const dto: HoldSlotDto = {
         eventDate: '2025-12-25',
-        period: SLOT_PERIOD.MORNING,
+        period: SLOT_PERIOD.AM_BLOCK,
         authorId: user.id,
         leadName: 'Ana',
         leadEmail: 'ana@email.com',
@@ -93,7 +92,7 @@ describe('SlotsService', () => {
       const user = await userFactory.create();
       const dto: HoldSlotDto = {
         eventDate: '2025-12-25',
-        period: SLOT_PERIOD.MORNING,
+        period: SLOT_PERIOD.AM_BLOCK,
         authorId: user.id,
         leadName: 'Ana',
         leadEmail: null,
@@ -114,7 +113,7 @@ describe('SlotsService', () => {
       const user = await userFactory.create();
       const dto: HoldSlotDto = {
         eventDate: '2025-12-25',
-        period: SLOT_PERIOD.MORNING,
+        period: SLOT_PERIOD.AM_BLOCK,
         authorId: user.id,
         leadName: 'Ana',
         leadEmail: null,
@@ -174,7 +173,7 @@ describe('SlotsService', () => {
       const user = await userFactory.create();
       const dto: HoldSlotDto = {
         eventDate: '2025-12-25',
-        period: SLOT_PERIOD.MORNING,
+        period: SLOT_PERIOD.AM_BLOCK,
         authorId: user.id,
         leadName: 'Ana',
         leadEmail: null,
