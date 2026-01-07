@@ -21,9 +21,8 @@ import { isUniqueViolation } from '../config/errors/exceptions-handler';
 import { UpdateLeadInfoSlotDto } from './dto/updateLeadInfoSlot.dto';
 
 const PERIODS_IN_ORDER: SLOT_PERIOD[] = [
-  SLOT_PERIOD.MORNING,
-  SLOT_PERIOD.AFTERNOON,
-  SLOT_PERIOD.EVENING,
+  SLOT_PERIOD.AM_BLOCK,
+  SLOT_PERIOD.PM_BLOCK,
 ];
 
 @Injectable()
@@ -84,9 +83,8 @@ export class SlotsService {
 
   async hold(holdSlotDto: HoldSlotDto): Promise<SlotDto> {
     if (
-      holdSlotDto.period !== SLOT_PERIOD.MORNING &&
-      holdSlotDto.period !== SLOT_PERIOD.AFTERNOON &&
-      holdSlotDto.period !== SLOT_PERIOD.EVENING
+      holdSlotDto.period !== SLOT_PERIOD.AM_BLOCK &&
+      holdSlotDto.period !== SLOT_PERIOD.PM_BLOCK
     ) {
       throw new UnprocessableEntityException(EXCEPTION_RESPONSE.INVALID_PERIOD);
     }
