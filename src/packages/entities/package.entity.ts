@@ -3,6 +3,7 @@ import { Brand } from '../../brands/entities/brand.entity';
 import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { PackageProduct } from './package-product.entity';
 import { PACKAGE_STATUS } from '../types/packages-status.types';
+import { PackageTerm } from '../../terms/entities/package-term.entity';
 
 @Entity('packages')
 export class Package extends BaseTimeEntity {
@@ -33,4 +34,7 @@ export class Package extends BaseTimeEntity {
 
   @OneToMany(() => PackageProduct, (packageProduct) => packageProduct.package)
   packageProducts?: PackageProduct[];
+
+  @OneToMany(() => PackageTerm, (packageTerm) => packageTerm.package)
+  packageTerms?: PackageTerm[];
 }

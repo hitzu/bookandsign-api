@@ -27,16 +27,27 @@ export class AuthGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const isPublic =
+      this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? false;
+
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
 
     if (isPublic) {
+      const token = this.extractTokenFromHeader(request);
+      if (token) {
+        try {
+          await this.tokenService.verifyToken(token);
+          request.user = this.tokenService.decodeToken(token);
+        } catch {
+          // Public routes should not fail when the bearer token is missing/invalid.
+        }
+      }
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     try {
       const token = this.extractTokenFromHeader(request);
       if (!token) {
