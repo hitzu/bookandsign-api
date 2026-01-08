@@ -1,8 +1,15 @@
 import { Expose, Type } from 'class-transformer';
 import { BrandDto } from '../../brands/dto/brand.dto';
 import { PackageProductsDto } from './package-products.dto';
-import { IsEnum, IsNumber, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsNumber,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { PACKAGE_STATUS } from '../types/packages-status.types';
+import { TermResponseDto } from '../../terms/dto/term-response.dto';
 
 export class PackageResponseDto {
   @Expose()
@@ -44,4 +51,10 @@ export class PackageResponseDto {
   @Expose()
   @Type(() => PackageProductsDto)
   packageProducts!: PackageProductsDto[];
+
+  @Expose()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TermResponseDto)
+  terms!: TermResponseDto[];
 }

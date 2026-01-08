@@ -1,0 +1,16 @@
+meta {
+  name: get contract detail by token (public)
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{base_url}}/contracts/get-by-token/{{contract_token}}
+  body: none
+  auth: none
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

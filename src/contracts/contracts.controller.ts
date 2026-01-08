@@ -12,6 +12,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOkResponse,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
@@ -26,6 +27,7 @@ import { CreateContractFromSlotsDto } from './dto/create-contract-from-slots.dto
 import { PaymentDto } from './dto/payment.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { ContractDto } from './dto/contract.dto';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('contracts')
 @ApiTags('contracts')
@@ -44,9 +46,20 @@ export class ContractsController {
   }
 
   @Get(':id')
+  @ApiParam({ name: 'id', type: Number })
   @ApiOkResponse({ type: ContractDetailDto })
   async get(@Param('id') id: string): Promise<ContractDetailDto> {
     return await this.contractsService.getDetail(Number(id));
+  }
+
+  @Get('/get-by-token/:token')
+  @ApiParam({ name: 'token', type: String })
+  @ApiOkResponse({ type: ContractDetailDto })
+  @Public()
+  async getDetailByToken(
+    @Param('token') token: string,
+  ): Promise<ContractDetailDto> {
+    return await this.contractsService.getDetailByToken(token);
   }
 
   @Post(':id/items')

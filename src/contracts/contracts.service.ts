@@ -302,4 +302,45 @@ export class ContractsService {
     });
     return await this.getDetail(contractId);
   }
+
+  async getDetailByToken(token: string): Promise<ContractDetailDto> {
+    const contract = await this.contractsRepository.findOne({
+      where: { token },
+    });
+    if (!contract) {
+      throw new NotFoundException('Contract not found');
+    }
+
+    const contractId = contract.id;
+
+    const [slots, items, payments, paidAmount] = await Promise.all([
+      this.slotsRepository.find({ where: { contractId } }),
+      this.contractPackagesRepository.find({
+        where: { contractId },
+        relations: [
+          'package',
+          'package.packageTerms',
+          'package.packageTerms.term',
+        ],
+      }),
+      this.paymentsRepository.find({ where: { contractId } }),
+      this.sumPayments(contractId),
+    ]);
+
+    const itemsWithTerms = items.map((item) => ({
+      ...item,
+      package: item.package
+        ? {
+            ...item.package,
+            terms: item.package.packageTerms?.map((pt) => pt.term) ?? [],
+          }
+        : item.package,
+    }));
+
+    return plainToInstance(
+      ContractDetailDto,
+      { contract, slots, items: itemsWithTerms, payments, paidAmount },
+      { excludeExtraneousValues: true },
+    );
+  }
 }
