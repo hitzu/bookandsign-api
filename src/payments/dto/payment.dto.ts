@@ -1,7 +1,13 @@
 import { Expose, Type } from 'class-transformer';
-import { IsDate, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsDate,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
-import { PAYMENT_METHOD } from '../types/payment-method.types';
+import { PAYMENT_METHOD } from '../../contracts/types/payment-method.types';
 
 export class PaymentDto {
   @Expose()
@@ -28,7 +34,10 @@ export class PaymentDto {
   @Expose()
   @IsString()
   @IsOptional()
-  note?: string | null;
+  note!: string | null;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  reference!: string | null;
 }
-
-

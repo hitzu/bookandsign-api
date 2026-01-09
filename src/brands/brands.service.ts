@@ -18,7 +18,7 @@ export class BrandsService {
   async create(createBrandDto: CreateBrandDto) {
     try {
       this.logger.log(
-        { brandName: createBrandDto.name, brandKey: createBrandDto.key },
+        { brandName: createBrandDto.name },
         'Creating brand',
       );
       const brand = this.brandsRepository.create(createBrandDto);

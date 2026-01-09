@@ -1,9 +1,5 @@
 import {
-  IsEmail,
   IsEnum,
-  IsNumber,
-  IsOptional,
-  IsString,
   Matches,
 } from 'class-validator';
 import { SLOT_PERIOD } from '../types/slot-period.types';
@@ -16,18 +12,4 @@ export class HoldSlotDto {
 
   @IsEnum(SLOT_PERIOD)
   period!: SLOT_PERIOD;
-
-  @IsNumber()
-  authorId!: number;
-
-  @IsString()
-  leadName!: string;
-
-  @IsEmail()
-  @IsOptional()
-  leadEmail: string | null = null;
-
-  @IsString()
-  @IsOptional()
-  leadPhone: string | null = null;
 }

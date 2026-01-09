@@ -1,0 +1,29 @@
+meta {
+  name: post payment (invalid amount)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/contracts/{{contract_id}}/payments
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "amount": 0,
+    "method": "cash",
+    "receivedAt": "2030-01-01T10:00:00.000Z"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

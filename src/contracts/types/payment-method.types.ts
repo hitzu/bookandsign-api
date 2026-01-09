@@ -3,5 +3,3 @@ export enum PAYMENT_METHOD {
   TRANSFER = 'transfer',
   CARD = 'card',
 }
-
-

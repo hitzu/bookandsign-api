@@ -1,5 +1,1 @@
-export enum USER_ROLES {
-  USER = 'user',
-  ADMIN = 'admin',
-  VIEWER = 'viewer',
-}
+export { USER_ROLE as USER_ROLES } from '../../users/constants/user_role.enum';

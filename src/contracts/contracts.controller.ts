@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  ParseIntPipe,
   ValidationPipe,
 } from '@nestjs/common';
 import {
@@ -15,19 +16,19 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { plainToInstance } from 'class-transformer';
 
 import { AuthUser } from '../auth/decorators/auth-user.decorator';
 import { DecodedTokenDto } from '../tokens/dto/decode-token.dto';
 import { ContractsService } from './contracts.service';
 import { AddItemDto } from './dto/add-item.dto';
-import { AddPaymentDto } from './dto/add-payment.dto';
 import { ContractDetailDto } from './dto/contract-detail.dto';
 import { CreateContractFromSlotsDto } from './dto/create-contract-from-slots.dto';
-import { PaymentDto } from './dto/payment.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { ContractDto } from './dto/contract.dto';
 import { Public } from '../auth/decorators/public.decorator';
+import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
+import { PaymentDto } from '../payments/dto/payment.dto';
+import { PaymentResponseDto } from '../payments/dto/payment-response.dto';
 
 @Controller('contracts')
 @ApiTags('contracts')
@@ -106,24 +107,22 @@ export class ContractsController {
   }
 
   @Post(':id/payments')
-  @ApiBody({ type: AddPaymentDto })
-  @ApiOkResponse({ type: ContractDetailDto })
-  async addPayment(
-    @Param('id') id: string,
+  @ApiBody({ type: CreatePaymentDto })
+  @ApiOkResponse({ type: PaymentResponseDto })
+  async createPayment(
+    @Param('id', ParseIntPipe) id: number,
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
-    dto: AddPaymentDto,
-    @AuthUser() user: DecodedTokenDto,
-  ): Promise<ContractDetailDto> {
-    return await this.contractsService.addPayment(Number(id), dto, user.id);
+    dto: CreatePaymentDto,
+  ): Promise<PaymentDto> {
+    return await this.contractsService.createPayment(id, dto);
   }
 
   @Get(':id/payments')
-  @ApiOkResponse({ type: PaymentDto, isArray: true })
-  async listPayments(@Param('id') id: string): Promise<PaymentDto[]> {
-    const payments = await this.contractsService.listPayments(Number(id));
-    return plainToInstance(PaymentDto, payments, {
-      excludeExtraneousValues: true,
-    });
+  @ApiOkResponse({ type: PaymentResponseDto, isArray: true })
+  async listPayments(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<PaymentDto[]> {
+    return await this.contractsService.listPayments(id);
   }
 
   @Post(':id/cancel')

@@ -1,5 +1,5 @@
 import { Expose } from 'class-transformer';
-import { IsEnum, IsNumber, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 import { CONTRACT_STATUS } from '../types/contract-status.types';
 
@@ -14,7 +14,46 @@ export class ContractDto {
 
   @Expose()
   @IsNumber()
-  totalAmount!: number;
+  slotId!: number;
+
+  @Expose()
+  @IsOptional()
+  @IsString()
+  clientName?: string | null;
+
+  @Expose()
+  @IsOptional()
+  @IsString()
+  clientPhone?: string | null;
+
+  @Expose()
+  @IsOptional()
+  @IsEmail()
+  clientEmail?: string | null;
+
+  @Expose()
+  @IsOptional()
+  @IsNumber()
+  subtotal?: number | null;
+
+  @Expose()
+  @IsOptional()
+  @IsNumber()
+  discountTotal?: number | null;
+
+  @Expose()
+  @IsOptional()
+  @IsNumber()
+  total?: number | null;
+
+  @Expose()
+  @IsOptional()
+  @IsNumber()
+  deposit?: number | null;
+
+  @Expose()
+  @IsString()
+  sku!: string;
 
   @Expose()
   @IsString()

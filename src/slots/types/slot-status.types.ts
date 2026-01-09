@@ -1,4 +1,1 @@
-export enum SLOT_STATUS {
-  HELD = 'held',
-  BOOKED = 'booked',
-}
+export { SLOT_STATUS } from '../constants/slot_status.enum';

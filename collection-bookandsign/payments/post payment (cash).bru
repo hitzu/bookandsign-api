@@ -1,0 +1,33 @@
+meta {
+  name: post payment (cash)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/contracts/:contractId/payments
+  body: json
+  auth: inherit
+}
+
+params:path {
+  contractId: 19
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "amount": 50,
+    "method": "cash",
+    "receivedAt": "2030-01-01T10:00:00.000Z",
+    "note": "hola esoy un 2do mensaje"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

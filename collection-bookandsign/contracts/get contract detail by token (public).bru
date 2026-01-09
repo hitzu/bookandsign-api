@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: {{base_url}}/contracts/get-by-token/{{contract_token}}
+  url: {{base_url}}/contracts/get-by-token/:contract-token
   body: none
   auth: none
+}
+
+params:path {
+  contract-token: 4dc171c7-4c27-4ad4-b0af-c1e75c81162c
 }
 
 settings {

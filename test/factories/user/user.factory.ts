@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import { faker } from '@faker-js/faker';
 import { Factory } from '@jorgebodega/typeorm-factory';
 import { User } from '../../../src/users/entities/user.entity';
-import { USER_ROLES } from '../../../src/common/types/user-roles.type';
+import { USER_ROLE } from '../../../src/users/constants/user_role.enum';
 
 export class UserFactory extends Factory<User> {
   protected entity = User;
@@ -16,7 +16,7 @@ export class UserFactory extends Factory<User> {
 
   protected attrs(): FactorizedAttrs<User> {
     return {
-      role: faker.helpers.arrayElement<USER_ROLES>(Object.values(USER_ROLES)),
+      role: faker.helpers.arrayElement<USER_ROLE>(Object.values(USER_ROLE)),
       firstName: faker.person.firstName(),
       lastName: faker.person.lastName(),
       email: faker.internet.email(),

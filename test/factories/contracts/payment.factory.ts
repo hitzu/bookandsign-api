@@ -3,10 +3,10 @@ import { Factory } from '@jorgebodega/typeorm-factory';
 import { faker } from '@faker-js/faker';
 import type { DataSource } from 'typeorm';
 
-import { Payment } from '../../../src/contracts/entities/payment.entity';
+import { Payment } from '../../../src/payments/entities/payment.entity';
 import { PAYMENT_METHOD } from '../../../src/contracts/types/payment-method.types';
 import { ContractFactory } from './contract.factory';
-import type { Contract } from '../../../src/contracts/entities/contract.entity';
+import { Contract } from '../../../src/contracts/entities/contract.entity';
 
 export class PaymentFactory extends Factory<Payment> {
   protected entity = Payment;
@@ -29,7 +29,10 @@ export class PaymentFactory extends Factory<Payment> {
     };
   }
 
-  async createForContract(contract: Contract, attrs?: Partial<Payment>): Promise<Payment> {
+  async createForContract(
+    contract: Contract,
+    attrs?: Partial<Payment>,
+  ): Promise<Payment> {
     const payment = await this.make({ contractId: contract.id, ...attrs });
     return this.dataSource.getRepository(Payment).save(payment);
   }
@@ -46,5 +49,3 @@ export class PaymentFactory extends Factory<Payment> {
     return this.dataSource.getRepository(Payment).save(payment);
   }
 }
-
-

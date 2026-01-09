@@ -8,6 +8,9 @@ import { Package } from '../../packages/entities/package.entity';
 @Index('package_terms_pkg_idx', ['packageId'])
 @Index('package_terms_term_idx', ['termId'])
 export class PackageTerm extends BaseTimeEntity {
+  /**
+   * Join table (aka TermPackage in the target model): links terms to packages.
+   */
   @Column('integer', { name: 'package_id' })
   packageId!: number;
 
