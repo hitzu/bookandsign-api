@@ -14,7 +14,7 @@ import { UpdateBrandDto } from './dto/update-brand.dto';
 import { Logger } from '@nestjs/common';
 import { AuthUser } from '../auth/decorators/auth-user.decorator';
 import { DecodedTokenDto } from '../tokens/dto/decode-token.dto';
-import { Brand } from './entities/brand.entity';
+import { BrandDto } from './dto/brand.dto';
 
 @Controller('brands')
 export class BrandsController {
@@ -33,7 +33,7 @@ export class BrandsController {
   }
 
   @Get()
-  findAll(@AuthUser() user: DecodedTokenDto): Promise<Brand[]> {
+  findAll(@AuthUser() user: DecodedTokenDto): Promise<BrandDto[]> {
     this.logger.log(
       {
         user: {

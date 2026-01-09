@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -25,14 +29,17 @@ export class ProductsService {
     private productsRepository: Repository<Product>,
   ) {}
 
-  create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto): Promise<ProductDto> {
     try {
       this.logger.log({ createProductDto }, 'Creating product');
       const product = this.productsRepository.create(createProductDto);
-      return this.productsRepository.save(product);
+      const savedProduct = await this.productsRepository.save(product);
+      return plainToInstance(ProductDto, savedProduct, {
+        excludeExtraneousValues: true,
+      });
     } catch (error) {
       this.logger.error(error, 'Error creating product');
-      throw error;
+      throw new BadRequestException(EXCEPTION_RESPONSE.PRODUCT_CREATE_ERROR);
     }
   }
 
@@ -54,7 +61,7 @@ export class ProductsService {
   async findWithFilters(
     filters: FindProductsQueryDto,
     relations: FindOptionsRelations<Product>,
-  ) {
+  ): Promise<ProductDto[]> {
     try {
       const where: FindOptionsWhere<Product> = {};
       if (filters.brandId) {

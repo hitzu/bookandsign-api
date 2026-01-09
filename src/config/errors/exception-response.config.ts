@@ -23,6 +23,7 @@ enum ErrorMessages {
   SLOT_NOT_AVAILABLE = 'SLOT_NOT_AVAILABLE',
   SLOT_ALREADY_BOOKED = 'SLOT_ALREADY_BOOKED',
   INVALID_PERIOD = 'INVALID_PERIOD',
+  PRODUCT_CREATE_ERROR = 'PRODUCT_CREATE_ERROR',
   // Add more error messages as needed
 }
 
@@ -126,5 +127,9 @@ export const EXCEPTION_RESPONSE: Record<
   [ErrorMessages.INVALID_PERIOD]: {
     code: 25,
     message: 'invalid period',
+  },
+  [ErrorMessages.PRODUCT_CREATE_ERROR]: {
+    code: 26,
+    message: 'error creating product',
   },
 };

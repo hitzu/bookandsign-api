@@ -2,8 +2,11 @@ import { Column, Entity, OneToMany } from 'typeorm';
 
 import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { Product } from '../../products/entities/product.entity';
+import { BrandDto } from '../dto/brand.dto';
+import { UseDto } from '../../common/dto/use-dto.decorator';
 
 @Entity('brands')
+@UseDto(BrandDto)
 export class Brand extends BaseTimeEntity {
   @Column('text')
   name!: string;
