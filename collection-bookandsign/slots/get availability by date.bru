@@ -1,0 +1,21 @@
+meta {
+  name: get availability by date
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/slots?date=:event_date
+  body: json
+  auth: inherit
+}
+
+headers {
+  authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

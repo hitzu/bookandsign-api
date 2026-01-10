@@ -1,0 +1,27 @@
+meta {
+  name: hold slot
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/slots/hold
+  body: json
+  auth: inherit
+}
+
+headers {
+  authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "eventDate": "2026-01-16",
+    "period": "am_block"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

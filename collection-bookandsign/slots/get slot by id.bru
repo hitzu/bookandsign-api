@@ -1,0 +1,21 @@
+meta {
+  name: get slot by id
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/slots/:slot_id
+  body: json
+  auth: inherit
+}
+
+headers {
+  authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

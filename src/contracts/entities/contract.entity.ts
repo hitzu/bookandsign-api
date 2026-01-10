@@ -1,4 +1,11 @@
-import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+} from 'typeorm';
 
 import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { UseDto } from '../../common/dto/use-dto.decorator';
@@ -9,12 +16,13 @@ import { Slot } from '../../slots/entities/slot.entity';
 import { ContractPromotion } from './contract-promotion.entity';
 import { CONTRACT_STATUS } from '../types/contract-status.types';
 import { ContractSlot } from './contract-slot.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('contracts')
 @UseDto(ContractDto)
 export class Contract extends BaseTimeEntity {
-  @Column('integer', { name: 'brand_id', nullable: true })
-  brandId: number | null = null;
+  @Column('integer', { name: 'user_id' })
+  userId!: number;
 
   @Column('text', { name: 'client_name', nullable: true })
   clientName: string | null = null;
@@ -53,15 +61,6 @@ export class Contract extends BaseTimeEntity {
   })
   total: number | null = null;
 
-  @Column('decimal', {
-    transformer: {
-      to: (value: number | null) => value,
-      from: (value: string | null) => (value == null ? null : Number(value)),
-    },
-    nullable: true,
-  })
-  deposit: number | null = null;
-
   @Column('text')
   sku!: string;
 
@@ -98,4 +97,7 @@ export class Contract extends BaseTimeEntity {
 
   @OneToMany(() => Payment, (payment) => payment.contract)
   payments?: Payment[];
+
+  @ManyToOne(() => User, (user) => user.contracts)
+  user!: User;
 }

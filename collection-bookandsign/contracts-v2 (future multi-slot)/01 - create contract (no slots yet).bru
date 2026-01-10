@@ -1,0 +1,32 @@
+meta {
+  name: 01 - create contract (no slots yet)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/contracts
+  body: json
+  auth: inherit
+}
+
+headers {
+  authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "brandId": 1,
+    "clientName": "Ana",
+    "clientPhone": "555-111-222",
+    "clientEmail": "ana@email.com",
+    "deposit": 0,
+    "status": "confirmed"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

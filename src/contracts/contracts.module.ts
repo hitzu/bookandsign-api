@@ -7,13 +7,19 @@ import { Contract } from './entities/contract.entity';
 import { ContractPackage } from './entities/contract-package.entity';
 import { Package } from '../packages/entities/package.entity';
 import { Slot } from '../slots/entities/slot.entity';
-import { User } from '../users/entities/user.entity';
 import { PaymentsModule } from '../payments/payments.module';
+import { ContractSlot } from './entities/contract-slot.entity';
 
 @Module({
   imports: [
     PaymentsModule,
-    TypeOrmModule.forFeature([Contract, ContractPackage, Slot, Package, User]),
+    TypeOrmModule.forFeature([
+      Contract,
+      ContractPackage,
+      Slot,
+      Package,
+      ContractSlot,
+    ]),
   ],
   controllers: [ContractsController],
   providers: [ContractsService],

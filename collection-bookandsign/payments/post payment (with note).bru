@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{base_url}}/contracts/{{contract_id}}/payments
+  url: {{base_url}}/contracts/:contract_id/payments
   body: json
   auth: inherit
 }

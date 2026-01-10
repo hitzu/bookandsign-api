@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { Token } from '../../tokens/entities/token.entity';
 import { USER_ROLE } from '../constants/user_role.enum';
 import { USER_STATUS } from '../constants/user_status.enum';
+import { Contract } from '../../contracts/entities/contract.entity';
 
 @Entity('users')
 export class User extends BaseTimeEntity {
@@ -31,6 +32,9 @@ export class User extends BaseTimeEntity {
 
   @OneToMany(() => Token, (token) => token.user)
   tokens?: Token[];
+
+  @OneToMany(() => Contract, (contract) => contract.user)
+  contracts?: Contract[];
 
   async hashPassword(password: string): Promise<void> {
     this.password = await bcrypt.hash(password, 10);

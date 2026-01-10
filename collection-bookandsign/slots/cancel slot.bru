@@ -1,0 +1,21 @@
+meta {
+  name: cancel slot
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{base_url}}/slots/:slot_id
+  body: json
+  auth: inherit
+}
+
+headers {
+  authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

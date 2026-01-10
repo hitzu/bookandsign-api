@@ -8,7 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { DataSource, In, Repository } from 'typeorm';
 
-import { User } from '../users/entities/user.entity';
 import { Package } from '../packages/entities/package.entity';
 import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
 import { PaymentsService } from '../payments/payments.service';
@@ -18,12 +17,14 @@ import { ContractDetailDto } from './dto/contract-detail.dto';
 import { CreateContractFromSlotsDto } from './dto/create-contract-from-slots.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { CONTRACT_STATUS } from './types/contract-status.types';
-import { SLOT_STATUS } from '../slots/types/slot-status.types';
 import { ContractPackage } from './entities/contract-package.entity';
 import { Slot } from '../slots/entities/slot.entity';
 import { randomUUID } from 'crypto';
 import { ContractDto } from './dto/contract.dto';
 import { PaymentDto } from 'src/payments/dto/payment.dto';
+import { ContractSlot } from './entities/contract-slot.entity';
+import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
+import { CONTRACT_SLOT_PURPOSE } from './constants/slot_purpose.enum';
 
 @Injectable()
 export class ContractsService {
@@ -38,8 +39,8 @@ export class ContractsService {
     private readonly contractPackagesRepository: Repository<ContractPackage>,
     @InjectRepository(Package)
     private readonly packagesRepository: Repository<Package>,
-    @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+    @InjectRepository(ContractSlot)
+    private readonly contractSlotsRepository: Repository<ContractSlot>,
   ) {}
 
   private async recalculateTotals(contractId: number): Promise<void> {
@@ -58,24 +59,21 @@ export class ContractsService {
   }
 
   async createContract(dto: CreateContractFromSlotsDto): Promise<ContractDto> {
-    const slot = await this.slotsRepository.findOne({
-      where: { id: dto.slotId },
+    const contractSlotValidation = await this.contractSlotsRepository.findOne({
+      where: { slotId: dto.slotId },
     });
-    if (!slot) {
-      throw new NotFoundException('Slot not found');
-    }
-    if (slot.status !== SLOT_STATUS.AVAILABLE) {
-      throw new ConflictException('Slot is not available');
+    if (contractSlotValidation) {
+      throw new ConflictException(EXCEPTION_RESPONSE.SLOT_ALREADY_USED);
     }
 
     const contract = this.contractsRepository.create({
-      clientName: null,
-      clientPhone: null,
-      clientEmail: null,
-      subtotal: 0,
-      discountTotal: 0,
-      total: 0,
-      deposit: 0,
+      userId: dto.userId,
+      clientName: dto.clientName,
+      clientPhone: dto.clientPhone,
+      clientEmail: dto.clientEmail,
+      subtotal: dto.subtotal,
+      discountTotal: dto.discountTotal,
+      total: dto.total,
       sku: dto.sku,
       token: randomUUID(),
       status: CONTRACT_STATUS.CONFIRMED,
@@ -85,6 +83,13 @@ export class ContractsService {
     await this.setItems(savedContract.id, dto.packages);
 
     await this.recalculateTotals(savedContract.id);
+
+    const contractSlot = this.contractSlotsRepository.create({
+      contractId: savedContract.id,
+      slotId: dto.slotId,
+      purpose: CONTRACT_SLOT_PURPOSE.EVENT,
+    });
+    await this.contractSlotsRepository.save(contractSlot);
 
     return plainToInstance(ContractDto, savedContract, {
       excludeExtraneousValues: true,

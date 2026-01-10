@@ -32,9 +32,9 @@ export class ContractSlot extends BaseTimeEntity {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'contract_id' })
-  contract!: Contract;
+  contract?: Contract | null;
 
   @OneToOne(() => Slot, (slot) => slot.contractSlot, { nullable: false })
   @JoinColumn({ name: 'slot_id' })
-  slot!: Slot;
+  slot?: Slot | null;
 }
