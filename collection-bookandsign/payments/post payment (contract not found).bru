@@ -1,0 +1,29 @@
+meta {
+  name: post payment (contract not found)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/contracts/999999/payments
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "amount": 50,
+    "method": "cash",
+    "receivedAt": "2030-01-01T10:00:00.000Z"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

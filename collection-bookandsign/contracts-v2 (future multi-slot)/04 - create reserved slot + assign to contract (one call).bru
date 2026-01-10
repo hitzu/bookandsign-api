@@ -1,0 +1,29 @@
+meta {
+  name: 04 - create reserved slot + assign to contract (one call)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/contracts/:contract_id/slots/reserve
+  body: json
+  auth: inherit
+}
+
+headers {
+  authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "eventDate": ":event_date",
+    "period": ":slot_period",
+    "purpose": ":slot_purpose"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

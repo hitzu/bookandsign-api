@@ -11,10 +11,10 @@ import {
 import { BrandsService } from './brands.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
-import { BrandDto } from './dto/brand.dto';
 import { Logger } from '@nestjs/common';
 import { AuthUser } from '../auth/decorators/auth-user.decorator';
 import { DecodedTokenDto } from '../tokens/dto/decode-token.dto';
+import { BrandDto } from './dto/brand.dto';
 
 @Controller('brands')
 export class BrandsController {

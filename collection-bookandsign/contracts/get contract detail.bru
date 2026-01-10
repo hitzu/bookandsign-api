@@ -5,16 +5,17 @@ meta {
 }
 
 get {
-  url: {{base_url}}/contracts/1
-  body: none
+  url: {{base_url}}/contracts/:contract_id
+  body: json
   auth: inherit
 }
 
 headers {
-  Authorization: Bearer {{token}}
+  authorization: Bearer {{token}}
 }
 
 settings {
   encodeUrl: true
   timeout: 0
 }
+

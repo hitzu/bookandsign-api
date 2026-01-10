@@ -1,30 +1,40 @@
+import { Column, Entity, OneToMany } from 'typeorm';
+
 import { BaseTimeEntity } from '../../common/entities/base-time.entity';
-import { Entity, Column, OneToMany } from 'typeorm';
-import { USER_ROLES } from '../../common/types/user-roles.type';
 import * as bcrypt from 'bcrypt';
 import { Token } from '../../tokens/entities/token.entity';
-import { Slot } from '../../slots/entities/slot.entity';
+import { USER_ROLE } from '../constants/user_role.enum';
+import { USER_STATUS } from '../constants/user_status.enum';
+import { Contract } from '../../contracts/entities/contract.entity';
 
 @Entity('users')
 export class User extends BaseTimeEntity {
-  @Column('enum', { enum: USER_ROLES })
-  role!: USER_ROLES;
+  @Column('enum', { enum: USER_ROLE })
+  role!: USER_ROLE;
+
   @Column('text', { name: 'first_name' })
   firstName!: string;
+
   @Column('text', { name: 'last_name' })
   lastName!: string;
-  @Column('text', { name: 'email', unique: true })
-  email!: string;
+
+  @Column('text', { name: 'email', nullable: true })
+  email: string | null = null;
+
   @Column('text')
   password!: string;
-  @Column('text', { name: 'phone', unique: true })
-  phone!: string;
+
+  @Column('text', { name: 'phone', nullable: true })
+  phone: string | null = null;
+
+  @Column('enum', { enum: USER_STATUS, default: USER_STATUS.ACTIVE })
+  status: USER_STATUS = USER_STATUS.ACTIVE;
 
   @OneToMany(() => Token, (token) => token.user)
   tokens?: Token[];
 
-  @OneToMany(() => Slot, (slot) => slot.user)
-  slots?: Slot[];
+  @OneToMany(() => Contract, (contract) => contract.user)
+  contracts?: Contract[];
 
   async hashPassword(password: string): Promise<void> {
     this.password = await bcrypt.hash(password, 10);

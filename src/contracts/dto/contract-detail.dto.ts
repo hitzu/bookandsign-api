@@ -2,9 +2,9 @@ import { Expose, Type } from 'class-transformer';
 import { IsArray, IsNumber } from 'class-validator';
 
 import { SlotDto } from '../../slots/dto/slot.dto';
+import { PaymentResponseDto } from '../../payments/dto/payment-response.dto';
 import { ContractDto } from './contract.dto';
 import { ContractPackageDto } from './contract-package.dto';
-import { PaymentDto } from './payment.dto';
 
 export class ContractDetailDto {
   @Expose()
@@ -12,9 +12,8 @@ export class ContractDetailDto {
   contract!: ContractDto;
 
   @Expose()
-  @IsArray()
   @Type(() => SlotDto)
-  slots!: SlotDto[];
+  slot!: SlotDto;
 
   @Expose()
   @IsArray()
@@ -23,8 +22,8 @@ export class ContractDetailDto {
 
   @Expose()
   @IsArray()
-  @Type(() => PaymentDto)
-  payments!: PaymentDto[];
+  @Type(() => PaymentResponseDto)
+  payments!: PaymentResponseDto[];
 
   @Expose()
   @IsNumber()

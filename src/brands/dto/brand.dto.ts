@@ -1,6 +1,5 @@
-import { IsEnum, IsString, IsObject, IsDate, IsNumber } from 'class-validator';
-import { BrandKey } from '../brands.constants';
 import { Expose } from 'class-transformer';
+import { IsDate, IsNumber, IsString } from 'class-validator';
 
 export class BrandDto {
   @Expose()
@@ -8,16 +7,8 @@ export class BrandDto {
   id!: number;
 
   @Expose()
-  @IsEnum(BrandKey)
-  key!: BrandKey;
-
-  @Expose()
   @IsString()
   name!: string;
-
-  @Expose()
-  @IsObject()
-  theme!: Record<string, any>;
 
   @Expose()
   @IsString()

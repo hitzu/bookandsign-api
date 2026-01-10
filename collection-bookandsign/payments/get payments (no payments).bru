@@ -1,0 +1,24 @@
+meta {
+  name: get payments (no payments)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{base_url}}/contracts/:contractId/payments
+  body: none
+  auth: inherit
+}
+
+params:path {
+  contractId: 19
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

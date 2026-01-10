@@ -8,12 +8,13 @@ import { AppDataSource as TestDataSource } from '../config/database/data-source'
 import { BrandFactory } from '../../test/factories/brands/brands.factories';
 import { PackageFactory } from '../../test/factories/packages/package.factory';
 import { SlotFactory } from '../../test/factories/slots/slot.factory';
+import { PaymentsService } from '../payments/payments.service';
 import { ContractsService } from './contracts.service';
 import { AddItemDto } from './dto/add-item.dto';
 import { CreateContractFromSlotsDto } from './dto/create-contract-from-slots.dto';
 import { Contract } from './entities/contract.entity';
 import { ContractPackage } from './entities/contract-package.entity';
-import { Payment } from './entities/payment.entity';
+import { Payment } from '../payments/entities/payment.entity';
 import { CONTRACT_PACKAGE_SOURCE } from './types/contract-package-source.types';
 import { CONTRACT_STATUS } from './types/contract-status.types';
 import { PAYMENT_METHOD } from './types/payment-method.types';
@@ -37,6 +38,7 @@ describe('ContractsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ContractsService,
+        PaymentsService,
         { provide: DataSource, useValue: TestDataSource },
         {
           provide: getRepositoryToken(Contract),

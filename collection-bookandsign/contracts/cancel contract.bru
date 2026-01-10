@@ -1,21 +1,21 @@
 meta {
   name: cancel contract
   type: http
-  seq: 5
+  seq: 4
 }
 
 post {
-  url: {{base_url}}/contracts/{{contractId}}/cancel
+  url: {{base_url}}/contracts/:contract_id/cancel
+  body: json
   auth: inherit
 }
 
 headers {
-  Authorization: Bearer {{token}}
+  authorization: Bearer {{token}}
 }
 
 settings {
   encodeUrl: true
   timeout: 0
 }
-
 

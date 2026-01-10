@@ -1,12 +1,5 @@
-import {
-  IsEmail,
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Matches,
-} from 'class-validator';
-import { SLOT_PERIOD } from '../types/slot-period.types';
+import { IsEnum, Matches } from 'class-validator';
+import { SLOT_PERIOD } from '../constants/slot_period.enum';
 
 export class HoldSlotDto {
   @Matches(/^\d{4}-\d{2}-\d{2}$/, {
@@ -16,18 +9,4 @@ export class HoldSlotDto {
 
   @IsEnum(SLOT_PERIOD)
   period!: SLOT_PERIOD;
-
-  @IsNumber()
-  authorId!: number;
-
-  @IsString()
-  leadName!: string;
-
-  @IsEmail()
-  @IsOptional()
-  leadEmail: string | null = null;
-
-  @IsString()
-  @IsOptional()
-  leadPhone: string | null = null;
 }

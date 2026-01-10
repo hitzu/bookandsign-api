@@ -1,0 +1,30 @@
+meta {
+  name: post payment (with note)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/contracts/:contract_id/payments
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "amount": 20,
+    "method": "card",
+    "receivedAt": "2030-01-01T12:00:00.000Z",
+    "note": "paid at the booth"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

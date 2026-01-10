@@ -3,7 +3,6 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { Contract } from './contract.entity';
 import { Package } from '../../packages/entities/package.entity';
-import { CONTRACT_PACKAGE_SOURCE } from '../types/contract-package-source.types';
 
 @Entity('contract_packages')
 export class ContractPackage extends BaseTimeEntity {
@@ -13,14 +12,23 @@ export class ContractPackage extends BaseTimeEntity {
   @Column('integer', { name: 'package_id' })
   packageId!: number;
 
+  /**
+   * Snapshot fields: these represent the package state at the moment the contract is created.
+   */
+  @Column('text', { name: 'name_snapshot' })
+  nameSnapshot!: string;
+
+  @Column('decimal', {
+    name: 'base_price_snapshot',
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => Number(value),
+    },
+  })
+  basePriceSnapshot!: number;
+
   @Column('integer', { default: 1 })
   quantity: number = 1;
-
-  @Column('enum', {
-    enum: CONTRACT_PACKAGE_SOURCE,
-    default: CONTRACT_PACKAGE_SOURCE.PACKAGE,
-  })
-  source: CONTRACT_PACKAGE_SOURCE = CONTRACT_PACKAGE_SOURCE.PACKAGE;
 
   @ManyToOne(() => Contract, (contract) => contract.items, { nullable: false })
   @JoinColumn({ name: 'contract_id' })

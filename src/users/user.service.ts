@@ -23,12 +23,12 @@ export class UserService {
     }
   }
 
-  async createNewUser(signupDto: SignupDto) {
+  async createNewUser(signupDto: SignupDto): Promise<User> {
     try {
       this.logger.log({ signupDto }, 'Creating new user');
       const user = this.userRepository.create(signupDto);
       await user.hashPassword(signupDto.password);
-      return this.userRepository.save(user);
+      return await this.userRepository.save(user);
     } catch (error) {
       this.logger.error(error, 'Error creating new user');
       throw error;

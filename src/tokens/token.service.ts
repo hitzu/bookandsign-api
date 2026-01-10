@@ -10,6 +10,7 @@ import { AccessAndRefreshTokenDto } from './dto/access-refresh-token.dto';
 import { DecodedTokenDto } from './dto/decode-token.dto';
 import { Logger } from '@nestjs/common';
 import { EXCEPTION_RESPONSE } from 'src/config/errors/exception-response.config';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class TokenService {
@@ -28,6 +29,7 @@ export class TokenService {
 
   private async generateJwtToken(
     user: User,
+    tokenId: string,
     expiresIn: number,
     type: TOKEN_TYPE,
   ): Promise<string> {
@@ -36,6 +38,7 @@ export class TokenService {
       email: user.email,
       type,
       id: user.id,
+      jti: tokenId,
     };
 
     try {
@@ -51,30 +54,42 @@ export class TokenService {
   public async generateAuthTokens(
     user: User,
   ): Promise<AccessAndRefreshTokenDto> {
-    // Generate both tokens before any database operations
+    const accessTokenId = randomUUID();
+    const refreshTokenId = randomUUID();
+    const accessExpiresAt = new Date(
+      Date.now() + TOKEN_CONFIG.EXP.accessTokenExp * 24 * 60 * 60 * 1000,
+    );
+    const refreshExpiresAt = new Date(
+      Date.now() + TOKEN_CONFIG.EXP.refreshTokenExp * 24 * 60 * 60 * 1000,
+    );
+
     const [accessToken, refreshToken] = await Promise.all([
       this.generateJwtToken(
         user,
+        accessTokenId,
         TOKEN_CONFIG.EXP.accessTokenExp,
         TOKEN_TYPE.ACCESS,
       ),
       this.generateJwtToken(
         user,
+        refreshTokenId,
         TOKEN_CONFIG.EXP.refreshTokenExp,
         TOKEN_TYPE.REFRESH,
       ),
     ]);
 
-    // Build token entities
+    // Store only UUID identifiers in DB; JWT is returned to the client
     const accessTokenEntity = this.tokenRepository.create({
-      token: accessToken,
-      user,
+      token: accessTokenId,
+      userId: user.id,
       type: TOKEN_TYPE.ACCESS,
+      expiresAt: accessExpiresAt,
     });
     const refreshTokenEntity = this.tokenRepository.create({
-      token: refreshToken,
-      user,
+      token: refreshTokenId,
+      userId: user.id,
       type: TOKEN_TYPE.REFRESH,
+      expiresAt: refreshExpiresAt,
     });
 
     await this.tokenRepository.manager.transaction(

@@ -1,0 +1,21 @@
+meta {
+  name: get slots calendar
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{base_url}}/slots/calendar?year=2026&month=01
+  body: json
+  auth: inherit
+}
+
+params:query {
+  year: 2026
+  month: 01
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

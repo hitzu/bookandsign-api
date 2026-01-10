@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { BrandsService } from './brands.service';
 import { Brand } from './entities/brand.entity';
 import { CreateBrandDto } from './dto/create-brand.dto';
-import { BrandKey } from './brands.constants';
 import { AppDataSource as TestDataSource } from '../config/database/data-source';
 import { BrandFactory } from '@factories/brands/brands.factories';
 
@@ -35,9 +34,7 @@ describe('BrandsService', () => {
         // Arrange
         const brandData = await brandFactory.make();
         const createBrandDto: CreateBrandDto = {
-          key: brandData.key,
           name: brandData.name,
-          theme: brandData.theme,
         };
 
         // Act
@@ -46,124 +43,23 @@ describe('BrandsService', () => {
         // Assert
         expect(result).toBeDefined();
         expect(result.id).toBeDefined();
-        expect(result.key).toBe(createBrandDto.key);
         expect(result.name).toBe(createBrandDto.name);
-        expect(result.theme).toEqual(createBrandDto.theme);
         expect(result.createdAt).toBeDefined();
         expect(result.updatedAt).toBeDefined();
       });
-
-      it('should create a brand with complex theme object', async () => {
-        // Arrange
-        const brandData = await brandFactory.make({
-          theme: {
-            primaryColor: '#0066cc',
-            secondaryColor: '#ffffff',
-            accentColor: '#ff6b35',
-            fontFamily: 'Inter',
-            borderRadius: '8px',
-            spacing: {
-              small: '8px',
-              medium: '16px',
-              large: '24px',
-            },
-          },
-        });
-        const createBrandDto: CreateBrandDto = {
-          key: brandData.key,
-          name: brandData.name,
-          theme: brandData.theme,
-        };
-
-        // Act
-        const result = await service.create(createBrandDto);
-
-        // Assert
-        expect(result).toBeDefined();
-        expect(result.theme).toEqual(createBrandDto.theme);
-        expect(result.theme.spacing).toBeDefined();
-        expect((result.theme.spacing as Record<string, string>).small).toBe(
-          '8px',
-        );
-      });
-    });
-
-    describe('Boundary Value Analysis - Theme Variations', () => {
-      it('should create a brand with empty theme object', async () => {
-        // Arrange
-        const brandData = await brandFactory.make({ theme: {} });
-        const createBrandDto: CreateBrandDto = {
-          key: brandData.key,
-          name: brandData.name,
-          theme: {},
-        };
-
-        // Act
-        const result = await service.create(createBrandDto);
-
-        // Assert
-        expect(result).toBeDefined();
-        expect(result.theme).toEqual({});
-      });
-
-      it('should create a brand with minimal theme properties', async () => {
-        // Arrange
-        const brandData = await brandFactory.make({
-          theme: {
-            color: '#000000',
-          },
-        });
-        const createBrandDto: CreateBrandDto = {
-          key: brandData.key,
-          name: brandData.name,
-          theme: brandData.theme,
-        };
-
-        // Act
-        const result = await service.create(createBrandDto);
-
-        // Assert
-        expect(result).toBeDefined();
-        expect(result.theme).toEqual({ color: '#000000' });
-      });
-    });
-
-    describe('Parameterized Testing - All Brand Keys', () => {
-      const brandKeys = Object.values(BrandKey);
-
-      it.each(brandKeys)(
-        'should create a brand with key: %s',
-        async (brandKey) => {
-          // Arrange
-          const brandData = await brandFactory.make({ key: brandKey });
-          const createBrandDto: CreateBrandDto = {
-            key: brandData.key,
-            name: brandData.name,
-            theme: brandData.theme,
-          };
-
-          // Act
-          const result = await service.create(createBrandDto);
-
-          // Assert
-          expect(result).toBeDefined();
-          expect(result.key).toBe(brandKey);
-        },
-      );
     });
 
     describe('State-Based Testing - Database Persistence', () => {
       it('should persist brand to database', async () => {
         // Arrange
         const brandData = await brandFactory.make({
-          key: BrandKey.LUSSO,
           name: 'Persistent Brand',
-          theme: { primaryColor: '#ff0000' },
         });
         const createBrandDto: CreateBrandDto = {
-          key: brandData.key,
           name: brandData.name,
-          theme: brandData.theme,
+          logoUrl: brandData.logoUrl,
+          phoneNumber: brandData.phoneNumber,
+          email: brandData.email,
         };
 
         // Act
@@ -185,19 +81,15 @@ describe('BrandsService', () => {
       it('should return all brands when database has multiple brands', async () => {
         // Arrange
         const brand1 = await brandFactory.create({
-          key: BrandKey.LUSSO,
           name: 'Lusso Brand',
-          theme: { primaryColor: '#1a1a1a' },
         });
         const brand2 = await brandFactory.create({
-          key: BrandKey.BRILLIPOINT,
           name: 'Brillipoint Brand',
-          theme: { primaryColor: '#0066cc' },
         });
         const brand3 = await brandFactory.create({
-          key: BrandKey.ALETVIA,
           name: 'Aletvia Brand',
-          theme: { primaryColor: '#2c3e50' },
+          phoneNumber: '+1234567890',
+          email: 'aletvia@example.com',
         });
 
         // Act
@@ -235,9 +127,7 @@ describe('BrandsService', () => {
       it('should return brands with all required properties', async () => {
         // Arrange
         await brandFactory.create({
-          key: BrandKey.LUSSO,
           name: 'Test Brand',
-          theme: { primaryColor: '#ff0000' },
         });
 
         // Act
@@ -249,7 +139,6 @@ describe('BrandsService', () => {
         expect(brand).toHaveProperty('id');
         expect(brand).toHaveProperty('key');
         expect(brand).toHaveProperty('name');
-        expect(brand).toHaveProperty('theme');
         expect(brand).toHaveProperty('createdAt');
         expect(brand).toHaveProperty('updatedAt');
         expect(brand).toHaveProperty('deletedAt');
@@ -261,14 +150,13 @@ describe('BrandsService', () => {
     it('should create and then find all brands', async () => {
       // Arrange
       const brandData = await brandFactory.make({
-        key: BrandKey.LUSSO,
         name: 'Integration Test Brand',
-        theme: { primaryColor: '#00ff00' },
       });
       const createBrandDto: CreateBrandDto = {
-        key: brandData.key,
         name: brandData.name,
-        theme: brandData.theme,
+        logoUrl: brandData.logoUrl,
+        phoneNumber: brandData.phoneNumber,
+        email: brandData.email,
       };
 
       // Act

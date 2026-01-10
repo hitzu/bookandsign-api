@@ -1,25 +1,18 @@
-import { IsEnum, IsString, IsObject, IsOptional } from 'class-validator';
-import { BrandKey } from '../brands.constants';
+import { IsString, IsOptional } from 'class-validator';
 
 export class CreateBrandDto {
-  @IsEnum(BrandKey)
-  key!: BrandKey;
-
   @IsString()
   name!: string;
 
   @IsString()
   @IsOptional()
-  logoUrl: string | null;
+  logoUrl?: string | null;
 
   @IsString()
   @IsOptional()
-  phoneNumber: string | null;
+  phoneNumber?: string | null;
 
   @IsString()
   @IsOptional()
-  email: string | null = null;
-
-  @IsObject()
-  theme!: Record<string, any>;
+  email?: string | null;
 }

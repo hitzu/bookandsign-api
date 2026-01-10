@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -10,15 +11,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { plainToInstance } from 'class-transformer';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
-import { BookSlotDto } from './dto/book-slot.dto';
 import { HoldSlotDto } from './dto/hold-slot.dto';
 import { SlotAvailabilityDto } from './dto/slot-availability.dto';
+import { SlotsCalendarDto } from './dto/slots-calendar.dto';
 import { Slot } from './entities/slot.entity';
-import { SLOT_PERIOD } from './types/slot-period.types';
-import { SLOT_STATUS } from './types/slot-status.types';
+import { SLOT_PERIOD } from './constants/slot_period.enum';
+import { SLOT_STATUS } from './constants/slot_status.enum';
 import { SlotDto } from './dto/slot.dto';
 import { isUniqueViolation } from '../config/errors/exceptions-handler';
-import { UpdateLeadInfoSlotDto } from './dto/updateLeadInfoSlot.dto';
 
 const PERIODS_IN_ORDER: SLOT_PERIOD[] = [
   SLOT_PERIOD.AM_BLOCK,
@@ -33,6 +33,64 @@ export class SlotsService {
     @InjectRepository(Slot)
     private slotsRepository: Repository<Slot>,
   ) {}
+
+  /**
+   * Returns a lightweight month calendar for slots, optimized for frontend usage.
+   * Only days that have at least one RESERVED slot are returned.
+   */
+  async getCalendarByMonth(year: number, month: number): Promise<any> {
+    if (!Number.isInteger(year) || year < 1900 || year > 2200) {
+      throw new BadRequestException('Invalid query params');
+    }
+    if (!Number.isInteger(month) || month < 1 || month > 12) {
+      throw new BadRequestException('Invalid query params');
+    }
+
+    const startDate = this.formatUtcDate(
+      new Date(Date.UTC(year, month - 1, 1)),
+    );
+    const endDate = this.formatUtcDate(new Date(Date.UTC(year, month, 1)));
+
+    const reservedSlots = await this.slotsRepository
+      .createQueryBuilder('slot')
+      .select(['slot.eventDate', 'slot.period'])
+      .where('slot.eventDate >= :startDate', { startDate })
+      .andWhere('slot.eventDate < :endDate', { endDate })
+      .andWhere('slot.status = :status', { status: SLOT_STATUS.RESERVED })
+      .orderBy('slot.eventDate', 'ASC')
+      .getMany();
+
+    const dayMap = new Map<
+      string,
+      { morning: SLOT_STATUS; afternoon: SLOT_STATUS }
+    >();
+
+    for (const slot of reservedSlots) {
+      const date = slot.eventDate;
+      const current =
+        dayMap.get(date) ??
+        ({
+          morning: SLOT_STATUS.AVAILABLE,
+          afternoon: SLOT_STATUS.AVAILABLE,
+        } as const);
+
+      if (slot.period === SLOT_PERIOD.AM_BLOCK) {
+        dayMap.set(date, { ...current, morning: SLOT_STATUS.RESERVED });
+        continue;
+      }
+      if (slot.period === SLOT_PERIOD.PM_BLOCK) {
+        dayMap.set(date, { ...current, afternoon: SLOT_STATUS.RESERVED });
+      }
+    }
+
+    const days: SlotsCalendarDto[] = Array.from(dayMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, slots]) => ({ date, slots }));
+
+    return plainToInstance(SlotsCalendarDto, days, {
+      excludeExtraneousValues: true,
+    });
+  }
 
   async getById(id: number) {
     try {
@@ -62,15 +120,11 @@ export class SlotsService {
       const slot = slotByPeriod.get(period);
       return {
         period,
-        available: !slot,
+        available: !slot || slot.status === SLOT_STATUS.AVAILABLE,
         slot: slot
           ? {
               id: slot.id,
               status: slot.status,
-              leadName: slot.leadName,
-              leadEmail: slot.leadEmail,
-              leadPhone: slot.leadPhone,
-              contractId: slot.contractId,
             }
           : null,
       };
@@ -92,12 +146,7 @@ export class SlotsService {
       const slotToSave = this.slotsRepository.create({
         eventDate: holdSlotDto.eventDate,
         period: holdSlotDto.period,
-        status: SLOT_STATUS.HELD,
-        contractId: null,
-        authorId: holdSlotDto.authorId,
-        leadName: holdSlotDto.leadName,
-        leadEmail: holdSlotDto.leadEmail,
-        leadPhone: holdSlotDto.leadPhone,
+        status: SLOT_STATUS.RESERVED,
       });
       const savedSlot = await this.slotsRepository.save(slotToSave);
       return plainToInstance(SlotDto, savedSlot, {
@@ -112,27 +161,6 @@ export class SlotsService {
     }
   }
 
-  async book(id: number, bookSlotDto: BookSlotDto): Promise<SlotDto> {
-    const slot = await this.slotsRepository.findOne({
-      where: { id },
-    });
-    if (!slot) {
-      throw new NotFoundException(EXCEPTION_RESPONSE.SLOT_NOT_FOUND);
-    }
-    if (
-      slot.status === SLOT_STATUS.BOOKED &&
-      slot.contractId !== bookSlotDto.contractId
-    ) {
-      throw new ConflictException(EXCEPTION_RESPONSE.SLOT_ALREADY_BOOKED);
-    }
-    slot.status = SLOT_STATUS.BOOKED;
-    slot.contractId = bookSlotDto.contractId;
-    const savedSlot = await this.slotsRepository.save(slot);
-    return plainToInstance(SlotDto, savedSlot, {
-      excludeExtraneousValues: true,
-    });
-  }
-
   async cancel(id: number): Promise<{ ok: true }> {
     const slot = await this.slotsRepository.findOne({
       where: { id },
@@ -140,43 +168,11 @@ export class SlotsService {
     if (!slot) {
       throw new NotFoundException(EXCEPTION_RESPONSE.SLOT_NOT_FOUND);
     }
-    if (slot.contractId != null) {
-      throw new ConflictException(EXCEPTION_RESPONSE.SLOT_ALREADY_BOOKED);
-    }
     await this.slotsRepository.softDelete(id);
     return { ok: true };
   }
 
-  async findActiveByContractId(contractId: number): Promise<Slot[]> {
-    return await this.slotsRepository.find({
-      where: { contractId },
-    });
-  }
-
-  async updateLeadInfoSlot(
-    id: number,
-    leadInfo: UpdateLeadInfoSlotDto,
-  ): Promise<SlotDto> {
-    const slot = await this.slotsRepository.findOne({
-      where: { id },
-    });
-    if (!slot) {
-      throw new NotFoundException(EXCEPTION_RESPONSE.SLOT_NOT_FOUND);
-    }
-    if (slot.contractId != null) {
-      throw new ConflictException(EXCEPTION_RESPONSE.SLOT_ALREADY_BOOKED);
-    }
-
-    await this.slotsRepository.update(id, {
-      ...leadInfo,
-    });
-
-    const updatedSlot = await this.slotsRepository.findOne({
-      where: { id },
-    });
-
-    return plainToInstance(SlotDto, updatedSlot, {
-      excludeExtraneousValues: true,
-    });
+  private formatUtcDate(date: Date): string {
+    return date.toISOString().slice(0, 10);
   }
 }
