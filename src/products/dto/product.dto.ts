@@ -1,13 +1,7 @@
-import {
-  IsBoolean,
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
-import { PRODUCT_STATUS } from '../types/products-status.types';
+import { IsDate, IsEnum, IsNumber, IsString } from 'class-validator';
 import { Expose, Type } from 'class-transformer';
 import { BrandDto } from '../../brands/dto/brand.dto';
+import { PROMOTIONAL_TYPE } from '../constants/promotional_type.enum';
 
 export class ProductDto {
   @Expose()
@@ -19,39 +13,22 @@ export class ProductDto {
   name!: string;
 
   @Expose()
-  @IsString()
-  description: string | null;
-
-  @Expose()
-  @IsString()
-  imageUrl: string | null;
-
-  @Expose()
-  @IsNumber()
-  price!: number;
-
-  @Expose()
-  @IsNumber()
-  discountPercentage: number | null;
-
-  @Expose()
-  @IsEnum(PRODUCT_STATUS)
-  status!: PRODUCT_STATUS;
-
-  @Expose()
   @IsNumber()
   brandId!: number;
 
   @Expose()
-  @IsBoolean()
-  isPromotional!: boolean;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  promotionalText?: string | null = null;
+  @IsEnum(PROMOTIONAL_TYPE)
+  promotionalType!: PROMOTIONAL_TYPE;
 
   @Expose()
   @Type(() => BrandDto)
   brand: BrandDto | null;
+
+  @Expose()
+  @IsDate()
+  createdAt!: Date;
+
+  @Expose()
+  @IsDate()
+  updatedAt!: Date;
 }

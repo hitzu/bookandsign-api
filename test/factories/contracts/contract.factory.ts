@@ -5,6 +5,7 @@ import type { DataSource } from 'typeorm';
 
 import { Contract } from '../../../src/contracts/entities/contract.entity';
 import { CONTRACT_STATUS } from '../../../src/contracts/types/contract-status.types';
+import { UserFactory } from '../user/user.factory';
 
 export class ContractFactory extends Factory<Contract> {
   protected entity = Contract;
@@ -17,14 +18,23 @@ export class ContractFactory extends Factory<Contract> {
 
   protected attrs(): FactorizedAttrs<Contract> {
     return {
-      status: CONTRACT_STATUS.PENDING,
-      totalAmount: 0,
-      token: faker.string.alphanumeric(100),
+      sku: faker.string.alphanumeric(12),
+      token: faker.string.uuid(),
+      status: CONTRACT_STATUS.CONFIRMED,
+      subtotal: null,
+      discountTotal: null,
+      total: null,
     };
   }
 
   async create(attrs?: Partial<Contract>): Promise<Contract> {
     const contract = await this.make({ ...attrs });
+    if (contract.userId == null) {
+      const userFactory = new UserFactory(this.dataSource);
+      const user = await userFactory.create();
+      contract.userId = user.id;
+      contract.user = user;
+    }
     return this.dataSource.getRepository(Contract).save(contract);
   }
 }

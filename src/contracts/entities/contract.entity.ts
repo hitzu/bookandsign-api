@@ -99,5 +99,6 @@ export class Contract extends BaseTimeEntity {
   payments?: Payment[];
 
   @ManyToOne(() => User, (user) => user.contracts)
+  @JoinColumn({ name: 'user_id' })
   user!: User;
 }

@@ -23,11 +23,14 @@ export class BrandDto {
   email: string | null;
 
   @IsDate()
+  @Expose()
   createdAt!: Date;
 
   @IsDate()
+  @Expose()
   updatedAt!: Date;
 
   @IsDate()
+  @Expose()
   deletedAt!: Date | null;
 }

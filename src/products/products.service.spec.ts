@@ -9,7 +9,6 @@ import { BrandFactory } from '../../test/factories/brands/brands.factories';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { FindProductsQueryDto } from './dto/find-products-query.dto';
-import { PRODUCT_STATUS } from './types/products-status.types';
 import { NotFoundException } from '@nestjs/common';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 
@@ -43,11 +42,6 @@ describe('ProductsService', () => {
         const brand = await brandFactory.create();
         const createProductDto: CreateProductDto = {
           name: 'Test Product',
-          description: 'Test Description',
-          imageUrl: 'https://example.com/image.jpg',
-          price: 99.99,
-          discountPercentage: 10,
-          status: PRODUCT_STATUS.ACTIVE,
           brandId: brand.id,
         };
 
@@ -57,15 +51,7 @@ describe('ProductsService', () => {
         // Assert
         expect(result).toBeDefined();
         expect(result.name).toBe(createProductDto.name);
-        expect(result.description).toBe(createProductDto.description);
-        expect(result.imageUrl).toBe(createProductDto.imageUrl);
-        expect(result.price).toBe(createProductDto.price);
-        expect(result.discountPercentage).toBe(createProductDto.discountPercentage);
-        expect(result.status).toBe(createProductDto.status);
         expect(result.brandId).toBe(createProductDto.brandId);
-        expect(result.id).toBeDefined();
-        expect(result.createdAt).toBeDefined();
-        expect(result.updatedAt).toBeDefined();
       });
 
       it('should create a product with minimal required fields', async () => {
@@ -73,11 +59,6 @@ describe('ProductsService', () => {
         const brand = await brandFactory.create();
         const createProductDto: CreateProductDto = {
           name: 'Minimal Product',
-          description: null,
-          imageUrl: null,
-          price: null,
-          discountPercentage: null,
-          status: PRODUCT_STATUS.DRAFT,
           brandId: brand.id,
         };
 
@@ -87,12 +68,7 @@ describe('ProductsService', () => {
         // Assert
         expect(result).toBeDefined();
         expect(result.name).toBe(createProductDto.name);
-        expect(result.status).toBe(createProductDto.status);
         expect(result.brandId).toBe(createProductDto.brandId);
-        expect(result.description).toBeNull();
-        expect(result.imageUrl).toBeNull();
-        expect(result.price).toBeNull();
-        expect(result.discountPercentage).toBeNull();
       });
 
       it('should create a product with null optional fields', async () => {
@@ -100,11 +76,6 @@ describe('ProductsService', () => {
         const brand = await brandFactory.create();
         const createProductDto: CreateProductDto = {
           name: 'Product with Nulls',
-          description: null,
-          imageUrl: null,
-          price: null,
-          discountPercentage: null,
-          status: PRODUCT_STATUS.DRAFT,
           brandId: brand.id,
         };
 
@@ -113,118 +84,6 @@ describe('ProductsService', () => {
 
         // Assert
         expect(result).toBeDefined();
-        expect(result.description).toBeNull();
-        expect(result.imageUrl).toBeNull();
-        expect(result.price).toBeNull();
-        expect(result.discountPercentage).toBeNull();
-      });
-    });
-
-    describe('Equivalence Partitioning - Status Values', () => {
-      it.each([
-        [PRODUCT_STATUS.DRAFT, 'DRAFT status'],
-        [PRODUCT_STATUS.ACTIVE, 'ACTIVE status'],
-        [PRODUCT_STATUS.INACTIVE, 'INACTIVE status'],
-      ])('should create product with %s', async (status, description) => {
-        // Arrange
-        const brand = await brandFactory.create();
-        const createProductDto: CreateProductDto = {
-          name: `Product ${description}`,
-          description: null,
-          imageUrl: null,
-          price: null,
-          discountPercentage: null,
-          status,
-          brandId: brand.id,
-        };
-
-        // Act
-        const result = await service.create(createProductDto);
-
-        // Assert
-        expect(result.status).toBe(status);
-      });
-    });
-
-    describe('Boundary Value Analysis - Price Values', () => {
-      it('should create product with minimum price (0.01)', async () => {
-        // Arrange
-        const brand = await brandFactory.create();
-        const createProductDto: CreateProductDto = {
-          name: 'Min Price Product',
-          description: null,
-          imageUrl: null,
-          price: 0.01,
-          discountPercentage: null,
-          status: PRODUCT_STATUS.ACTIVE,
-          brandId: brand.id,
-        };
-
-        // Act
-        const result = await service.create(createProductDto);
-
-        // Assert
-        expect(result.price).toBe(0.01);
-      });
-
-      it('should create product with large price value', async () => {
-        // Arrange
-        const brand = await brandFactory.create();
-        const createProductDto: CreateProductDto = {
-          name: 'Large Price Product',
-          description: null,
-          imageUrl: null,
-          price: 999999.99,
-          discountPercentage: null,
-          status: PRODUCT_STATUS.ACTIVE,
-          brandId: brand.id,
-        };
-
-        // Act
-        const result = await service.create(createProductDto);
-
-        // Assert
-        expect(result.price).toBe(999999.99);
-      });
-
-      it('should create product with discount percentage at boundary (0)', async () => {
-        // Arrange
-        const brand = await brandFactory.create();
-        const createProductDto: CreateProductDto = {
-          name: 'Zero Discount Product',
-          description: null,
-          imageUrl: null,
-          price: null,
-          discountPercentage: 0,
-          status: PRODUCT_STATUS.ACTIVE,
-          brandId: brand.id,
-        };
-
-        // Act
-        const result = await service.create(createProductDto);
-
-        // Assert
-        expect(result.discountPercentage).toBe(0);
-      });
-
-      it('should create product with discount percentage at boundary (100)', async () => {
-        // Arrange
-        const brand = await brandFactory.create();
-        const createProductDto: CreateProductDto = {
-          name: 'Max Discount Product',
-          description: null,
-          imageUrl: null,
-          price: null,
-          discountPercentage: 100,
-          status: PRODUCT_STATUS.ACTIVE,
-          brandId: brand.id,
-        };
-
-        // Act
-        const result = await service.create(createProductDto);
-
-        // Assert
-        expect(result.discountPercentage).toBe(100);
       });
     });
 
@@ -234,19 +93,18 @@ describe('ProductsService', () => {
         const brand = await brandFactory.create();
         const createProductDto: CreateProductDto = {
           name: 'Test Product',
-          description: null,
-          imageUrl: null,
-          price: null,
-          discountPercentage: null,
-          status: PRODUCT_STATUS.ACTIVE,
           brandId: brand.id,
         };
 
         // Mock repository to throw error
-        jest.spyOn(repository, 'save').mockRejectedValueOnce(new Error('Database error'));
+        jest
+          .spyOn(repository, 'save')
+          .mockRejectedValueOnce(new Error('Database error'));
 
         // Act & Assert
-        await expect(service.create(createProductDto)).rejects.toThrow('Database error');
+        await expect(service.create(createProductDto)).rejects.toThrow(
+          'Database error',
+        );
       });
     });
   });
@@ -302,7 +160,7 @@ describe('ProductsService', () => {
         expect(foundProduct).toBeDefined();
         expect(foundProduct).toHaveProperty('id');
         expect(foundProduct).toHaveProperty('name');
-        expect(foundProduct).toHaveProperty('status');
+        expect(foundProduct).toHaveProperty('promotionalType');
         expect(foundProduct).toHaveProperty('brandId');
       });
     });
@@ -310,7 +168,9 @@ describe('ProductsService', () => {
     describe('Error Handling', () => {
       it('should throw error when database query fails', async () => {
         // Arrange
-        jest.spyOn(repository, 'find').mockRejectedValueOnce(new Error('Database error'));
+        jest
+          .spyOn(repository, 'find')
+          .mockRejectedValueOnce(new Error('Database error'));
 
         // Act & Assert
         await expect(service.findAll()).rejects.toThrow('Database error');
@@ -400,7 +260,9 @@ describe('ProductsService', () => {
       it('should return empty array when no products match term', async () => {
         // Arrange
         const brand = await brandFactory.create();
-        await productFactory.createForBrand(brand, { name: 'Existing Product' });
+        await productFactory.createForBrand(brand, {
+          name: 'Existing Product',
+        });
 
         const filters: FindProductsQueryDto = {
           term: 'NonExistentProduct',
@@ -424,7 +286,9 @@ describe('ProductsService', () => {
         const product1 = await productFactory.createForBrand(brand1, {
           name: 'Premium Widget',
         });
-        await productFactory.createForBrand(brand1, { name: 'Different Product' });
+        await productFactory.createForBrand(brand1, {
+          name: 'Different Product',
+        });
         await productFactory.createForBrand(brand2, { name: 'Premium Widget' });
 
         const filters: FindProductsQueryDto = {
@@ -474,12 +338,14 @@ describe('ProductsService', () => {
       it('should throw error when database query fails', async () => {
         // Arrange
         const filters: FindProductsQueryDto = {};
-        jest.spyOn(repository, 'find').mockRejectedValueOnce(new Error('Database error'));
+        jest
+          .spyOn(repository, 'find')
+          .mockRejectedValueOnce(new Error('Database error'));
 
         // Act & Assert
-        await expect(service.findWithFilters(filters, { brand: true })).rejects.toThrow(
-          'Database error',
-        );
+        await expect(
+          service.findWithFilters(filters, { brand: true }),
+        ).rejects.toThrow('Database error');
       });
     });
   });
@@ -498,7 +364,6 @@ describe('ProductsService', () => {
         expect(result).toBeDefined();
         expect(result.id).toBe(product.id);
         expect(result.name).toBe(product.name);
-        expect(result.status).toBe(product.status);
         expect(result.brandId).toBe(product.brandId);
       });
 
@@ -514,7 +379,7 @@ describe('ProductsService', () => {
         expect(result).toBeDefined();
         expect(result).toHaveProperty('id');
         expect(result).toHaveProperty('name');
-        expect(result).toHaveProperty('status');
+        expect(result).toHaveProperty('promotionalType');
         expect(result).toHaveProperty('brandId');
       });
     });
@@ -525,7 +390,9 @@ describe('ProductsService', () => {
         const nonExistentId = 99999;
 
         // Act & Assert
-        await expect(service.findOne(nonExistentId)).rejects.toThrow(NotFoundException);
+        await expect(service.findOne(nonExistentId)).rejects.toThrow(
+          NotFoundException,
+        );
         await expect(service.findOne(nonExistentId)).rejects.toThrow(
           EXCEPTION_RESPONSE.PRODUCT_NOT_FOUND.message,
         );
@@ -536,7 +403,9 @@ describe('ProductsService', () => {
         const invalidId = 0;
 
         // Act & Assert
-        await expect(service.findOne(invalidId)).rejects.toThrow(NotFoundException);
+        await expect(service.findOne(invalidId)).rejects.toThrow(
+          NotFoundException,
+        );
       });
 
       it('should throw NotFoundException when id is negative', async () => {
@@ -544,7 +413,9 @@ describe('ProductsService', () => {
         const invalidId = -1;
 
         // Act & Assert
-        await expect(service.findOne(invalidId)).rejects.toThrow(NotFoundException);
+        await expect(service.findOne(invalidId)).rejects.toThrow(
+          NotFoundException,
+        );
       });
     });
 
@@ -552,10 +423,14 @@ describe('ProductsService', () => {
       it('should throw error when database query fails', async () => {
         // Arrange
         const productId = 1;
-        jest.spyOn(repository, 'findOne').mockRejectedValueOnce(new Error('Database error'));
+        jest
+          .spyOn(repository, 'findOne')
+          .mockRejectedValueOnce(new Error('Database error'));
 
         // Act & Assert
-        await expect(service.findOne(productId)).rejects.toThrow('Database error');
+        await expect(service.findOne(productId)).rejects.toThrow(
+          'Database error',
+        );
       });
     });
   });
@@ -568,10 +443,6 @@ describe('ProductsService', () => {
         const product = await productFactory.createForBrand(brand);
         const updateProductDto: UpdateProductDto = {
           name: 'Updated Product Name',
-          description: 'Updated Description',
-          price: 199.99,
-          discountPercentage: 20,
-          status: PRODUCT_STATUS.ACTIVE,
         };
 
         // Act
@@ -582,13 +453,11 @@ describe('ProductsService', () => {
         expect(result.affected).toBe(1);
 
         // Verify the update
-        const updatedProduct = await repository.findOne({ where: { id: product.id } });
+        const updatedProduct = await repository.findOne({
+          where: { id: product.id },
+        });
         expect(updatedProduct).toBeDefined();
         expect(updatedProduct?.name).toBe(updateProductDto.name);
-        expect(updatedProduct?.description).toBe(updateProductDto.description);
-        expect(updatedProduct?.price).toBe(updateProductDto.price);
-        expect(updatedProduct?.discountPercentage).toBe(updateProductDto.discountPercentage);
-        expect(updatedProduct?.status).toBe(updateProductDto.status);
       });
 
       it('should update product with partial fields', async () => {
@@ -607,22 +476,19 @@ describe('ProductsService', () => {
         expect(result.affected).toBe(1);
 
         // Verify the update
-        const updatedProduct = await repository.findOne({ where: { id: product.id } });
+        const updatedProduct = await repository.findOne({
+          where: { id: product.id },
+        });
         expect(updatedProduct).toBeDefined();
         expect(updatedProduct?.name).toBe(updateProductDto.name);
         // Other fields should remain unchanged
-        expect(updatedProduct?.status).toBe(product.status);
       });
 
       it('should update product status only', async () => {
         // Arrange
         const brand = await brandFactory.create();
-        const product = await productFactory.createForBrand(brand, {
-          status: PRODUCT_STATUS.DRAFT,
-        });
-        const updateProductDto: UpdateProductDto = {
-          status: PRODUCT_STATUS.ACTIVE,
-        };
+        const product = await productFactory.createForBrand(brand);
+        const updateProductDto: UpdateProductDto = {};
 
         // Act
         const result = await service.update(product.id, updateProductDto);
@@ -632,9 +498,10 @@ describe('ProductsService', () => {
         expect(result.affected).toBe(1);
 
         // Verify the update
-        const updatedProduct = await repository.findOne({ where: { id: product.id } });
+        const updatedProduct = await repository.findOne({
+          where: { id: product.id },
+        });
         expect(updatedProduct).toBeDefined();
-        expect(updatedProduct?.status).toBe(PRODUCT_STATUS.ACTIVE);
       });
     });
 
@@ -662,12 +529,14 @@ describe('ProductsService', () => {
         const updateProductDto: UpdateProductDto = {
           name: 'Updated Name',
         };
-        jest.spyOn(repository, 'update').mockRejectedValueOnce(new Error('Database error'));
+        jest
+          .spyOn(repository, 'update')
+          .mockRejectedValueOnce(new Error('Database error'));
 
         // Act & Assert
-        await expect(service.update(productId, updateProductDto)).rejects.toThrow(
-          'Database error',
-        );
+        await expect(
+          service.update(productId, updateProductDto),
+        ).rejects.toThrow('Database error');
       });
     });
   });
@@ -687,7 +556,9 @@ describe('ProductsService', () => {
         expect(result.affected).toBe(1);
 
         // Verify soft delete
-        const deletedProduct = await repository.findOne({ where: { id: product.id } });
+        const deletedProduct = await repository.findOne({
+          where: { id: product.id },
+        });
         expect(deletedProduct).toBeNull();
 
         // Verify soft delete with deletedAt
@@ -721,50 +592,9 @@ describe('ProductsService', () => {
           .mockRejectedValueOnce(new Error('Database error'));
 
         // Act & Assert
-        await expect(service.remove(productId)).rejects.toThrow('Database error');
-      });
-    });
-  });
-
-  describe('findProductsStatus', () => {
-    describe('Happy Path - Status Values', () => {
-      it('should return all product status values', async () => {
-        // Act
-        const result = await service.findProductsStatus();
-
-        // Assert
-        expect(result).toBeDefined();
-        expect(Array.isArray(result)).toBe(true);
-        expect(result.length).toBe(3);
-        expect(result).toContain(PRODUCT_STATUS.DRAFT);
-        expect(result).toContain(PRODUCT_STATUS.ACTIVE);
-        expect(result).toContain(PRODUCT_STATUS.INACTIVE);
-      });
-
-      it('should return status values in correct order', async () => {
-        // Act
-        const result = await service.findProductsStatus();
-
-        // Assert
-        expect(result).toEqual([
-          PRODUCT_STATUS.DRAFT,
-          PRODUCT_STATUS.ACTIVE,
-          PRODUCT_STATUS.INACTIVE,
-        ]);
-      });
-    });
-
-    describe('Error Handling', () => {
-      it('should handle errors gracefully', async () => {
-        // This test is mainly for coverage as the method is simple
-        // Arrange - No setup needed
-
-        // Act
-        const result = await service.findProductsStatus();
-
-        // Assert
-        expect(result).toBeDefined();
-        expect(Array.isArray(result)).toBe(true);
+        await expect(service.remove(productId)).rejects.toThrow(
+          'Database error',
+        );
       });
     });
   });

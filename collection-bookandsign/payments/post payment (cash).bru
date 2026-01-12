@@ -5,13 +5,9 @@ meta {
 }
 
 post {
-  url: {{base_url}}/contracts/:contractId/payments
+  url: {{base_url}}/contracts/17/payments
   body: json
   auth: inherit
-}
-
-params:path {
-  contractId: 23
 }
 
 headers {
@@ -23,7 +19,7 @@ body:json {
     "amount": 1500,
     "method": "cash",
     "receivedAt": "2030-01-01T10:00:00.000Z",
-    "note": "hola esoy un 2do pago"
+    "note": "hola soy un 2do pago"
   }
 }
 

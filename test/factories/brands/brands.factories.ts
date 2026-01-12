@@ -1,9 +1,8 @@
 import type { FactorizedAttrs } from '@jorgebodega/typeorm-factory';
-import { DataSource } from 'typeorm';
 import { faker } from '@faker-js/faker';
 import { Factory } from '@jorgebodega/typeorm-factory';
+import { DataSource } from 'typeorm';
 import { Brand } from '../../../src/brands/entities/brand.entity';
-import { BrandKey } from '../../../src/brands/brands.constants';
 
 export class BrandFactory extends Factory<Brand> {
   protected entity = Brand;
@@ -17,15 +16,9 @@ export class BrandFactory extends Factory<Brand> {
   protected attrs(): FactorizedAttrs<Brand> {
     return {
       name: faker.company.name(),
-      theme: {
-        primaryColor: faker.color.rgb(),
-        secondaryColor: faker.color.rgb(),
-      },
-      key: faker.helpers.arrayElement<BrandKey>([
-        BrandKey.LUSSO,
-        BrandKey.BRILLIPOINT,
-        BrandKey.ALETVIA,
-      ]),
+      logoUrl: faker.internet.url(),
+      phoneNumber: faker.phone.number(),
+      email: faker.internet.email(),
     };
   }
 }

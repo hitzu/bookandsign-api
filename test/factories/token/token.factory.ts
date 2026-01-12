@@ -1,7 +1,7 @@
 import type { FactorizedAttrs } from '@jorgebodega/typeorm-factory';
-import { DataSource } from 'typeorm';
 import { faker } from '@faker-js/faker';
 import { Factory } from '@jorgebodega/typeorm-factory';
+import { DataSource } from 'typeorm';
 import { Token } from '../../../src/tokens/entities/token.entity';
 import { TOKEN_TYPE } from '../../../src/common/types/token-type';
 import { User } from '../../../src/users/entities/user.entity';
@@ -17,7 +17,7 @@ export class TokenFactory extends Factory<Token> {
 
   protected attrs(): FactorizedAttrs<Token> {
     return {
-      token: faker.string.alphanumeric(100),
+      token: faker.string.uuid(),
       type: faker.helpers.arrayElement<TOKEN_TYPE>(Object.values(TOKEN_TYPE)),
       // user should be provided via makeForUser or createForUser methods
     };

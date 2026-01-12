@@ -137,7 +137,6 @@ describe('BrandsService', () => {
         expect(result).toHaveLength(1);
         const brand = result[0];
         expect(brand).toHaveProperty('id');
-        expect(brand).toHaveProperty('key');
         expect(brand).toHaveProperty('name');
         expect(brand).toHaveProperty('createdAt');
         expect(brand).toHaveProperty('updatedAt');

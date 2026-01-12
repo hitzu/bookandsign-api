@@ -11,6 +11,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { plainToInstance } from 'class-transformer';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
+import { ContractSlot } from '../contracts/entities/contract-slot.entity';
+import { BookSlotDto } from './dto/book-slot.dto';
 import { HoldSlotDto } from './dto/hold-slot.dto';
 import { SlotAvailabilityDto } from './dto/slot-availability.dto';
 import { SlotsCalendarDto } from './dto/slots-calendar.dto';
@@ -32,6 +34,8 @@ export class SlotsService {
   constructor(
     @InjectRepository(Slot)
     private slotsRepository: Repository<Slot>,
+    @InjectRepository(ContractSlot)
+    private contractSlotsRepository: Repository<ContractSlot>,
   ) {}
 
   /**
@@ -161,6 +165,40 @@ export class SlotsService {
     }
   }
 
+  async book(id: number, dto: BookSlotDto): Promise<SlotDto> {
+    const slot = await this.slotsRepository.findOne({
+      where: { id },
+    });
+    if (!slot) {
+      throw new NotFoundException(EXCEPTION_RESPONSE.SLOT_NOT_FOUND);
+    }
+
+    const existingLink = await this.contractSlotsRepository.findOne({
+      where: { slotId: id },
+    });
+    if (existingLink) {
+      throw new ConflictException(EXCEPTION_RESPONSE.SLOT_ALREADY_USED);
+    }
+
+    const link = this.contractSlotsRepository.create({
+      slotId: id,
+      contractId: dto.contractId,
+    });
+    await this.contractSlotsRepository.save(link);
+
+    if (slot.status !== SLOT_STATUS.RESERVED) {
+      await this.slotsRepository.update(id, { status: SLOT_STATUS.RESERVED });
+      const updated = await this.slotsRepository.findOne({ where: { id } });
+      return plainToInstance(SlotDto, updated, {
+        excludeExtraneousValues: true,
+      });
+    }
+
+    return plainToInstance(SlotDto, slot, {
+      excludeExtraneousValues: true,
+    });
+  }
+
   async cancel(id: number): Promise<{ ok: true }> {
     const slot = await this.slotsRepository.findOne({
       where: { id },
@@ -168,8 +206,28 @@ export class SlotsService {
     if (!slot) {
       throw new NotFoundException(EXCEPTION_RESPONSE.SLOT_NOT_FOUND);
     }
+
+    const existingLink = await this.contractSlotsRepository.findOne({
+      where: { slotId: id },
+    });
+    if (existingLink) {
+      throw new ConflictException(EXCEPTION_RESPONSE.SLOT_ALREADY_USED);
+    }
     await this.slotsRepository.softDelete(id);
     return { ok: true };
+  }
+
+  async findActiveByContractId(contractId: number): Promise<SlotDto[]> {
+    const links = await this.contractSlotsRepository.find({
+      where: { contractId },
+      relations: ['slot'],
+    });
+    const slots = links
+      .map((l) => l.slot)
+      .filter((s): s is Slot => Boolean(s));
+    return plainToInstance(SlotDto, slots, {
+      excludeExtraneousValues: true,
+    });
   }
 
   private formatUtcDate(date: Date): string {

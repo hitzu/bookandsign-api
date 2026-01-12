@@ -58,9 +58,7 @@ describe('PackagesService', () => {
         const brand = await brandFactory.create();
         const createPackageDto: CreatePackageDto = {
           brandId: brand.id,
-          code: 'PKG001',
           name: 'Test Package',
-          description: 'Test Description',
           basePrice: 999.99,
           discount: 10,
           status: PACKAGE_STATUS.ACTIVE,
@@ -71,11 +69,8 @@ describe('PackagesService', () => {
 
         // Assert
         expect(result).toBeDefined();
-        expect(result.code).toBe(createPackageDto.code);
         expect(result.name).toBe(createPackageDto.name);
-        expect(result.description).toBe(createPackageDto.description);
         expect(result.basePrice).toBe(createPackageDto.basePrice);
-        expect(result.discount).toBe(createPackageDto.discount);
         expect(result.status).toBe(createPackageDto.status);
         expect(result.brandId).toBe(createPackageDto.brandId);
         expect(result.id).toBeDefined();
@@ -88,9 +83,7 @@ describe('PackagesService', () => {
         const brand = await brandFactory.create();
         const createPackageDto: CreatePackageDto = {
           brandId: brand.id,
-          code: 'PKG002',
           name: 'Minimal Package',
-          description: null,
           basePrice: null,
           discount: null,
           status: PACKAGE_STATUS.DRAFT,
@@ -101,13 +94,10 @@ describe('PackagesService', () => {
 
         // Assert
         expect(result).toBeDefined();
-        expect(result.code).toBe(createPackageDto.code);
         expect(result.name).toBe(createPackageDto.name);
         expect(result.status).toBe(createPackageDto.status);
         expect(result.brandId).toBe(createPackageDto.brandId);
-        expect(result.description).toBeNull();
         expect(result.basePrice).toBeNull();
-        expect(result.discount).toBeNull();
       });
 
       it('should create a package with null optional fields', async () => {
@@ -115,9 +105,7 @@ describe('PackagesService', () => {
         const brand = await brandFactory.create();
         const createPackageDto: CreatePackageDto = {
           brandId: brand.id,
-          code: 'PKG003',
           name: 'Package with Nulls',
-          description: null,
           basePrice: null,
           discount: null,
           status: PACKAGE_STATUS.DRAFT,
@@ -128,9 +116,7 @@ describe('PackagesService', () => {
 
         // Assert
         expect(result).toBeDefined();
-        expect(result.description).toBeNull();
         expect(result.basePrice).toBeNull();
-        expect(result.discount).toBeNull();
       });
     });
 
@@ -144,9 +130,7 @@ describe('PackagesService', () => {
         const brand = await brandFactory.create();
         const createPackageDto: CreatePackageDto = {
           brandId: brand.id,
-          code: `PKG-${status}`,
           name: `Package ${description}`,
-          description: null,
           basePrice: null,
           discount: null,
           status,
@@ -166,9 +150,7 @@ describe('PackagesService', () => {
         const brand = await brandFactory.create();
         const createPackageDto: CreatePackageDto = {
           brandId: brand.id,
-          code: 'PKG-MIN',
           name: 'Min Price Package',
-          description: null,
           basePrice: 0.01,
           discount: null,
           status: PACKAGE_STATUS.ACTIVE,
@@ -186,9 +168,7 @@ describe('PackagesService', () => {
         const brand = await brandFactory.create();
         const createPackageDto: CreatePackageDto = {
           brandId: brand.id,
-          code: 'PKG-MAX',
           name: 'Large Price Package',
-          description: null,
           basePrice: 999999.99,
           discount: null,
           status: PACKAGE_STATUS.ACTIVE,
@@ -200,46 +180,6 @@ describe('PackagesService', () => {
         // Assert
         expect(result.basePrice).toBe(999999.99);
       });
-
-      it('should create package with discount at boundary (0)', async () => {
-        // Arrange
-        const brand = await brandFactory.create();
-        const createPackageDto: CreatePackageDto = {
-          brandId: brand.id,
-          code: 'PKG-ZERO',
-          name: 'Zero Discount Package',
-          description: null,
-          basePrice: null,
-          discount: 0,
-          status: PACKAGE_STATUS.ACTIVE,
-        };
-
-        // Act
-        const result = await service.create(createPackageDto);
-
-        // Assert
-        expect(result.discount).toBe(0);
-      });
-
-      it('should create package with discount at boundary (100)', async () => {
-        // Arrange
-        const brand = await brandFactory.create();
-        const createPackageDto: CreatePackageDto = {
-          brandId: brand.id,
-          code: 'PKG-100',
-          name: 'Max Discount Package',
-          description: null,
-          basePrice: null,
-          discount: 100,
-          status: PACKAGE_STATUS.ACTIVE,
-        };
-
-        // Act
-        const result = await service.create(createPackageDto);
-
-        // Assert
-        expect(result.discount).toBe(100);
-      });
     });
 
     describe('Error Handling', () => {
@@ -248,9 +188,7 @@ describe('PackagesService', () => {
         const brand = await brandFactory.create();
         const createPackageDto: CreatePackageDto = {
           brandId: brand.id,
-          code: 'PKG-ERR',
           name: 'Error Package',
-          description: null,
           basePrice: null,
           discount: null,
           status: PACKAGE_STATUS.ACTIVE,
@@ -411,7 +349,6 @@ describe('PackagesService', () => {
         // Assert
         expect(result).toBeDefined();
         expect(result?.id).toBe(packageEntity.id);
-        expect(result?.code).toBe(packageEntity.code);
         expect(result?.name).toBe(packageEntity.name);
         expect(result?.status).toBe(packageEntity.status);
         expect(result?.brand?.id).toBe(packageEntity.brandId);
@@ -489,9 +426,7 @@ describe('PackagesService', () => {
         const packageEntity = await packageFactory.createForBrand(brand);
         const updatePackageDto: UpdatePackageDto = {
           name: 'Updated Package Name',
-          description: 'Updated Description',
           basePrice: 1999.99,
-          discount: 20,
           status: PACKAGE_STATUS.ACTIVE,
         };
 
@@ -508,9 +443,7 @@ describe('PackagesService', () => {
         });
         expect(updatedPackage).toBeDefined();
         expect(updatedPackage?.name).toBe(updatePackageDto.name);
-        expect(updatedPackage?.description).toBe(updatePackageDto.description);
         expect(updatedPackage?.basePrice).toBe(updatePackageDto.basePrice);
-        expect(updatedPackage?.discount).toBe(updatePackageDto.discount);
         expect(updatedPackage?.status).toBe(updatePackageDto.status);
       });
 

@@ -4,6 +4,9 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SignupDto } from './dto/signup.dto';
+import { plainToInstance } from 'class-transformer';
+import { UserResponseDto } from './dto/user-response.dto';
+import { GetUsersDto } from './dto/getUsers.dto';
 
 @Injectable()
 export class UserService {
@@ -31,6 +34,23 @@ export class UserService {
       return await this.userRepository.save(user);
     } catch (error) {
       this.logger.error(error, 'Error creating new user');
+      throw error;
+    }
+  }
+
+  async getUsers(query: GetUsersDto): Promise<UserResponseDto[]> {
+    try {
+      this.logger.log({ query }, 'Getting users');
+      const queryBuilder = this.userRepository.createQueryBuilder('user');
+      if (query.role) {
+        queryBuilder.where('user.role = :role', { role: query.role });
+      }
+      const users = await queryBuilder.getMany();
+      return plainToInstance(UserResponseDto, users, {
+        excludeExtraneousValues: true,
+      });
+    } catch (error) {
+      this.logger.error(error, 'Error getting users');
       throw error;
     }
   }

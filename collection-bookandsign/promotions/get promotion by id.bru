@@ -1,0 +1,21 @@
+meta {
+  name: get promotion by id
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{base_url}}/promotions/{{promotion_id}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

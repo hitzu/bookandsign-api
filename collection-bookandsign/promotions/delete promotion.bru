@@ -1,0 +1,21 @@
+meta {
+  name: delete promotion
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{base_url}}/promotions/{{promotion_id}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

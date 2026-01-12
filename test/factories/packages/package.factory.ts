@@ -1,7 +1,7 @@
 import type { FactorizedAttrs } from '@jorgebodega/typeorm-factory';
-import { DataSource } from 'typeorm';
 import { faker } from '@faker-js/faker';
 import { Factory } from '@jorgebodega/typeorm-factory';
+import type { DataSource } from 'typeorm';
 import { Package } from '../../../src/packages/entities/package.entity';
 import { PACKAGE_STATUS } from '../../../src/packages/types/packages-status.types';
 import { Brand } from '../../../src/brands/entities/brand.entity';
@@ -27,7 +27,7 @@ export class PackageFactory extends Factory<Package> {
         Object.values(PACKAGE_STATUS),
       ),
       // brandId should be provided via makeForBrand or createForBrand methods
-      brandId: 0, // Placeholder, will be overridden
+      brandId: 0, // Placeholder, will be overridden in create() if missing
     };
   }
 
@@ -50,6 +50,17 @@ export class PackageFactory extends Factory<Package> {
     attrs?: Partial<Package>,
   ): Promise<Package> {
     const packageEntity = await this.makeForBrand(brand, attrs);
+    return this.dataSource.getRepository(Package).save(packageEntity);
+  }
+
+  async create(attrs?: Partial<Package>): Promise<Package> {
+    const packageEntity = await this.make(attrs);
+    if (!packageEntity.brandId) {
+      const brandFactory = new BrandFactory(this.dataSource);
+      const brand = await brandFactory.create();
+      packageEntity.brandId = brand.id;
+      packageEntity.brand = brand;
+    }
     return this.dataSource.getRepository(Package).save(packageEntity);
   }
 

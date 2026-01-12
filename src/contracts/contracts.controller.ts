@@ -29,6 +29,7 @@ import { Public } from '../auth/decorators/public.decorator';
 import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
 import { PaymentDto } from '../payments/dto/payment.dto';
 import { PaymentResponseDto } from '../payments/dto/payment-response.dto';
+import { AddContractSlotDto } from './dto/add-contract-slot.dto';
 
 @Controller('contracts')
 @ApiTags('contracts')
@@ -138,5 +139,16 @@ export class ContractsController {
     @AuthUser() user: DecodedTokenDto,
   ): Promise<ContractDetailDto> {
     return await this.contractsService.reopen(Number(id), user.id);
+  }
+
+  @Post(':id/slots')
+  @ApiBody({ type: AddContractSlotDto })
+  @ApiOkResponse({ type: ContractDetailDto })
+  async createContractSlot(
+    @Param('id') id: string,
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: AddContractSlotDto,
+  ): Promise<ContractDetailDto> {
+    return await this.contractsService.addContractSlot(Number(id), dto);
   }
 }

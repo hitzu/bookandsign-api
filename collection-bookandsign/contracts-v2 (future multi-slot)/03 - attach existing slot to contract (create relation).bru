@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{base_url}}/contracts/:contract_id/slots
+  url: {{base_url}}/contracts/12/slots
   body: json
   auth: inherit
 }
@@ -16,8 +16,8 @@ headers {
 
 body:json {
   {
-    "slotId": 1,
-    "purpose": "event"
+    "slotId": 17,
+    "purpose": "trial_makeup"
   }
 }
 
@@ -25,4 +25,3 @@ settings {
   encodeUrl: true
   timeout: 0
 }
-

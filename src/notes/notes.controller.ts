@@ -6,6 +6,7 @@ import {
   ParseEnumPipe,
   ParseIntPipe,
   Post,
+  Query,
   ValidationPipe,
 } from '@nestjs/common';
 import {
@@ -26,6 +27,7 @@ import { CreateNoteDto } from './dto/create-note.dto';
 import { NoteDto } from './dto/note.dto';
 import { NotesService } from './notes.service';
 import { NOTE_SCOPE } from './types/note-scope.types';
+import { NOTE_KIND } from './types/note-kind.types';
 
 @Controller('notes')
 @ApiTags('notes')
@@ -53,8 +55,10 @@ export class NotesController {
   findNotesByTarget(
     @Param('scope', new ParseEnumPipe(NOTE_SCOPE)) scope: NOTE_SCOPE,
     @Param('targetId', ParseIntPipe) targetId: number,
+    @Query('kind', new ParseEnumPipe(NOTE_KIND))
+    kind: NOTE_KIND,
   ) {
-    return this.notesService.findTimelineByTarget(scope, targetId);
+    return this.notesService.findTimelineByTarget(scope, targetId, kind);
   }
 
   @Post()

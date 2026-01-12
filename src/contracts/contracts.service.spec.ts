@@ -8,6 +8,7 @@ import { AppDataSource as TestDataSource } from '../config/database/data-source'
 import { BrandFactory } from '../../test/factories/brands/brands.factories';
 import { PackageFactory } from '../../test/factories/packages/package.factory';
 import { SlotFactory } from '../../test/factories/slots/slot.factory';
+import { UserFactory } from '../../test/factories/user/user.factory';
 import { PaymentsService } from '../payments/payments.service';
 import { ContractsService } from './contracts.service';
 import { AddItemDto } from './dto/add-item.dto';
@@ -15,7 +16,6 @@ import { CreateContractFromSlotsDto } from './dto/create-contract-from-slots.dto
 import { Contract } from './entities/contract.entity';
 import { ContractPackage } from './entities/contract-package.entity';
 import { Payment } from '../payments/entities/payment.entity';
-import { CONTRACT_PACKAGE_SOURCE } from './types/contract-package-source.types';
 import { CONTRACT_STATUS } from './types/contract-status.types';
 import { PAYMENT_METHOD } from './types/payment-method.types';
 import { Package } from '../packages/entities/package.entity';
@@ -23,16 +23,18 @@ import { Slot } from '../slots/entities/slot.entity';
 import { SLOT_PERIOD } from '../slots/types/slot-period.types';
 import { SLOT_STATUS } from '../slots/types/slot-status.types';
 import { User } from '../users/entities/user.entity';
+import { ContractSlot } from './entities/contract-slot.entity';
 
 describe('ContractsService', () => {
   let service: ContractsService;
   let contractsRepo: Repository<Contract>;
-  let slotsRepo: Repository<Slot>;
   let contractPackagesRepo: Repository<ContractPackage>;
   let paymentsRepo: Repository<Payment>;
+  let contractSlotsRepo: Repository<ContractSlot>;
   let packageFactory: PackageFactory;
   let brandFactory: BrandFactory;
   let slotFactory: SlotFactory;
+  let userFactory: UserFactory;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -53,6 +55,10 @@ describe('ContractsService', () => {
           useValue: TestDataSource.getRepository(ContractPackage),
         },
         {
+          provide: getRepositoryToken(ContractSlot),
+          useValue: TestDataSource.getRepository(ContractSlot),
+        },
+        {
           provide: getRepositoryToken(Payment),
           useValue: TestDataSource.getRepository(Payment),
         },
@@ -71,43 +77,60 @@ describe('ContractsService', () => {
     contractsRepo = module.get<Repository<Contract>>(
       getRepositoryToken(Contract),
     );
-    slotsRepo = module.get<Repository<Slot>>(getRepositoryToken(Slot));
     contractPackagesRepo = module.get<Repository<ContractPackage>>(
       getRepositoryToken(ContractPackage),
+    );
+    contractSlotsRepo = module.get<Repository<ContractSlot>>(
+      getRepositoryToken(ContractSlot),
     );
     paymentsRepo = module.get<Repository<Payment>>(getRepositoryToken(Payment));
 
     packageFactory = new PackageFactory(TestDataSource);
     brandFactory = new BrandFactory(TestDataSource);
     slotFactory = new SlotFactory(TestDataSource);
+    userFactory = new UserFactory(TestDataSource);
   });
 
   describe('createContract', () => {
-    it('should create an active contract, save items, and persist totalAmount', async () => {
+    it('should create a confirmed contract, attach the legacy slot relation, create contract_slots link, and persist item snapshots/totals', async () => {
+      const user = await userFactory.create();
       const brand = await brandFactory.create();
       const pkg = await packageFactory.createForBrand(brand, {
         basePrice: 100,
-        discount: 10,
       });
       const slot = await slotFactory.create({
-        status: SLOT_STATUS.HELD,
-        contractId: null,
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
       });
 
       const packages: AddItemDto[] = [{ packageId: pkg.id, quantity: 2 }];
-      const dto: CreateContractFromSlotsDto = { slotId: slot.id, packages };
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        sku: 'SKU-TEST-001',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        subtotal: 0,
+        discountTotal: 0,
+        total: 200,
+        packages,
+      };
 
       const result = await service.createContract(dto);
 
       expect(result.id).toBeDefined();
-      expect(result.status).toBe(CONTRACT_STATUS.ACTIVE);
+      expect(result.status).toBe(CONTRACT_STATUS.CONFIRMED);
+      expect(result.sku).toBe('SKU-TEST-001');
       expect(typeof result.token).toBe('string');
       expect(result.token.length).toBeGreaterThan(0);
 
-      const saved = await contractsRepo.findOne({ where: { id: result.id } });
-      expect(saved).not.toBeNull();
-      const expectedUnitPrice = 100 * (1 - 10 / 100);
-      expect(saved?.totalAmount).toBeCloseTo(expectedUnitPrice * 2);
+      const savedContract = await contractsRepo.findOne({
+        where: { id: result.id },
+        relations: ['slot'],
+      });
+      expect(savedContract).not.toBeNull();
+      expect(savedContract?.slot?.id).toBe(slot.id);
 
       const savedItems = await contractPackagesRepo.find({
         where: { contractId: result.id },
@@ -115,40 +138,97 @@ describe('ContractsService', () => {
       expect(savedItems).toHaveLength(1);
       expect(savedItems[0]?.packageId).toBe(pkg.id);
       expect(savedItems[0]?.quantity).toBe(2);
-      expect(savedItems[0]?.source).toBe(CONTRACT_PACKAGE_SOURCE.PACKAGE);
+      expect(savedItems[0]?.basePriceSnapshot).toBe(100);
 
-      const unchangedSlot = await slotsRepo.findOne({ where: { id: slot.id } });
-      expect(unchangedSlot?.contractId).toBeNull();
-      expect(unchangedSlot?.status).toBe(SLOT_STATUS.HELD);
+      const updatedContract = await contractsRepo.findOne({
+        where: { id: result.id },
+      });
+      expect(updatedContract?.total).toBe(200);
+
+      const link = await contractSlotsRepo.findOne({
+        where: { contractId: result.id, slotId: slot.id },
+      });
+      expect(link).toBeDefined();
     });
 
-    it('should throw if slot is not found', async () => {
-      const dto: CreateContractFromSlotsDto = { slotId: 999999, packages: [] };
+    it('should throw NotFoundException if slot is not found', async () => {
+      const user = await userFactory.create();
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: 999999,
+        sku: 'SKU-TEST-002',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        subtotal: 0,
+        discountTotal: 0,
+        total: 0,
+        packages: [],
+      };
       await expect(service.createContract(dto)).rejects.toBeInstanceOf(
         NotFoundException,
       );
     });
 
-    it('should throw if slot is not held', async () => {
+    it('should throw ConflictException if slot is available (not held/reserved)', async () => {
+      const user = await userFactory.create();
       const slot = await slotFactory.create({
-        status: SLOT_STATUS.BOOKED,
-        contractId: null,
+        status: SLOT_STATUS.AVAILABLE,
+        period: SLOT_PERIOD.AM_BLOCK,
       });
-      const dto: CreateContractFromSlotsDto = { slotId: slot.id, packages: [] };
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        sku: 'SKU-TEST-003',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        subtotal: 0,
+        discountTotal: 0,
+        total: 0,
+        packages: [],
+      };
       await expect(service.createContract(dto)).rejects.toBeInstanceOf(
         ConflictException,
       );
     });
 
-    it('should throw if slot is already booked (has contractId)', async () => {
+    it('should throw ConflictException if slot is already used by another contract', async () => {
+      const user = await userFactory.create();
       const slot = await slotFactory.create({
-        status: SLOT_STATUS.HELD,
-        contractId: 123,
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
       });
-      const dto: CreateContractFromSlotsDto = { slotId: slot.id, packages: [] };
-      await expect(service.createContract(dto)).rejects.toBeInstanceOf(
-        ConflictException,
-      );
+
+      const first = await service.createContract({
+        userId: user.id,
+        slotId: slot.id,
+        sku: 'SKU-TEST-004',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        subtotal: 0,
+        discountTotal: 0,
+        total: 0,
+        packages: [],
+      });
+
+      expect(first.id).toBeDefined();
+
+      await expect(
+        service.createContract({
+          userId: user.id,
+          slotId: slot.id,
+          sku: 'SKU-TEST-005',
+          clientName: 'Ana',
+          clientPhone: null,
+          clientEmail: null,
+          subtotal: 0,
+          discountTotal: 0,
+          total: 0,
+          packages: [],
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
     });
   });
 
@@ -159,39 +239,33 @@ describe('ContractsService', () => {
       );
     });
 
-    it('should return contract, slots, items, payments, and paidAmount', async () => {
+    it('should return contract, legacy slot, packages, payments, and paidAmount', async () => {
+      const user = await userFactory.create();
+      const slot = await slotFactory.create({
+        eventDate: '2030-01-01',
+        period: SLOT_PERIOD.AM_BLOCK,
+        status: SLOT_STATUS.RESERVED,
+      });
+
       const contract = await contractsRepo.save(
         contractsRepo.create({
-          status: CONTRACT_STATUS.ACTIVE,
-          totalAmount: 0,
+          userId: user.id,
+          sku: 'SKU-DETAIL-001',
           token: 'test-token',
+          status: CONTRACT_STATUS.CONFIRMED,
+          slot,
         }),
       );
 
-      const slot1 = await slotFactory.create({
-        eventDate: '2030-01-01',
-        period: SLOT_PERIOD.MORNING,
-        status: SLOT_STATUS.BOOKED,
-        contractId: contract.id,
-      });
-      const slot2 = await slotFactory.create({
-        eventDate: '2030-01-02',
-        period: SLOT_PERIOD.MORNING,
-        status: SLOT_STATUS.BOOKED,
-        contractId: contract.id,
-      });
-
       const brand = await brandFactory.create();
-      const pkg = await packageFactory.createForBrand(brand, {
-        basePrice: 50,
-        discount: 0,
-      });
+      const pkg = await packageFactory.createForBrand(brand, { basePrice: 50 });
       await contractPackagesRepo.save(
         contractPackagesRepo.create({
           contractId: contract.id,
           packageId: pkg.id,
           quantity: 3,
-          source: CONTRACT_PACKAGE_SOURCE.PACKAGE,
+          nameSnapshot: pkg.name,
+          basePriceSnapshot: 50,
         }),
       );
 
@@ -199,34 +273,30 @@ describe('ContractsService', () => {
         paymentsRepo.create({
           contractId: contract.id,
           amount: 40,
-          method: PAYMENT_METHOD.CASH,
           receivedAt: new Date('2030-01-01T10:00:00.000Z'),
           note: null,
+          reference: null,
+          method: PAYMENT_METHOD.CASH,
         }),
       );
       const payment2 = await paymentsRepo.save(
         paymentsRepo.create({
           contractId: contract.id,
           amount: 60,
-          method: PAYMENT_METHOD.CARD,
           receivedAt: new Date('2030-01-01T11:00:00.000Z'),
           note: 'partial',
+          reference: 'ref',
+          method: PAYMENT_METHOD.CARD,
         }),
       );
 
       const detail = await service.getDetail(contract.id);
 
       expect(detail.contract.id).toBe(contract.id);
-      expect(detail.contract.status).toBe(CONTRACT_STATUS.ACTIVE);
+      expect(detail.contract.status).toBe(CONTRACT_STATUS.CONFIRMED);
       expect(detail.contract.token).toBe('test-token');
 
-      const slotIds = detail.slots.map((s) => s.id).sort((a, b) => a - b);
-      expect(slotIds).toEqual([slot1.id, slot2.id].sort((a, b) => a - b));
-
-      expect(detail.items).toHaveLength(1);
-      expect(detail.items[0]?.contractId).toBe(contract.id);
-      expect(detail.items[0]?.packageId).toBe(pkg.id);
-      expect(detail.items[0]?.quantity).toBe(3);
+      expect(detail.slot.id).toBe(slot.id);
 
       const paymentIds = detail.payments.map((p) => p.id).sort((a, b) => a - b);
       expect(paymentIds).toEqual(

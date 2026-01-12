@@ -62,5 +62,3 @@ Before writing any test logic:
 {Ask up to 3 clarification questions if needed}
 
 ---
-
-**Important!** Only start the test implementation once the user has agreed to start. Refer to `@domain-service-test.mdc` for test setup conventions.

@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: {{base_url}}/notes/contract/123
+  url: {{base_url}}/notes/contract/17?kind=public
   body: json
   auth: inherit
+}
+
+params:query {
+  kind: public
 }
 
 headers {
@@ -18,5 +22,3 @@ settings {
   encodeUrl: true
   timeout: 0
 }
-
-

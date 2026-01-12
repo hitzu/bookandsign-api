@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: {{base_url}}/slots?date=:event_date
+  url: {{base_url}}/slots?date=2026-01-15
   body: json
   auth: inherit
+}
+
+params:query {
+  date: 2026-01-15
 }
 
 headers {
@@ -18,4 +22,3 @@ settings {
   encodeUrl: true
   timeout: 0
 }
-

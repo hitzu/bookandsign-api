@@ -5,14 +5,13 @@ meta {
 }
 
 get {
-  url: {{base_url}}/terms?scope=package&q=NO in
+  url: {{base_url}}/terms?scope=global
   body: json
   auth: inherit
 }
 
 params:query {
-  scope: package
-  q: NO in
+  scope: global
 }
 
 headers {
