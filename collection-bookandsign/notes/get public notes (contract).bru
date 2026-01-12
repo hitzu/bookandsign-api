@@ -1,0 +1,24 @@
+meta {
+  name: get public notes (contract)
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{base_url}}/notes/contract/17?kind=public
+  body: json
+  auth: inherit
+}
+
+params:query {
+  kind: public
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

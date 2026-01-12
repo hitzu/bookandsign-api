@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{base_url}}/promotions/{{promotion_id}}/packages/bulk
+  url: {{base_url}}/promotions/1/packages/bulk
   body: json
   auth: inherit
 }
@@ -16,7 +16,7 @@ headers {
 
 body:json {
   {
-    "packageIds": [{{package_id}}]
+    "packageIds": []
   }
 }
 
@@ -24,4 +24,3 @@ settings {
   encodeUrl: true
   timeout: 0
 }
-

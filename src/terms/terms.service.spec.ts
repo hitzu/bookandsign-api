@@ -16,7 +16,7 @@ import { RemovePackageTermDto } from './dto/remove-package-term.dto';
 import { BulkUpsertPackageTermsDto } from './dto/bulk-upsert-package-terms.dto';
 import { FindAllTermsQueryDto } from './dto/find-all-terms-query.dto';
 import { TERM_SCOPE } from './types/term-scope.types';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 
 describe('TermsService', () => {
@@ -538,6 +538,71 @@ describe('TermsService', () => {
           where: { termId: term.id },
         });
         expect(associations.length).toBe(10);
+      });
+    });
+  });
+
+  describe('findAllPublic', () => {
+    describe('GLOBAL scope', () => {
+      it('should return global terms', async () => {
+        const globalTerm = await termFactory.create({
+          scope: TERM_SCOPE.GLOBAL,
+        });
+        await termFactory.create({
+          scope: TERM_SCOPE.PACKAGE,
+        });
+
+        const result = await service.findAllPublic({
+          scope: TERM_SCOPE.GLOBAL,
+        });
+
+        expect(result.every((t) => t.scope === TERM_SCOPE.GLOBAL)).toBe(true);
+        expect(result.some((t) => t.id === globalTerm.id)).toBe(true);
+      });
+    });
+
+    describe('PACKAGE scope', () => {
+      it('should require packageId when scope is package', async () => {
+        await expect(
+          service.findAllPublic({ scope: TERM_SCOPE.PACKAGE }),
+        ).rejects.toThrow(BadRequestException);
+
+        await expect(
+          service.findAllPublic({ scope: TERM_SCOPE.PACKAGE }),
+        ).rejects.toThrow(EXCEPTION_RESPONSE.PACKAGE_ID_REQUIRED.message);
+      });
+
+      it('should return terms associated with a package', async () => {
+        const brand = await brandFactory.create();
+        const package1 = await packageFactory.createForBrand(brand);
+        const package2 = await packageFactory.createForBrand(brand);
+
+        const term1 = await termFactory.create({
+          scope: TERM_SCOPE.PACKAGE,
+        });
+        const term2 = await termFactory.create({
+          scope: TERM_SCOPE.PACKAGE,
+        });
+        const termOtherPackage = await termFactory.create({
+          scope: TERM_SCOPE.PACKAGE,
+        });
+
+        await packageTermFactory.createForPackageAndTerm(package1, term1);
+        await packageTermFactory.createForPackageAndTerm(package1, term2);
+        await packageTermFactory.createForPackageAndTerm(
+          package2,
+          termOtherPackage,
+        );
+
+        const result = await service.findAllPublic({
+          scope: TERM_SCOPE.PACKAGE,
+          packageId: package1.id,
+        });
+
+        const resultIds = result.map((t) => t.id);
+        expect(resultIds).toContain(term1.id);
+        expect(resultIds).toContain(term2.id);
+        expect(resultIds).not.toContain(termOtherPackage.id);
       });
     });
   });

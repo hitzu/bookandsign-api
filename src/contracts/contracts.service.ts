@@ -123,6 +123,7 @@ export class ContractsService {
           contractId,
           packageId: packageInfo.packageId,
           quantity: packageInfo.quantity,
+          promotionId: packageInfo.promotionId,
           nameSnapshot: pkg.name,
           basePriceSnapshot: pkg.basePrice || 0,
         });
@@ -309,6 +310,7 @@ export class ContractsService {
           'package',
           'package.packageProducts',
           'package.packageProducts.product',
+          'promotion',
         ],
       }),
       this.paymentsService.listPaymentsByContract(contractId),

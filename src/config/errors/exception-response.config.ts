@@ -15,6 +15,7 @@ enum ErrorMessages {
   JWT_SECRET_NOT_FOUND = 'JWT_SECRET_NOT_FOUND',
   PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND',
   PACKAGE_NOT_FOUND = 'PACKAGE_NOT_FOUND',
+  PACKAGE_ID_REQUIRED = 'PACKAGE_ID_REQUIRED',
   TERM_NOT_FOUND = 'TERM_NOT_FOUND',
   PACKAGE_TERM_NOT_FOUND = 'PACKAGE_TERM_NOT_FOUND',
   TERM_CODE_ALREADY_EXISTS = 'TERM_CODE_ALREADY_EXISTS',
@@ -96,6 +97,10 @@ export const EXCEPTION_RESPONSE: Record<
   [ErrorMessages.PACKAGE_NOT_FOUND]: {
     code: 17,
     message: 'package not found',
+  },
+  [ErrorMessages.PACKAGE_ID_REQUIRED]: {
+    code: 28,
+    message: 'packageId is required when scope is package',
   },
   [ErrorMessages.TERM_NOT_FOUND]: {
     code: 18,

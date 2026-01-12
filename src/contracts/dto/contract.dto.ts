@@ -1,5 +1,11 @@
 import { Expose } from 'class-transformer';
-import { IsEmail, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 import { CONTRACT_STATUS } from '../types/contract-status.types';
 
@@ -58,4 +64,8 @@ export class ContractDto {
   @Expose()
   @IsString()
   token!: string;
+
+  @Expose()
+  @IsString()
+  createdAt!: string;
 }

@@ -3,6 +3,7 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { Contract } from './contract.entity';
 import { Package } from '../../packages/entities/package.entity';
+import { Promotion } from '../../promotions/entities/promotion.entity';
 
 @Entity('contract_packages')
 export class ContractPackage extends BaseTimeEntity {
@@ -11,6 +12,9 @@ export class ContractPackage extends BaseTimeEntity {
 
   @Column('integer', { name: 'package_id' })
   packageId!: number;
+
+  @Column('integer', { name: 'promotion_id', nullable: true })
+  promotionId: number | null = null;
 
   /**
    * Snapshot fields: these represent the package state at the moment the contract is created.
@@ -37,4 +41,8 @@ export class ContractPackage extends BaseTimeEntity {
   @ManyToOne(() => Package, { nullable: true })
   @JoinColumn({ name: 'package_id' })
   package?: Package | null;
+
+  @ManyToOne(() => Promotion, { nullable: true })
+  @JoinColumn({ name: 'promotion_id' })
+  promotion?: Promotion | null;
 }

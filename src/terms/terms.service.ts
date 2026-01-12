@@ -234,4 +234,43 @@ export class TermsService {
       throw error;
     }
   }
+
+  async findAllPublic({
+    scope,
+    packageId,
+  }: {
+    scope: TERM_SCOPE;
+    packageId?: number;
+  }): Promise<TermDto[]> {
+    try {
+      this.logger.log({ scope, packageId }, 'Finding all terms');
+
+      if (scope === TERM_SCOPE.PACKAGE) {
+        if (!packageId) {
+          throw new BadRequestException(EXCEPTION_RESPONSE.PACKAGE_ID_REQUIRED);
+        }
+
+        const terms = await this.termsRepository
+          .createQueryBuilder('term')
+          .innerJoin(
+            'term.packageTerms',
+            'packageTerm',
+            'packageTerm.packageId = :packageId',
+            { packageId },
+          )
+          .where('term.scope = :scope', { scope })
+          .getMany();
+
+        return plainToInstance(TermDto, terms, {
+          excludeExtraneousValues: true,
+        });
+      }
+
+      const terms = await this.termsRepository.find({ where: { scope } });
+      return plainToInstance(TermDto, terms, { excludeExtraneousValues: true });
+    } catch (error) {
+      this.logger.error(error, 'Error finding all terms');
+      throw error;
+    }
+  }
 }

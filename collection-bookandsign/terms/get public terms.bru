@@ -1,13 +1,17 @@
 meta {
-  name: create note (contract)
+  name: get public terms
   type: http
-  seq: 8
+  seq: 7
 }
 
-post {
-  url: {{base_url}}/notes
+get {
+  url: {{base_url}}/terms?scope=global
   body: json
   auth: inherit
+}
+
+params:query {
+  scope: global
 }
 
 headers {
@@ -16,10 +20,7 @@ headers {
 
 body:json {
   {
-    "scope": "contract",
-    "targetId": 17,
-    "kind": "public",
-    "content": "otra nota"
+    "packagesId": [2,3,4,5]
   }
 }
 
