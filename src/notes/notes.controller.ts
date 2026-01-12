@@ -28,6 +28,7 @@ import { NoteDto } from './dto/note.dto';
 import { NotesService } from './notes.service';
 import { NOTE_SCOPE } from './types/note-scope.types';
 import { NOTE_KIND } from './types/note-kind.types';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('notes')
 @ApiTags('notes')
@@ -59,6 +60,35 @@ export class NotesController {
     kind: NOTE_KIND,
   ) {
     return this.notesService.findTimelineByTarget(scope, targetId, kind);
+  }
+
+  @Public()
+  @Get('public/:scope/:targetId')
+  @ApiOperation({ summary: 'List notes for a target' })
+  @ApiParam({
+    name: 'scope',
+    type: String,
+    enum: NOTE_SCOPE,
+    description: 'Scope',
+  })
+  @ApiParam({ name: 'targetId', type: Number, description: 'Target id' })
+  @ApiOkResponse({
+    description: 'Notes for the target (ascending by createdAt)',
+    type: NoteDto,
+    isArray: true,
+  })
+  @ApiNotFoundResponse({
+    description: EXCEPTION_RESPONSE.SLOT_NOT_FOUND.message,
+  })
+  findPublicNotesByTarget(
+    @Param('scope', new ParseEnumPipe(NOTE_SCOPE)) scope: NOTE_SCOPE,
+    @Param('targetId', ParseIntPipe) targetId: number,
+  ) {
+    return this.notesService.findTimelineByTarget(
+      scope,
+      targetId,
+      NOTE_KIND.PUBLIC,
+    );
   }
 
   @Post()

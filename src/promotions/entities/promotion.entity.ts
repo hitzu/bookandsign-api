@@ -3,6 +3,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { Brand } from '../../brands/entities/brand.entity';
 import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { PromotionPackage } from './promotion-package.entity';
+import { ContractPackage } from '../../contracts/entities/contract-package.entity';
 
 export enum PROMOTION_TYPE {
   PERCENTAGE = 'percentage',
@@ -52,4 +53,10 @@ export class Promotion extends BaseTimeEntity {
     (promotionPackage) => promotionPackage.promotion,
   )
   promotionPackages?: PromotionPackage[];
+
+  @OneToMany(
+    () => ContractPackage,
+    (contractPackage) => contractPackage.promotion,
+  )
+  contractPackages?: ContractPackage[];
 }

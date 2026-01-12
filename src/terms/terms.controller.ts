@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseEnumPipe,
   Patch,
   Post,
   Query,
@@ -29,6 +30,8 @@ import { BulkUpsertPackageTermsDto } from './dto/bulk-upsert-package-terms.dto';
 import { FindAllTermsQueryDto } from './dto/find-all-terms-query.dto';
 import { Term } from './entities/term.entity';
 import { TermDto } from './dto/term.dto';
+import { Public } from '../auth/decorators/public.decorator';
+import { TERM_SCOPE } from './types/term-scope.types';
 
 @Controller('terms')
 @ApiTags('terms')
@@ -148,5 +151,30 @@ export class TermsController {
   })
   findByPackage(@Param('packageId') packageId: string) {
     return this.termsService.findByPackage(+packageId);
+  }
+
+  @Public()
+  @Get('public/:scope')
+  @ApiOperation({ summary: 'Get terms associated with a scope' })
+  @ApiParam({ name: 'scope', type: String, description: 'Scope' })
+  @ApiQuery({
+    name: 'packageId',
+    type: Number,
+    description: 'Package id',
+    required: false,
+  })
+  @ApiOkResponse({
+    description: 'Terms found successfully',
+    type: Term,
+    isArray: true,
+  })
+  findAllPublic(
+    @Param('scope', new ParseEnumPipe(TERM_SCOPE)) scope: TERM_SCOPE,
+    @Query('packageId') packageId?: string,
+  ) {
+    return this.termsService.findAllPublic({
+      scope,
+      packageId: packageId ? Number(packageId) : undefined,
+    });
   }
 }

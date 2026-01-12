@@ -1,4 +1,4 @@
-import { IsNumber } from 'class-validator';
+import { IsNumber, IsOptional } from 'class-validator';
 
 export class AddItemDto {
   @IsNumber()
@@ -6,4 +6,8 @@ export class AddItemDto {
 
   @IsNumber()
   quantity!: number;
+
+  @IsNumber()
+  @IsOptional()
+  promotionId?: number;
 }
