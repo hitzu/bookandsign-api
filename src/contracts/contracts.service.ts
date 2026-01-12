@@ -19,12 +19,14 @@ import { UpdateItemDto } from './dto/update-item.dto';
 import { CONTRACT_STATUS } from './types/contract-status.types';
 import { ContractPackage } from './entities/contract-package.entity';
 import { Slot } from '../slots/entities/slot.entity';
+import { SLOT_STATUS } from '../slots/types/slot-status.types';
 import { randomUUID } from 'crypto';
 import { ContractDto } from './dto/contract.dto';
 import { PaymentDto } from 'src/payments/dto/payment.dto';
 import { ContractSlot } from './entities/contract-slot.entity';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { CONTRACT_SLOT_PURPOSE } from './constants/slot_purpose.enum';
+import { AddContractSlotDto } from './dto/add-contract-slot.dto';
 
 @Injectable()
 export class ContractsService {
@@ -66,6 +68,16 @@ export class ContractsService {
       throw new ConflictException(EXCEPTION_RESPONSE.SLOT_ALREADY_USED);
     }
 
+    const slot = await this.slotsRepository.findOne({
+      where: { id: dto.slotId },
+    });
+    if (!slot) {
+      throw new NotFoundException(EXCEPTION_RESPONSE.SLOT_NOT_FOUND);
+    }
+    if (slot.status !== SLOT_STATUS.RESERVED) {
+      throw new ConflictException(EXCEPTION_RESPONSE.SLOT_NOT_AVAILABLE);
+    }
+
     const contract = this.contractsRepository.create({
       userId: dto.userId,
       clientName: dto.clientName,
@@ -77,12 +89,11 @@ export class ContractsService {
       sku: dto.sku,
       token: randomUUID(),
       status: CONTRACT_STATUS.CONFIRMED,
+      slot,
     });
     const savedContract = await this.contractsRepository.save(contract);
 
     await this.setItems(savedContract.id, dto.packages);
-
-    await this.recalculateTotals(savedContract.id);
 
     const contractSlot = this.contractSlotsRepository.create({
       contractId: savedContract.id,
@@ -113,7 +124,7 @@ export class ContractsService {
           packageId: packageInfo.packageId,
           quantity: packageInfo.quantity,
           nameSnapshot: pkg.name,
-          basePriceSnapshot: pkg.basePrice ?? 0,
+          basePriceSnapshot: pkg.basePrice || 0,
         });
         await this.contractPackagesRepository.save(itemToSave);
       }),
@@ -207,7 +218,7 @@ export class ContractsService {
   async getDetail(contractId: number): Promise<ContractDetailDto> {
     const contract = await this.contractsRepository.findOne({
       where: { id: contractId },
-      relations: ['slot'],
+      relations: ['slot', 'contractSlots', 'contractSlots.slot'],
     });
     if (!contract) {
       throw new NotFoundException('Contract not found');
@@ -221,7 +232,14 @@ export class ContractsService {
     ]);
     return plainToInstance(
       ContractDetailDto,
-      { contract, slot: contract.slot, items, payments, paidAmount },
+      {
+        contract,
+        slot: contract.slot,
+        contractSlots: contract.contractSlots,
+        items,
+        payments,
+        paidAmount,
+      },
       { excludeExtraneousValues: true },
     );
   }
@@ -276,7 +294,7 @@ export class ContractsService {
   async getDetailByToken(token: string): Promise<ContractDetailDto> {
     const contract = await this.contractsRepository.findOne({
       where: { token },
-      relations: ['slot'],
+      relations: ['slot', 'contractSlots', 'contractSlots.slot'],
     });
     if (!contract) {
       throw new NotFoundException('Contract not found');
@@ -284,9 +302,14 @@ export class ContractsService {
 
     const contractId = contract.id;
 
-    const [items, payments, paidAmount] = await Promise.all([
+    const [packages, payments, paidAmount] = await Promise.all([
       this.contractPackagesRepository.find({
         where: { contractId },
+        relations: [
+          'package',
+          'package.packageProducts',
+          'package.packageProducts.product',
+        ],
       }),
       this.paymentsService.listPaymentsByContract(contractId),
       this.sumPayments(contractId),
@@ -294,8 +317,33 @@ export class ContractsService {
 
     return plainToInstance(
       ContractDetailDto,
-      { contract, slot: contract.slot, items, payments, paidAmount },
+      {
+        contract,
+        contractSlots: contract.contractSlots,
+        packages,
+        payments,
+        paidAmount,
+      },
       { excludeExtraneousValues: true },
     );
+  }
+
+  async addContractSlot(
+    contractId: number,
+    dto: AddContractSlotDto,
+  ): Promise<ContractDetailDto> {
+    const contract = await this.contractsRepository.findOne({
+      where: { id: contractId },
+    });
+    if (!contract) {
+      throw new NotFoundException('Contract not found');
+    }
+    const contractSlot = this.contractSlotsRepository.create({
+      contractId,
+      slotId: dto.slotId,
+      purpose: dto.purpose,
+    });
+    await this.contractSlotsRepository.save(contractSlot);
+    return await this.getDetail(contractId);
   }
 }

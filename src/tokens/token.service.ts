@@ -42,7 +42,9 @@ export class TokenService {
     };
 
     try {
-      return this.jwtService.signAsync(payload, { expiresIn: `${expiresIn}d` });
+      return await this.jwtService.signAsync(payload, {
+        expiresIn: `${expiresIn}d`,
+      });
     } catch (error) {
       this.logger.error(error, 'Error generating JWT token');
       throw new InternalServerErrorException(

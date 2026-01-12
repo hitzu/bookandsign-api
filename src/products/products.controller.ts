@@ -35,11 +35,6 @@ export class ProductsController {
     return this.productsService.findAll();
   }
 
-  @Get('statuses')
-  findProductsStatus() {
-    return this.productsService.findProductsStatus();
-  }
-
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(+id);

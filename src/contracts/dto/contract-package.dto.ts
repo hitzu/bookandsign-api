@@ -1,5 +1,6 @@
 import { Expose, Type } from 'class-transformer';
 import { IsNumber, IsString } from 'class-validator';
+import { PackageResponseDto } from '../../packages/dto/package-response.dto';
 
 export class ContractPackageDto {
   @Expose()
@@ -25,4 +26,8 @@ export class ContractPackageDto {
   @Expose()
   @IsNumber()
   basePriceSnapshot!: number;
+
+  @Expose()
+  @Type(() => PackageResponseDto)
+  package!: PackageResponseDto;
 }

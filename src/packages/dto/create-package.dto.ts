@@ -14,15 +14,7 @@ export class CreatePackageDto {
 
   @IsString()
   @IsNotEmpty()
-  code!: string;
-
-  @IsString()
-  @IsNotEmpty()
   name!: string;
-
-  @IsString()
-  @IsOptional()
-  description: string | null = null;
 
   @IsNumber()
   @IsOptional()

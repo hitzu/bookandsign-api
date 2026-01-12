@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AppDataSource as TestDataSource } from '../config/database/data-source';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
+import { ContractSlot } from '../contracts/entities/contract-slot.entity';
 import { Note } from '../notes/entities/note.entity';
 import { NOTE_SCOPE } from '../notes/types/note-scope.types';
 import { SlotFactory } from '../../test/factories/slots/slot.factory';
@@ -20,6 +21,7 @@ describe('SlotsService', () => {
   let service: SlotsService;
   let slotsRepository: Repository<Slot>;
   let notesRepository: Repository<Note>;
+  let contractSlotsRepository: Repository<ContractSlot>;
   let slotFactory: SlotFactory;
   let userFactory: UserFactory;
   let contractFactory: ContractFactory;
@@ -33,6 +35,10 @@ describe('SlotsService', () => {
           useValue: TestDataSource.getRepository(Slot),
         },
         {
+          provide: getRepositoryToken(ContractSlot),
+          useValue: TestDataSource.getRepository(ContractSlot),
+        },
+        {
           provide: getRepositoryToken(Note),
           useValue: TestDataSource.getRepository(Note),
         },
@@ -42,6 +48,9 @@ describe('SlotsService', () => {
     service = module.get<SlotsService>(SlotsService);
     slotsRepository = module.get<Repository<Slot>>(getRepositoryToken(Slot));
     notesRepository = module.get<Repository<Note>>(getRepositoryToken(Note));
+    contractSlotsRepository = module.get<Repository<ContractSlot>>(
+      getRepositoryToken(ContractSlot),
+    );
     slotFactory = new SlotFactory(TestDataSource);
     userFactory = new UserFactory(TestDataSource);
     contractFactory = new ContractFactory(TestDataSource);
@@ -63,40 +72,30 @@ describe('SlotsService', () => {
       await slotFactory.create({
         eventDate: date,
         period: SLOT_PERIOD.PM_BLOCK,
+        status: SLOT_STATUS.RESERVED,
       });
       const result = await service.getAvailabilityByDate(date);
       const afternoon = result.find((r) => r.period === SLOT_PERIOD.PM_BLOCK);
       expect(afternoon?.available).toBe(false);
-      expect(afternoon?.slot?.status).toBe(SLOT_STATUS.HELD);
+      expect(afternoon?.slot?.status).toBe(SLOT_STATUS.RESERVED);
     });
   });
 
   describe('hold', () => {
     it('should create a held slot', async () => {
-      const user = await userFactory.create();
       const dto: HoldSlotDto = {
         eventDate: '2025-12-25',
         period: SLOT_PERIOD.AM_BLOCK,
-        authorId: user.id,
-        leadName: 'Ana',
-        leadEmail: 'ana@email.com',
-        leadPhone: '222110149',
       };
       const result = await service.hold(dto);
       expect(result.id).toBeDefined();
-      expect(result.status).toBe(SLOT_STATUS.HELD);
-      expect(result.contractId).toBeNull();
+      expect(result.status).toBe(SLOT_STATUS.RESERVED);
     });
 
     it('should not create notes as a side effect (notes are handled separately)', async () => {
-      const user = await userFactory.create();
       const dto: HoldSlotDto = {
         eventDate: '2025-12-25',
         period: SLOT_PERIOD.AM_BLOCK,
-        authorId: user.id,
-        leadName: 'Ana',
-        leadEmail: null,
-        leadPhone: null,
       };
       const slot = await service.hold(dto);
 
@@ -110,14 +109,9 @@ describe('SlotsService', () => {
     });
 
     it('should throw ConflictException when date/period is already taken', async () => {
-      const user = await userFactory.create();
       const dto: HoldSlotDto = {
         eventDate: '2025-12-25',
         period: SLOT_PERIOD.AM_BLOCK,
-        authorId: user.id,
-        leadName: 'Ana',
-        leadEmail: null,
-        leadPhone: null,
       };
       await service.hold(dto);
       await expect(service.hold(dto)).rejects.toBeInstanceOf(ConflictException);
@@ -125,16 +119,19 @@ describe('SlotsService', () => {
   });
 
   describe('book', () => {
-    it('should book a held slot', async () => {
+    it('should link a slot to a contract via contract_slots', async () => {
       const slot = await slotFactory.create({
-        status: SLOT_STATUS.HELD,
-        contractId: null,
+        status: SLOT_STATUS.RESERVED,
       });
       const contract = await contractFactory.create();
       const dto: BookSlotDto = { contractId: contract.id };
       const result = await service.book(slot.id, dto);
-      expect(result.status).toBe(SLOT_STATUS.BOOKED);
-      expect(result.contractId).toBe(contract.id);
+      expect(result.status).toBe(SLOT_STATUS.RESERVED);
+
+      const link = await contractSlotsRepository.findOne({
+        where: { contractId: contract.id, slotId: slot.id },
+      });
+      expect(link).toBeDefined();
     });
 
     it('should throw NotFoundException when slot does not exist', async () => {
@@ -154,10 +151,14 @@ describe('SlotsService', () => {
     });
 
     it('should throw ConflictException when slot is attached to a contract', async () => {
-      const slot = await slotFactory.create({
-        status: SLOT_STATUS.BOOKED,
-        contractId: 123,
-      });
+      const slot = await slotFactory.create({ status: SLOT_STATUS.RESERVED });
+      const contract = await contractFactory.create();
+      await contractSlotsRepository.save(
+        contractSlotsRepository.create({
+          slotId: slot.id,
+          contractId: contract.id,
+        }),
+      );
       await expect(service.cancel(slot.id)).rejects.toBeInstanceOf(
         ConflictException,
       );
@@ -170,14 +171,9 @@ describe('SlotsService', () => {
     });
 
     it('should allow re-hold after cancel for same date/period', async () => {
-      const user = await userFactory.create();
       const dto: HoldSlotDto = {
         eventDate: '2025-12-25',
         period: SLOT_PERIOD.AM_BLOCK,
-        authorId: user.id,
-        leadName: 'Ana',
-        leadEmail: null,
-        leadPhone: null,
       };
       const slot = await service.hold(dto);
       await service.cancel(slot.id);
@@ -188,22 +184,33 @@ describe('SlotsService', () => {
 
   describe('findActiveByContractId', () => {
     it('should return active slots by contract id', async () => {
-      const contractId = 777;
-      await slotFactory.create({ contractId, status: SLOT_STATUS.BOOKED });
-      await slotFactory.create({ contractId: null, status: SLOT_STATUS.HELD });
+      const contract = await contractFactory.create();
+      const slot = await slotFactory.create({ status: SLOT_STATUS.RESERVED });
+      await contractSlotsRepository.save(
+        contractSlotsRepository.create({
+          contractId: contract.id,
+          slotId: slot.id,
+        }),
+      );
+      await slotFactory.create({ status: SLOT_STATUS.RESERVED });
+
+      const contractId = contract.id;
       const result = await service.findActiveByContractId(contractId);
       expect(result).toHaveLength(1);
-      expect(result[0]?.contractId).toBe(contractId);
+      expect(result[0]?.id).toBe(slot.id);
     });
 
     it('should not include cancelled (soft-deleted) slots', async () => {
-      const contractId = 888;
-      const slot = await slotFactory.create({
-        contractId,
-        status: SLOT_STATUS.BOOKED,
-      });
-      await slotsRepository.softDelete(slot.id);
-      const result = await service.findActiveByContractId(contractId);
+      const contract = await contractFactory.create();
+      const slot = await slotFactory.create({ status: SLOT_STATUS.RESERVED });
+      await contractSlotsRepository.save(
+        contractSlotsRepository.create({
+          contractId: contract.id,
+          slotId: slot.id,
+        }),
+      );
+      await slotsRepository.softDelete(slot.id); // should hide it from slot relation
+      const result = await service.findActiveByContractId(contract.id);
       expect(result).toHaveLength(0);
     });
 

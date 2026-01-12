@@ -1,0 +1,32 @@
+meta {
+  name: create promotion
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/promotions
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "brandId": 2,
+    "name": "10% descuento para makeup",
+    "type": "percentage",
+    "value": 10,
+    "status": "active",
+    "validFrom": null,
+    "validUntil": null
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -65,6 +66,8 @@ describe('TokenService', () => {
       it('should generate tokens with correct payload structure', async () => {
         // Arrange
         const user = await userFactory.create();
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
         const signAsyncSpy = jest
           .spyOn(jwtService, 'signAsync')
           .mockResolvedValueOnce('access-token')
@@ -77,23 +80,25 @@ describe('TokenService', () => {
         // Verify first call (access token)
         expect(signAsyncSpy).toHaveBeenNthCalledWith(
           1,
-          {
+          expect.objectContaining({
             sub: user.id,
             email: user.email,
             type: TOKEN_TYPE.ACCESS,
             id: user.id,
-          },
+            jti: expect.stringMatching(uuidRegex),
+          }),
           { expiresIn: '60d' },
         );
         // Verify second call (refresh token)
         expect(signAsyncSpy).toHaveBeenNthCalledWith(
           2,
-          {
+          expect.objectContaining({
             sub: user.id,
             email: user.email,
             type: TOKEN_TYPE.REFRESH,
             id: user.id,
-          },
+            jti: expect.stringMatching(uuidRegex),
+          }),
           { expiresIn: '365d' },
         );
       });
@@ -107,15 +112,18 @@ describe('TokenService', () => {
           .mockResolvedValueOnce('refresh-token-persisted');
 
         // Act
-        await service.generateAuthTokens(user);
+        const result = await service.generateAuthTokens(user);
 
         // Assert
+        expect(result.accessToken).toBe('access-token-persisted');
         const accessToken = await tokenRepository.findOne({
           where: { user: { id: user.id }, type: TOKEN_TYPE.ACCESS },
           relations: ['user'],
         });
         expect(accessToken).toBeDefined();
-        expect(accessToken?.token).toBe('access-token-persisted');
+        expect(accessToken?.token).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        );
         expect(accessToken?.type).toBe(TOKEN_TYPE.ACCESS);
         expect(accessToken?.user?.id).toBe(user.id);
       });
@@ -129,15 +137,18 @@ describe('TokenService', () => {
           .mockResolvedValueOnce('refresh-token-persisted');
 
         // Act
-        await service.generateAuthTokens(user);
+        const result = await service.generateAuthTokens(user);
 
         // Assert
+        expect(result.refreshToken).toBe('refresh-token-persisted');
         const refreshToken = await tokenRepository.findOne({
           where: { user: { id: user.id }, type: TOKEN_TYPE.REFRESH },
           relations: ['user'],
         });
         expect(refreshToken).toBeDefined();
-        expect(refreshToken?.token).toBe('refresh-token-persisted');
+        expect(refreshToken?.token).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        );
         expect(refreshToken?.type).toBe(TOKEN_TYPE.REFRESH);
         expect(refreshToken?.user?.id).toBe(user.id);
       });
@@ -200,8 +211,14 @@ describe('TokenService', () => {
         const newRefreshToken = await tokenRepository.findOne({
           where: { user: { id: user.id }, type: TOKEN_TYPE.REFRESH },
         });
-        expect(newAccessToken?.token).toBe('new-access-token');
-        expect(newRefreshToken?.token).toBe('new-refresh-token');
+        expect(newAccessToken?.token).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        );
+        expect(newRefreshToken?.token).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+        );
+        expect(newAccessToken?.token).not.toBe(existingAccessToken.token);
+        expect(newRefreshToken?.token).not.toBe(existingRefreshToken.token);
       });
 
       it('should handle user with multiple existing tokens', async () => {
@@ -334,8 +351,8 @@ describe('TokenService', () => {
           .mockRejectedValueOnce(new Error('JWT signing failed'));
 
         // Act & Assert
-        await expect(service.generateAuthTokens(user)).rejects.toThrow(
-          'JWT signing failed',
+        await expect(service.generateAuthTokens(user)).rejects.toBeInstanceOf(
+          InternalServerErrorException,
         );
       });
 

@@ -21,12 +21,13 @@ export class NotesService {
   async findTimelineByTarget(
     scope: NOTE_SCOPE,
     targetId: number,
+    kind: NOTE_KIND,
   ): Promise<NoteDto[]> {
     if (scope === NOTE_SCOPE.SLOT) {
       await this.slotsService.getById(targetId);
     }
     const notes = await this.notesRepository.find({
-      where: { scope, targetId },
+      where: { scope, targetId, kind },
       order: { createdAt: 'ASC' },
     });
     return plainToInstance(NoteDto, notes, { excludeExtraneousValues: true });

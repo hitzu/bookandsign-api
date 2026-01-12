@@ -7,6 +7,7 @@ import { SignupDto } from './dto/signup.dto';
 import { AppDataSource as TestDataSource } from '../config/database/data-source';
 import { UserFactory } from '../../test/factories/user/user.factory';
 import { USER_ROLES } from '../common/types/user-roles.type';
+import { USER_ROLE } from './constants/user_role.enum';
 
 describe('UserService', () => {
   let service: UserService;
@@ -439,5 +440,45 @@ describe('UserService', () => {
 
     // Error handling is tested implicitly through database operations
     // Explicit null repository tests don't provide value and cause runtime errors
+  });
+
+  describe('getUsers', () => {
+    it('should return all users when no role filter is provided', async () => {
+      const user1 = await userFactory.create({
+        role: USER_ROLE.ADMIN,
+        email: 'admin.getUsers@example.com',
+      });
+      const user2 = await userFactory.create({
+        role: USER_ROLE.SALES_AGENT,
+        email: 'sales.getUsers@example.com',
+      });
+
+      const result = await service.getUsers({});
+
+      expect(result).toHaveLength(2);
+      expect(result.map((u) => u.id)).toEqual(
+        expect.arrayContaining([user1.id, user2.id]),
+      );
+
+      const first = result[0] as unknown as Record<string, unknown>;
+      expect(first.password).toBeUndefined();
+    });
+
+    it('should filter users by role when role filter is provided', async () => {
+      await userFactory.create({
+        role: USER_ROLE.SALES_AGENT,
+        email: 'sales2.getUsers@example.com',
+      });
+      const admin = await userFactory.create({
+        role: USER_ROLE.ADMIN,
+        email: 'admin2.getUsers@example.com',
+      });
+
+      const result = await service.getUsers({ role: USER_ROLE.ADMIN });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(admin.id);
+      expect(result[0].role).toBe(USER_ROLE.ADMIN);
+    });
   });
 });

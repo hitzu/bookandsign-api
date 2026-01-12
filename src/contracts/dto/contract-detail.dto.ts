@@ -5,6 +5,7 @@ import { SlotDto } from '../../slots/dto/slot.dto';
 import { PaymentResponseDto } from '../../payments/dto/payment-response.dto';
 import { ContractDto } from './contract.dto';
 import { ContractPackageDto } from './contract-package.dto';
+import { ContractSlotDto } from './contractSlot.dto';
 
 export class ContractDetailDto {
   @Expose()
@@ -22,10 +23,20 @@ export class ContractDetailDto {
 
   @Expose()
   @IsArray()
+  @Type(() => ContractPackageDto)
+  packages!: ContractPackageDto[];
+
+  @Expose()
+  @IsArray()
   @Type(() => PaymentResponseDto)
   payments!: PaymentResponseDto[];
 
   @Expose()
   @IsNumber()
   paidAmount!: number;
+
+  @Expose()
+  @IsArray()
+  @Type(() => ContractSlotDto)
+  contractSlots!: ContractSlotDto[];
 }

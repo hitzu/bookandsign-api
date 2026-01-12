@@ -26,21 +26,12 @@ export class SlotFactory extends Factory<Slot> {
       period: faker.helpers.arrayElement<SLOT_PERIOD>(
         Object.values(SLOT_PERIOD),
       ),
-      status: SLOT_STATUS.HELD,
-      contractId: null,
-      leadName: faker.person.fullName(),
-      leadEmail: faker.internet.email(),
-      leadPhone: faker.phone.number(),
+      status: SLOT_STATUS.RESERVED,
     };
   }
 
   async create(attrs?: Partial<Slot>): Promise<Slot> {
     const slot = await this.make(attrs);
-    if (slot.authorId == null) {
-      const userFactory = new UserFactory(this.dataSource);
-      const user = await userFactory.create();
-      slot.authorId = user.id;
-    }
     return this.dataSource.getRepository(Slot).save(slot);
   }
 }
