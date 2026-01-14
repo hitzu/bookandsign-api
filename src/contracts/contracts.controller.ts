@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -12,6 +14,9 @@ import {
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOperation,
   ApiOkResponse,
   ApiParam,
   ApiTags,
@@ -45,6 +50,12 @@ export class ContractsController {
     dto: CreateContractFromSlotsDto,
   ): Promise<ContractDto> {
     return await this.contractsService.createContract(dto);
+  }
+
+  @Get()
+  @ApiOkResponse({ type: ContractDto, isArray: true })
+  async list(): Promise<ContractDto[]> {
+    return await this.contractsService.list();
   }
 
   @Get(':id')
@@ -150,5 +161,19 @@ export class ContractsController {
     dto: AddContractSlotDto,
   ): Promise<ContractDetailDto> {
     return await this.contractsService.addContractSlot(Number(id), dto);
+  }
+
+  @Delete(':id')
+  @ApiParam({ name: 'id', type: Number })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete a contract (soft delete) and free reserved slots',
+    description:
+      'Soft-deletes the contract and related snapshots/links, soft-deletes associated reserved slots to free availability, and soft-deletes payments to keep historical records (not returned by default queries).',
+  })
+  @ApiNoContentResponse({ description: 'Contract deleted (soft delete)' })
+  @ApiNotFoundResponse({ description: 'Contract not found' })
+  removeContract(@Param('id') id: string): Promise<void> {
+    return this.contractsService.removeContract(Number(id));
   }
 }

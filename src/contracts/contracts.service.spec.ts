@@ -31,6 +31,7 @@ describe('ContractsService', () => {
   let contractPackagesRepo: Repository<ContractPackage>;
   let paymentsRepo: Repository<Payment>;
   let contractSlotsRepo: Repository<ContractSlot>;
+  let slotsRepo: Repository<Slot>;
   let packageFactory: PackageFactory;
   let brandFactory: BrandFactory;
   let slotFactory: SlotFactory;
@@ -77,6 +78,7 @@ describe('ContractsService', () => {
     contractsRepo = module.get<Repository<Contract>>(
       getRepositoryToken(Contract),
     );
+    slotsRepo = module.get<Repository<Slot>>(getRepositoryToken(Slot));
     contractPackagesRepo = module.get<Repository<ContractPackage>>(
       getRepositoryToken(ContractPackage),
     );
@@ -303,6 +305,98 @@ describe('ContractsService', () => {
         [payment1.id, payment2.id].sort((a, b) => a - b),
       );
       expect(detail.paidAmount).toBeCloseTo(100);
+    });
+  });
+
+  describe('removeContract', () => {
+    it('should soft-delete contract, contract slots, item snapshots, payments, and associated slots', async () => {
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const pkg = await packageFactory.createForBrand(brand, { basePrice: 120 });
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const created = await service.createContract({
+        userId: user.id,
+        slotId: slot.id,
+        sku: 'SKU-REMOVE-001',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        subtotal: 0,
+        discountTotal: 0,
+        total: 240,
+        packages: [{ packageId: pkg.id, quantity: 2 }],
+      });
+
+      const payment = await paymentsRepo.save(
+        paymentsRepo.create({
+          contractId: created.id,
+          amount: 50,
+          receivedAt: new Date('2030-01-01T10:00:00.000Z'),
+          note: 'deposit',
+          reference: null,
+          method: PAYMENT_METHOD.CASH,
+        }),
+      );
+
+      await service.removeContract(created.id);
+
+      const visibleContract = await contractsRepo.findOne({
+        where: { id: created.id },
+      });
+      expect(visibleContract).toBeNull();
+
+      const deletedContract = await contractsRepo.findOne({
+        where: { id: created.id },
+        withDeleted: true,
+      });
+      expect(deletedContract).not.toBeNull();
+      expect(deletedContract?.deletedAt).not.toBeNull();
+
+      const deletedLink = await contractSlotsRepo.findOne({
+        where: { contractId: created.id, slotId: slot.id },
+        withDeleted: true,
+      });
+      expect(deletedLink).not.toBeNull();
+      expect(deletedLink?.deletedAt).not.toBeNull();
+
+      const deletedItem = await contractPackagesRepo.findOne({
+        where: { contractId: created.id },
+        withDeleted: true,
+      });
+      expect(deletedItem).not.toBeNull();
+      expect(deletedItem?.deletedAt).not.toBeNull();
+
+      const visiblePayments = await paymentsRepo.find({
+        where: { contractId: created.id },
+      });
+      expect(visiblePayments).toHaveLength(0);
+
+      const deletedPayment = await paymentsRepo.findOne({
+        where: { id: payment.id },
+        withDeleted: true,
+      });
+      expect(deletedPayment).not.toBeNull();
+      expect(deletedPayment?.deletedAt).not.toBeNull();
+
+      const visibleSlot = await slotsRepo.findOne({ where: { id: slot.id } });
+      expect(visibleSlot).toBeNull();
+
+      const deletedSlot = await slotsRepo.findOne({
+        where: { id: slot.id },
+        withDeleted: true,
+      });
+      expect(deletedSlot).not.toBeNull();
+      expect(deletedSlot?.deletedAt).not.toBeNull();
+    });
+
+    it('should throw NotFoundException if contract is not found', async () => {
+      await expect(service.removeContract(999999)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 });

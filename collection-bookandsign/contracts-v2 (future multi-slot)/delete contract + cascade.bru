@@ -1,0 +1,20 @@
+meta {
+  name: delete contract + cascade
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{base_url}}/contracts/3
+  body: none
+  auth: inherit
+}
+
+headers {
+  authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
