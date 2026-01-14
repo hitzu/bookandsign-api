@@ -11,6 +11,7 @@ import { DataSource, In, Repository } from 'typeorm';
 import { Package } from '../packages/entities/package.entity';
 import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
 import { PaymentsService } from '../payments/payments.service';
+import { Payment } from '../payments/entities/payment.entity';
 import { Contract } from './entities/contract.entity';
 import { AddItemDto } from './dto/add-item.dto';
 import { ContractDetailDto } from './dto/contract-detail.dto';
@@ -27,6 +28,7 @@ import { ContractSlot } from './entities/contract-slot.entity';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { CONTRACT_SLOT_PURPOSE } from './constants/slot_purpose.enum';
 import { AddContractSlotDto } from './dto/add-contract-slot.dto';
+import { ContractPromotion } from './entities/contract-promotion.entity';
 
 @Injectable()
 export class ContractsService {
@@ -347,5 +349,46 @@ export class ContractsService {
     });
     await this.contractSlotsRepository.save(contractSlot);
     return await this.getDetail(contractId);
+  }
+
+  async list(): Promise<ContractDto[]> {
+    const contracts = await this.contractsRepository.find({
+      relations: ['slot', 'contractSlots', 'contractSlots.slot'],
+    });
+    return plainToInstance(ContractDto, contracts, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  async removeContract(contractId: number): Promise<void> {
+    const contract = await this.contractsRepository.findOne({
+      where: { id: contractId },
+      relations: ['slot'],
+    });
+    if (!contract) {
+      throw new NotFoundException('Contract not found');
+    }
+    await this.dataSource.transaction(async (manager) => {
+      const contractSlots = await manager.getRepository(ContractSlot).find({
+        where: { contractId },
+      });
+
+      const slotIds = new Set<number>(contractSlots.map((s) => s.slotId));
+      if (contract.slot?.id != null) {
+        slotIds.add(contract.slot.id);
+      }
+
+      await manager.getRepository(ContractSlot).softDelete({ contractId });
+      await manager.getRepository(ContractPackage).softDelete({ contractId });
+      await manager.getRepository(ContractPromotion).softDelete({ contractId });
+      await manager.getRepository(Payment).softDelete({ contractId });
+
+      const slotIdsArray = Array.from(slotIds);
+      if (slotIdsArray.length > 0) {
+        await manager.getRepository(Slot).softDelete(slotIdsArray);
+      }
+
+      await manager.getRepository(Contract).softDelete(contractId);
+    });
   }
 }
