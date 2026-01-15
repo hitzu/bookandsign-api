@@ -41,10 +41,12 @@ export const getTypeOrmConfig = (): TypeOrmModuleOptions => {
 
     ...(isProd && {
       ssl: { rejectUnauthorized: false },
-      poolSize: 20,
+      poolSize: 2, // antes 20
       extra: {
-        max: 20,
+        max: 5, // antes 20
         connectionTimeoutMillis: 20000,
+        idleTimeoutMillis: 30000,
+        keepAlive: true,
       },
     }),
   };
