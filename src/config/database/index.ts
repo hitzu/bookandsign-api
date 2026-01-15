@@ -44,7 +44,7 @@ export const getTypeOrmConfig = (): TypeOrmModuleOptions => {
       poolSize: 20,
       extra: {
         max: 20,
-        connectionTimeoutMillis: 2000,
+        connectionTimeoutMillis: 20000,
       },
     }),
   };
