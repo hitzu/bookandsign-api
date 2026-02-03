@@ -26,7 +26,7 @@ export class PackagesService {
     private packagesRepository: Repository<Package>,
     @InjectRepository(PackageProduct)
     private packageProductsRepository: Repository<PackageProduct>,
-  ) {}
+  ) { }
 
   create(createPackageDto: CreatePackageDto) {
     try {

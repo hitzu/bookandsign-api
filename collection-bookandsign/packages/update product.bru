@@ -5,7 +5,7 @@ meta {
 }
 
 patch {
-  url: {{base_url}}/packages/3
+  url: {{base_url}}/packages/1
   body: json
   auth: inherit
 }
@@ -16,8 +16,11 @@ headers {
 
 body:json {
   {
-    "name": "Brillipop",
-    "basePrice": 1700
+    "name": "Social Glow",
+    "description": "Social Glow",
+    "basePrice": 1200,
+    "discount": 10,
+    "status": "active"
   }
 }
 

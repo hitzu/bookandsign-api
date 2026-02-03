@@ -34,7 +34,7 @@ import { PACKAGE_STATUS } from './types/packages-status.types';
 @ApiTags('packages')
 @ApiBearerAuth('access-token')
 export class PackagesController {
-  constructor(private readonly packagesService: PackagesService) {}
+  constructor(private readonly packagesService: PackagesService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a package' })

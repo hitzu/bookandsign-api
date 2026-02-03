@@ -8,9 +8,9 @@ alwaysApply: false
 
 ## File Organization
 
-- Files and directories in kebab-case (lowercase words separated by hyphens): `src/auth/`, `src/user-profiles/`, `src/common/types/`
-- Clear file suffixes indicating purpose (kebab-case): `user.model.ts`, `user.service.ts`, `auth.controller.ts`, `users.module.ts`, `create-user.dto.ts`
-- File extensions match content: `user.service.ts`, `user.service.spec.ts`, `my-types.d.ts`
+- Clear file suffixes indicating purpose: `.model.ts`, `.service.ts`, `.controller.ts`, `.module.ts`, etc
+- File names in kebab-case
+- File extensions match content: `.ts`, `.spec.ts`, `.d.ts`
 
 ## Import order
 
@@ -118,7 +118,7 @@ async function getUserById(
 
 ## Error Handling
 
-- Use custom error classes extending from errors defined in [errors.ts](mdc:utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/utilityprofit/lib/shared/src/errors.ts)
+- Use custom error classes extending from errors defined in [errors.ts]
 - Descriptive error messages
 - Proper error propagation
 - Try/catch only when handling errors
@@ -135,8 +135,8 @@ export class UserNotFoundError extends NotFoundError {
 
 ## Comments & Documentation
 
-- Internal code should be self-documenting: rely on clear naming, small functions, and good design (avoid inline comments)
-- Public-facing functions, modules, and exported interfaces MUST include concise JSDoc (purpose, params, returns, thrown errors)
+- JSDoc for public APIs
+- Inline comments for complex logic
 - Clear TODO format: `// TODO(@username): description`
 
 ```typescript
@@ -145,7 +145,7 @@ export class UserNotFoundError extends NotFoundError {
 
 ## Testing
 
-- Test file next to source: `my-service.service.ts` → `my-service.service.spec.ts`
+- Test file next to source: `file.ts` → `file.spec.ts`
 - Descriptive test names
 - Arrange-Act-Assert pattern
 - Mock external dependencies
