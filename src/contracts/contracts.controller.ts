@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   ParseIntPipe,
+  Query,
   ValidationPipe,
 } from '@nestjs/common';
 import {
@@ -19,6 +20,7 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -35,12 +37,25 @@ import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
 import { PaymentDto } from '../payments/dto/payment.dto';
 import { PaymentResponseDto } from '../payments/dto/payment-response.dto';
 import { AddContractSlotDto } from './dto/add-contract-slot.dto';
+import { PatchPrepProfileAnswerDto } from './preparation-profile/dto/patch-prep-profile-answer.dto';
+import { PatchPrepProfileAnswersBulkDto } from './preparation-profile/dto/patch-prep-profile-answers-bulk.dto';
+import { PrepProfileDto } from './preparation-profile/dto/prep-profile.dto';
+import { PrepProfilePublicQueryDto } from './preparation-profile/dto/prep-profile-public.query.dto';
+import { UnlockPrepProfileQuestionDto } from './preparation-profile/dto/unlock-prep-profile-question.dto';
+import { ContractsPreparationProfileService } from './preparation-profile/contracts-preparation-profile.service';
+import { CreatePrepProfileUploadUrlDto } from './preparation-profile/dto/create-prep-profile-upload-url.dto';
+import { PrepProfileUploadUrlDto } from './preparation-profile/dto/prep-profile-upload-url.dto';
+import { PrepProfileUploadsService } from './preparation-profile/prep-profile-uploads.service';
 
 @Controller('contracts')
 @ApiTags('contracts')
 @ApiBearerAuth('access-token')
 export class ContractsController {
-  constructor(private readonly contractsService: ContractsService) {}
+  constructor(
+    private readonly contractsService: ContractsService,
+    private readonly contractsPreparationProfileService: ContractsPreparationProfileService,
+    private readonly prepProfileUploadsService: PrepProfileUploadsService,
+  ) { }
 
   @Post()
   @ApiBody({ type: CreateContractFromSlotsDto })
@@ -73,6 +88,107 @@ export class ContractsController {
     @Param('token') token: string,
   ): Promise<ContractDetailDto> {
     return await this.contractsService.getDetailByToken(token);
+  }
+
+  @Get('/public/:token/prep-profile')
+  @ApiParam({ name: 'token', type: String })
+  @ApiQuery({ name: 'phone', type: String, required: true })
+  @ApiOkResponse({ type: PrepProfileDto })
+  @Public()
+  async getPreparationProfileByToken(
+    @Param('token') token: string,
+    @Query(new ValidationPipe({ transform: true, whitelist: true }))
+    query: PrepProfilePublicQueryDto,
+  ): Promise<PrepProfileDto> {
+    return await this.contractsPreparationProfileService.getByToken({
+      token,
+      phone: query.phone,
+      assets: query.assets,
+      expiresIn: query.expiresIn,
+    });
+  }
+
+  @Patch('/public/:token/prep-profile/answer')
+  @ApiParam({ name: 'token', type: String })
+  @ApiQuery({ name: 'phone', type: String, required: true })
+  @ApiBody({ type: PatchPrepProfileAnswerDto })
+  @ApiOkResponse({ type: PrepProfileDto })
+  @Public()
+  async savePreparationProfileAnswer(
+    @Param('token') token: string,
+    @Query(new ValidationPipe({ transform: true, whitelist: true }))
+    query: PrepProfilePublicQueryDto,
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: PatchPrepProfileAnswerDto,
+  ): Promise<PrepProfileDto> {
+    return await this.contractsPreparationProfileService.saveAnswerByPhone({
+      token,
+      phone: query.phone,
+      questionId: dto.questionId,
+      value: dto.value,
+      assets: query.assets,
+      expiresIn: query.expiresIn,
+    });
+  }
+
+  @Patch('/public/:token/prep-profile/answers')
+  @ApiParam({ name: 'token', type: String })
+  @ApiQuery({ name: 'phone', type: String, required: true })
+  @ApiBody({ type: PatchPrepProfileAnswersBulkDto })
+  @ApiOkResponse({ type: PrepProfileDto })
+  @Public()
+  async savePreparationProfileAnswersBulk(
+    @Param('token') token: string,
+    @Query(new ValidationPipe({ transform: true, whitelist: true }))
+    query: PrepProfilePublicQueryDto,
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: PatchPrepProfileAnswersBulkDto,
+  ): Promise<PrepProfileDto> {
+    return await this.contractsPreparationProfileService.saveAnswersBulkByToken({
+      token,
+      phone: query.phone,
+      answers: dto.answers,
+      assets: query.assets,
+      expiresIn: query.expiresIn,
+    });
+  }
+
+  @Post('/public/:token/prep-profile/upload-url')
+  @ApiParam({ name: 'token', type: String })
+  @ApiQuery({ name: 'phone', type: String, required: true })
+  @ApiBody({ type: CreatePrepProfileUploadUrlDto })
+  @ApiOkResponse({ type: PrepProfileUploadUrlDto })
+  @Public()
+  async createPrepProfileUploadUrl(
+    @Param('token') token: string,
+    @Query(new ValidationPipe({ transform: true, whitelist: true }))
+    query: PrepProfilePublicQueryDto,
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: CreatePrepProfileUploadUrlDto,
+  ): Promise<PrepProfileUploadUrlDto> {
+    return await this.prepProfileUploadsService.createSignedUploadUrl({
+      token,
+      phone: query.phone,
+      questionId: dto.questionId,
+      fileName: dto.fileName,
+      mime: dto.mime,
+    });
+  }
+
+  @Post(':id/prep-profile/unlock')
+  @ApiParam({ name: 'id', type: Number })
+  @ApiBody({ type: UnlockPrepProfileQuestionDto })
+  @ApiOkResponse({ type: PrepProfileDto })
+  async unlockPreparationProfileQuestion(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: UnlockPrepProfileQuestionDto,
+  ): Promise<PrepProfileDto> {
+    return await this.contractsPreparationProfileService.unlockQuestion({
+      contractId: id,
+      questionId: dto.questionId,
+      reason: dto.reason,
+    });
   }
 
   @Post(':id/items')
@@ -176,4 +292,5 @@ export class ContractsController {
   removeContract(@Param('id') id: string): Promise<void> {
     return this.contractsService.removeContract(Number(id));
   }
+
 }

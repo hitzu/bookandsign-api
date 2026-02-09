@@ -1,0 +1,29 @@
+import { Expose } from 'class-transformer';
+import { IsNumber, IsString } from 'class-validator';
+
+export class PrepProfileUploadUrlDto {
+  @Expose()
+  @IsNumber()
+  contractId!: number;
+
+  @Expose()
+  @IsString()
+  bucket!: string;
+
+  @Expose()
+  @IsString()
+  path!: string;
+
+  @Expose()
+  @IsString()
+  signedUrl!: string;
+
+  @Expose()
+  @IsString()
+  token!: string;
+
+  @Expose()
+  @IsString()
+  publicUrl!: string;
+}
+

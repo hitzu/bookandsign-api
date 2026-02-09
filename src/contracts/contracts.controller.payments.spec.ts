@@ -6,6 +6,8 @@ import { PAYMENT_METHOD } from './types/payment-method.types';
 import type { PaymentResponseDto } from '../payments/dto/payment-response.dto';
 import { ContractsController } from './contracts.controller';
 import { ContractsService } from './contracts.service';
+import { ContractsPreparationProfileService } from './preparation-profile/contracts-preparation-profile.service';
+import { PrepProfileUploadsService } from './preparation-profile/prep-profile-uploads.service';
 
 describe('ContractsController (payments)', () => {
   it('allows registering a payment on an existing contract', async () => {
@@ -27,7 +29,11 @@ describe('ContractsController (payments)', () => {
 
     const moduleRef = await Test.createTestingModule({
       controllers: [ContractsController],
-      providers: [{ provide: ContractsService, useValue: contractsService }],
+      providers: [
+        { provide: ContractsService, useValue: contractsService },
+        { provide: ContractsPreparationProfileService, useValue: {} },
+        { provide: PrepProfileUploadsService, useValue: {} },
+      ],
     }).compile();
 
     const app = moduleRef.createNestApplication();
@@ -62,7 +68,11 @@ describe('ContractsController (payments)', () => {
 
     const moduleRef = await Test.createTestingModule({
       controllers: [ContractsController],
-      providers: [{ provide: ContractsService, useValue: contractsService }],
+      providers: [
+        { provide: ContractsService, useValue: contractsService },
+        { provide: ContractsPreparationProfileService, useValue: {} },
+        { provide: PrepProfileUploadsService, useValue: {} },
+      ],
     }).compile();
 
     const app = moduleRef.createNestApplication();
@@ -88,7 +98,11 @@ describe('ContractsController (payments)', () => {
 
     const moduleRef = await Test.createTestingModule({
       controllers: [ContractsController],
-      providers: [{ provide: ContractsService, useValue: contractsService }],
+      providers: [
+        { provide: ContractsService, useValue: contractsService },
+        { provide: ContractsPreparationProfileService, useValue: {} },
+        { provide: PrepProfileUploadsService, useValue: {} },
+      ],
     }).compile();
 
     const app = moduleRef.createNestApplication();

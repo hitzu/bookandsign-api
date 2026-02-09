@@ -1,0 +1,32 @@
+meta {
+  name: patch prep profile answer - save face photo metadata (public)
+  type: http
+  seq: 25
+}
+
+patch {
+  url: {{base_url}}/contracts/public/{{contract_token}}/prep-profile/answer?phone={{contract_phone}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "questionId": "face_photos",
+    "value": [
+      {
+        "path": "{{prep_asset_path}}",
+        "mime": "{{prep_mime}}"
+      }
+    ]
+  }
+}
+
+vars:pre-request {
+  prep_mime: image/webp
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
