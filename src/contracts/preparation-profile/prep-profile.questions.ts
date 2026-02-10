@@ -223,6 +223,14 @@ const BRIDE_QUESTIONS: PrepProfileQuestionDefinition[] = [
     placeholder: 'Ej: base pesada, glitter, cejas muy marcadas',
   },
   {
+    id: 'skincare_routine',
+    type: 'textarea',
+    group: 'maquillaje',
+    label: '¿Sigues alguna rutina de skincare?',
+    placeholder:
+      'Cuéntanos brevemente cuáles son los productos que utilizas y cómo sueles aplicarlos.',
+  },
+  {
     id: 'face_photos',
     type: 'asset_array',
     group: 'maquillaje',
