@@ -32,6 +32,9 @@ importers:
       '@nestjs/typeorm':
         specifier: ^11.0.0
         version: 11.0.0(@nestjs/common@11.1.7(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.7)(reflect-metadata@0.2.2)(rxjs@7.8.2)(typeorm@0.3.27(ioredis@5.8.2)(pg@8.16.3)(reflect-metadata@0.2.2)(ts-node@10.9.2(@types/node@22.18.12)(typescript@5.9.3)))
+      '@supabase/supabase-js':
+        specifier: ^2.95.2
+        version: 2.95.2
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0
@@ -893,6 +896,30 @@ packages:
   '@sqltools/formatter@1.2.5':
     resolution: {integrity: sha512-Uy0+khmZqUrUGm5dmMqVlnvufZRSK0FbYzVgp0UMstm+F5+W2/jnEEQyc9vo1ZR/E5ZI/B1WjjoTqBqwJL6Krw==}
 
+  '@supabase/auth-js@2.95.2':
+    resolution: {integrity: sha512-0dW1Y0vFcjkQpjJb/vR92lVqVaWSjM8v6VBPoaJfiIQ94+F/qnc+yV1ZTSZ96LqM61TaLAhqt7S2fLS//lc8ew==}
+    engines: {node: '>=20.0.0'}
+
+  '@supabase/functions-js@2.95.2':
+    resolution: {integrity: sha512-SInf19qm2aWEp49O5OJ+gftzifSPeaA5w0L1qF96Ul13tilRbQOlQAk1e7py9xH4tPkOkCDMf6n+H5Js5uzIUQ==}
+    engines: {node: '>=20.0.0'}
+
+  '@supabase/postgrest-js@2.95.2':
+    resolution: {integrity: sha512-v0DHzy3vFALRLaFNZPbBWK7PESPvI+cC7/A2HtqwmLuX7XdOwdHwaz2yooNOfcYkoNOLS5p8WbgCA9DDXs+QlQ==}
+    engines: {node: '>=20.0.0'}
+
+  '@supabase/realtime-js@2.95.2':
+    resolution: {integrity: sha512-8LhHR28Xv1/jjtfiospyqMdE+sL0SVdk24ziio4vmgsUHApzh4ucr+sVY3LXInzSVycrgNnYwStMiWuTZUVxoA==}
+    engines: {node: '>=20.0.0'}
+
+  '@supabase/storage-js@2.95.2':
+    resolution: {integrity: sha512-vUNMnHgbyHIHGFmwkQkp1VUdWVGWoFqaEgAAmlXx3Ca0+GzlyScwhkYm8dvtM+mgUo/nJQXwPRPOcWTZMo/tpg==}
+    engines: {node: '>=20.0.0'}
+
+  '@supabase/supabase-js@2.95.2':
+    resolution: {integrity: sha512-CkNIPJCdOkokX5E92RJt6yHNyHprJ2V8wRuGK8wCPwbaEmWvW0CvMj+qr4uGozwnOd1ixeAsQUSg6+roA0+muA==}
+    engines: {node: '>=20.0.0'}
+
   '@tokenizer/inflate@0.2.7':
     resolution: {integrity: sha512-MADQgmZT1eKjp06jpI2yozxaU9uVs4GzzgSL+uEq7bVcJ9V1ZXQkeGNql1fsSI0gMy1vhvNTNbUqrx+pZfJVmg==}
     engines: {node: '>=18'}
@@ -987,6 +1014,9 @@ packages:
   '@types/node@22.18.12':
     resolution: {integrity: sha512-BICHQ67iqxQGFSzfCFTT7MRQ5XcBjG5aeKh5Ok38UBbPe5fxTyE+aHFxwVrGyr8GNlqFMLKD1D3P2K/1ks8tog==}
 
+  '@types/phoenix@1.6.7':
+    resolution: {integrity: sha512-oN9ive//QSBkf19rfDv45M7eZPi0eEXylht2OLEXicu5b4KoQ1OzXIw+xDSGWxSxe1JmepRR/ZH283vsu518/Q==}
+
   '@types/qs@6.14.0':
     resolution: {integrity: sha512-eOunJqu0K1923aExK6y8p6fsihYEn/BYuQ4g0CxAAgFc4b/ZLN4CrsRZ55srTdqoiLzU2B2evC+apEIxprEzkQ==}
 
@@ -1013,6 +1043,9 @@ packages:
 
   '@types/validator@13.15.3':
     resolution: {integrity: sha512-7bcUmDyS6PN3EuD9SlGGOxM77F8WLVsrwkxyWxKnxzmXoequ6c7741QBrANq6htVRGOITJ7z72mTP6Z4XyuG+Q==}
+
+  '@types/ws@8.18.1':
+    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
   '@types/yargs-parser@21.0.3':
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
@@ -2089,6 +2122,10 @@ packages:
   human-signals@2.1.0:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
     engines: {node: '>=10.17.0'}
+
+  iceberg-js@0.8.1:
+    resolution: {integrity: sha512-1dhVQZXhcHje7798IVM+xoo/1ZdVfzOMIc8/rgVSijRK38EDqOJoGula9N/8ZI5RD8QTxNQtK/Gozpr+qUqRRA==}
+    engines: {node: '>=20.0.0'}
 
   iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
@@ -3554,6 +3591,18 @@ packages:
     resolution: {integrity: sha512-+QU2zd6OTD8XWIJCbffaiQeH9U73qIqafo1x6V1snCWYGJf6cVE0cDR4D8xRzcEnfI21IFrUPzPGtcPf8AC+Rw==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
 
+  ws@8.19.0:
+    resolution: {integrity: sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   xtend@4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
     engines: {node: '>=0.4'}
@@ -4496,6 +4545,44 @@ snapshots:
 
   '@sqltools/formatter@1.2.5': {}
 
+  '@supabase/auth-js@2.95.2':
+    dependencies:
+      tslib: 2.8.1
+
+  '@supabase/functions-js@2.95.2':
+    dependencies:
+      tslib: 2.8.1
+
+  '@supabase/postgrest-js@2.95.2':
+    dependencies:
+      tslib: 2.8.1
+
+  '@supabase/realtime-js@2.95.2':
+    dependencies:
+      '@types/phoenix': 1.6.7
+      '@types/ws': 8.18.1
+      tslib: 2.8.1
+      ws: 8.19.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@supabase/storage-js@2.95.2':
+    dependencies:
+      iceberg-js: 0.8.1
+      tslib: 2.8.1
+
+  '@supabase/supabase-js@2.95.2':
+    dependencies:
+      '@supabase/auth-js': 2.95.2
+      '@supabase/functions-js': 2.95.2
+      '@supabase/postgrest-js': 2.95.2
+      '@supabase/realtime-js': 2.95.2
+      '@supabase/storage-js': 2.95.2
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
   '@tokenizer/inflate@0.2.7':
     dependencies:
       debug: 4.4.3
@@ -4614,6 +4701,8 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
+  '@types/phoenix@1.6.7': {}
+
   '@types/qs@6.14.0': {}
 
   '@types/range-parser@1.2.7': {}
@@ -4648,6 +4737,10 @@ snapshots:
       '@types/superagent': 8.1.9
 
   '@types/validator@13.15.3': {}
+
+  '@types/ws@8.18.1':
+    dependencies:
+      '@types/node': 22.18.12
 
   '@types/yargs-parser@21.0.3': {}
 
@@ -5781,6 +5874,8 @@ snapshots:
       toidentifier: 1.0.1
 
   human-signals@2.1.0: {}
+
+  iceberg-js@0.8.1: {}
 
   iconv-lite@0.6.3:
     dependencies:
@@ -7382,6 +7477,8 @@ snapshots:
     dependencies:
       imurmurhash: 0.1.4
       signal-exit: 4.1.0
+
+  ws@8.19.0: {}
 
   xtend@4.0.2: {}
 

@@ -1,0 +1,47 @@
+meta {
+  name: put prep profile upload file (signed url)
+  type: http
+  seq: 24
+}
+
+put {
+  url: {{prep_signed_url}}
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: {{prep_mime}}
+}
+
+script:pre-request {
+  /**
+   * Uploads a binary file to Supabase signed URL.
+   *
+   * IMPORTANT:
+   * - This request needs Bruno "Developer Mode" enabled to use `fs`.
+   * - Set `prep_file_path` in your environment (absolute path OR relative to this .bru file).
+   */
+  const { readFileSync } = require('fs');
+  const path = require('path');
+
+  const inputPath = bru.getVar('prep_file_path');
+  if (!inputPath) {
+    throw new Error('Missing env var: prep_file_path');
+  }
+
+  const absolutePath = path.isAbsolute(inputPath)
+    ? inputPath
+    : path.join(bru.cwd(), inputPath);
+
+  const fileBuffer = readFileSync(absolutePath);
+  req.setHeader('Content-Type', bru.getVar('prep_mime') || 'application/octet-stream');
+  req.setHeader('Content-Length', String(fileBuffer.length));
+  req.setBody(fileBuffer);
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+

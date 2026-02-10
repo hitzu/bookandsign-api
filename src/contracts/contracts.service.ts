@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -45,7 +46,7 @@ export class ContractsService {
     private readonly packagesRepository: Repository<Package>,
     @InjectRepository(ContractSlot)
     private readonly contractSlotsRepository: Repository<ContractSlot>,
-  ) {}
+  ) { }
 
   private async recalculateTotals(contractId: number): Promise<void> {
     const items = await this.contractPackagesRepository.find({
@@ -294,6 +295,25 @@ export class ContractsService {
     return await this.getDetail(contractId);
   }
 
+  private maskEmail(email: string): string {
+    const trimmed = email.trim();
+    const at = trimmed.indexOf('@');
+    if (at <= 0) return '****';
+    const local = trimmed.slice(0, at);
+    const domain = trimmed.slice(at + 1);
+    const visibleCount = Math.min(local.length, local.length >= 4 ? 4 : 1);
+    const visible = local.slice(0, visibleCount);
+    if (!domain) return `${visible}****`;
+    if (local.length <= visibleCount) return `${local}@${domain}`;
+    return `${visible}****@${domain}`;
+  }
+
+  private maskPhone(phone: string): string {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 4) return '***';
+    return `***${digits.slice(-4)}`;
+  }
+
   async getDetailByToken(token: string): Promise<ContractDetailDto> {
     const contract = await this.contractsRepository.findOne({
       where: { token },
@@ -302,6 +322,10 @@ export class ContractsService {
     if (!contract) {
       throw new NotFoundException('Contract not found');
     }
+
+    const maskedContract = { ...contract };
+    maskedContract.clientPhone = this.maskPhone(contract.clientPhone ?? '');
+    maskedContract.clientEmail = this.maskEmail(contract.clientEmail ?? '');
 
     const contractId = contract.id;
 
@@ -322,7 +346,7 @@ export class ContractsService {
     return plainToInstance(
       ContractDetailDto,
       {
-        contract,
+        contract: maskedContract,
         contractSlots: contract.contractSlots,
         packages,
         payments,

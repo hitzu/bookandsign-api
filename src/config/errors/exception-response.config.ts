@@ -26,6 +26,8 @@ enum ErrorMessages {
   INVALID_PERIOD = 'INVALID_PERIOD',
   PRODUCT_CREATE_ERROR = 'PRODUCT_CREATE_ERROR',
   SLOT_ALREADY_USED = 'SLOT_ALREADY_USED',
+  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
+  SUPABASE_STORAGE_NOT_CONFIGURED = 'SUPABASE_STORAGE_NOT_CONFIGURED',
   // Add more error messages as needed
 }
 
@@ -141,5 +143,13 @@ export const EXCEPTION_RESPONSE: Record<
   [ErrorMessages.SLOT_ALREADY_USED]: {
     code: 27,
     message: 'slot is already used by another contract',
+  },
+  [ErrorMessages.INVALID_CREDENTIALS]: {
+    code: 29,
+    message: 'invalid credentials',
+  },
+  [ErrorMessages.SUPABASE_STORAGE_NOT_CONFIGURED]: {
+    code: 30,
+    message: 'supabase storage is not configured',
   },
 };
