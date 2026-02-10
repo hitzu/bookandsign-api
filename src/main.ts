@@ -26,12 +26,40 @@ async function bootstrap() {
 
   // Enable CORS
   const corsOrigin = process.env.CORS_ORIGIN;
+  const normalizeOrigin = (origin: string): string =>
+    origin.trim().replace(/\/+$/, '').toLowerCase();
+
   const allowedOrigins = corsOrigin
-    ? corsOrigin.split(',').map((origin) => origin.trim())
+    ? corsOrigin
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean)
+        .map(normalizeOrigin)
     : true; // Allow all origins in local if not specified
 
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Non-browser clients (curl/postman) may not send an Origin header.
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      if (allowedOrigins === true) {
+        callback(null, true);
+        return;
+      }
+
+      const normalizedOrigin = normalizeOrigin(origin);
+      const allowAll = allowedOrigins.includes('*');
+
+      if (allowAll || allowedOrigins.includes(normalizedOrigin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
