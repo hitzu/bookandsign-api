@@ -19,6 +19,8 @@ import { SlotsModule } from './slots/slots.module';
 import { NotesModule } from './notes/notes.module';
 import { ContractsModule } from './contracts/contracts.module';
 import { PromotionsModule } from './promotions/promotions.module';
+import { EventsModule } from './events/events.module';
+import { PhotosModule } from './photos/photos.module';
 
 @Module({
   imports: [
@@ -45,6 +47,8 @@ import { PromotionsModule } from './promotions/promotions.module';
     NotesModule,
     ContractsModule,
     PromotionsModule,
+    EventsModule,
+    PhotosModule,
   ],
   controllers: [AppController],
   providers: [

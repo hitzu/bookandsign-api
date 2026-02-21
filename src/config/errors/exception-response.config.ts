@@ -28,7 +28,8 @@ enum ErrorMessages {
   SLOT_ALREADY_USED = 'SLOT_ALREADY_USED',
   INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
   SUPABASE_STORAGE_NOT_CONFIGURED = 'SUPABASE_STORAGE_NOT_CONFIGURED',
-  // Add more error messages as needed
+  EVENT_NOT_FOUND = 'EVENT_NOT_FOUND',
+  EVENT_KEY_ALREADY_EXISTS = 'EVENT_KEY_ALREADY_EXISTS',
 }
 
 export const EXCEPTION_RESPONSE: Record<
@@ -151,5 +152,13 @@ export const EXCEPTION_RESPONSE: Record<
   [ErrorMessages.SUPABASE_STORAGE_NOT_CONFIGURED]: {
     code: 30,
     message: 'supabase storage is not configured',
+  },
+  [ErrorMessages.EVENT_NOT_FOUND]: {
+    code: 31,
+    message: 'event not found',
+  },
+  [ErrorMessages.EVENT_KEY_ALREADY_EXISTS]: {
+    code: 32,
+    message: 'event key already exists',
   },
 };

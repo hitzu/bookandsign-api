@@ -1,0 +1,28 @@
+meta {
+  name: register photo
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/photos
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "eventToken": "{{event_token}}",
+    "storagePath": "local/photobooth/event_1/3.jpg",
+    "publicUrl": "https://uljzbxuxzknilubykrlw.supabase.co/storage/v1/object/public/local/photobooth/event_1/3.jpg"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
