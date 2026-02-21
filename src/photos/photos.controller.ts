@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   NotImplementedException,
   Param,
   Post,
@@ -21,10 +22,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { BulkSeedPhotosDto } from './dto/bulk-seed-photos.dto';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { PhotoResponseDto } from './dto/photo-response.dto';
 import { PhotosService } from './photos.service';
 import { Public } from '../auth/decorators/public.decorator';
+import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 
 @Controller('photos')
 @ApiTags('photos')
@@ -66,6 +69,34 @@ export class PhotosController {
       eventToken: dto.eventToken,
       storagePath: dto.storagePath,
       publicUrl: dto.publicUrl,
+    });
+  }
+
+  @Post('bulk-seed')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: '[TEST ONLY] Seed 1.jpg to N.jpg for an event',
+    description:
+      'Inserts N photo records (1.jpg through N.jpg). For testing without Bruno Run with Parameters. Remove manually when done.',
+  })
+  @ApiBody({ type: BulkSeedPhotosDto })
+  @ApiCreatedResponse({
+    description: 'Photos seeded',
+    type: PhotoResponseDto,
+    isArray: true,
+  })
+  @ApiNotFoundResponse({ description: 'Event not found' })
+  bulkSeed(
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: BulkSeedPhotosDto,
+  ) {
+    if (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'local') {
+      throw new NotFoundException(EXCEPTION_RESPONSE.ENDPOINT_NOT_FOUND);
+    }
+    return this.photosService.bulkSeed({
+      eventToken: dto.eventToken,
+      storageBase: dto.storageBase,
+      count: dto.count,
     });
   }
 

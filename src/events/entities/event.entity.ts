@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, OneToOne } from 'typeorm';
 
 import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { UseDto } from '../../common/dto/use-dto.decorator';
@@ -25,7 +25,7 @@ export class Event extends BaseTimeEntity {
   @Column('integer', { name: 'contract_id' })
   contractId!: number;
 
-  @ManyToOne(() => Contract, { nullable: true })
+  @OneToOne(() => Contract, (contract) => contract.event, { nullable: true })
   @JoinColumn({ name: 'contract_id' })
   contract?: Contract | null;
 }

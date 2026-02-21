@@ -1,0 +1,40 @@
+meta {
+  name: register photos 1-82
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/photos
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "eventToken": "{{event_token}}",
+    "storagePath": "{{photo_storage_base}}/{{photo_index}}.jpg",
+    "publicUrl": "{{supabase_storage_url}}/{{photo_storage_base}}/{{photo_index}}.jpg"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Registra fotos 1.jpg a 82.jpg de una en una.
+  
+  GUI: Runner → Selecciona la carpeta "register bulk 1-82" → Run with Parameters → iterations-register-photos-1-82.json
+  
+  CLI:
+    bru run collection-bookandsign --env local --folder "photos/register-bulk-1-82" --json-file-path collection-bookandsign/photos/iterations-register-photos-1-82.json
+  
+  Variables en local.bru:
+    - event_token, photo_storage_base, supabase_storage_url
+}

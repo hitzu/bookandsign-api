@@ -12,6 +12,7 @@ import { ContractSlot } from './entities/contract-slot.entity';
 import { ContractPreparationProfile } from './entities/contract-preparation-profile.entity';
 import { ContractsPreparationProfileService } from './preparation-profile/contracts-preparation-profile.service';
 import { PrepProfileUploadsService } from './preparation-profile/prep-profile-uploads.service';
+import { Event } from '../events/entities/event.entity';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { PrepProfileUploadsService } from './preparation-profile/prep-profile-up
       Package,
       ContractSlot,
       ContractPreparationProfile,
+      Event,
     ]),
   ],
   controllers: [ContractsController],

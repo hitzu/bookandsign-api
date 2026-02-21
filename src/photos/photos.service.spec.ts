@@ -1,4 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { AppDataSource as TestDataSource } from '../config/database/data-source';
@@ -20,6 +21,10 @@ describe('PhotosService', () => {
       providers: [
         PhotosService,
         EventsService,
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn((key: string) => (key === 'SUPABASE_URL' ? 'https://test.supabase.co' : undefined)) },
+        },
         {
           provide: getRepositoryToken(Photo),
           useValue: TestDataSource.getRepository(Photo),

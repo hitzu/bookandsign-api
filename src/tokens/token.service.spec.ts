@@ -1,4 +1,7 @@
-import { InternalServerErrorException } from '@nestjs/common';
+import {
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -9,6 +12,7 @@ import { AppDataSource as TestDataSource } from '../config/database/data-source'
 import { UserFactory } from '../../test/factories/user/user.factory';
 import { TokenFactory } from '../../test/factories/token/token.factory';
 import { TOKEN_TYPE } from '../common/types/token-type';
+import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 
 describe('TokenService', () => {
   let service: TokenService;
@@ -20,6 +24,7 @@ describe('TokenService', () => {
   beforeEach(async () => {
     const mockJwtService = {
       signAsync: jest.fn().mockResolvedValue('mock-jwt-token'),
+      verifyAsync: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -457,6 +462,73 @@ describe('TokenService', () => {
         expect(refreshToken?.createdAt).toBeDefined();
         expect(refreshToken?.updatedAt).toBeDefined();
       });
+    });
+  });
+
+  describe('validateRefreshTokenAndGetUser', () => {
+    it('should return user when refresh token is valid', async () => {
+      const user = await userFactory.create();
+      const refreshTokenEntity = await tokenFactory.createForUser(
+        user,
+        TOKEN_TYPE.REFRESH,
+      );
+      const mockVerify = jest.fn().mockResolvedValue({
+        jti: refreshTokenEntity.token,
+        type: TOKEN_TYPE.REFRESH,
+        sub: user.id,
+      });
+      jest.spyOn(jwtService, 'verifyAsync').mockImplementation(mockVerify);
+
+      const result = await service.validateRefreshTokenAndGetUser(
+        'valid-refresh-jwt',
+      );
+
+      expect(result).toBeDefined();
+      expect(result.id).toBe(user.id);
+      expect(result.email).toBe(user.email);
+    });
+
+    it('should throw UnauthorizedException when JWT verification fails', async () => {
+      jest.spyOn(jwtService, 'verifyAsync').mockRejectedValue(new Error());
+
+      await expect(
+        service.validateRefreshTokenAndGetUser('invalid-jwt'),
+      ).rejects.toEqual(
+        new UnauthorizedException(EXCEPTION_RESPONSE.TOKEN_EXPIRED),
+      );
+    });
+
+    it('should throw UnauthorizedException when token type is not REFRESH', async () => {
+      const user = await userFactory.create();
+      const refreshTokenEntity = await tokenFactory.createForUser(
+        user,
+        TOKEN_TYPE.REFRESH,
+      );
+      jest.spyOn(jwtService, 'verifyAsync').mockResolvedValue({
+        jti: refreshTokenEntity.token,
+        type: TOKEN_TYPE.ACCESS,
+        sub: user.id,
+      });
+
+      await expect(
+        service.validateRefreshTokenAndGetUser('access-token-jwt'),
+      ).rejects.toEqual(
+        new UnauthorizedException(EXCEPTION_RESPONSE.INVALID_TOKEN),
+      );
+    });
+
+    it('should throw UnauthorizedException when token not found in DB', async () => {
+      jest.spyOn(jwtService, 'verifyAsync').mockResolvedValue({
+        jti: '00000000-0000-0000-0000-000000000000',
+        type: TOKEN_TYPE.REFRESH,
+        sub: 1,
+      });
+
+      await expect(
+        service.validateRefreshTokenAndGetUser('revoked-token-jwt'),
+      ).rejects.toEqual(
+        new UnauthorizedException(EXCEPTION_RESPONSE.INVALID_TOKEN),
+      );
     });
   });
 });

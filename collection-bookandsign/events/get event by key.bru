@@ -1,11 +1,11 @@
 meta {
-  name: presign photo (501 stub)
+  name: get event by key
   type: http
-  seq: 4
+  seq: 3
 }
 
-post {
-  url: {{base_url}}/photos/presign
+get {
+  url: {{base_url}}/events/by-key/{{event_key}}
   body: none
   auth: inherit
 }

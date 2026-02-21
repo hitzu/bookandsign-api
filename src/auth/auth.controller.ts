@@ -1,14 +1,18 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   ApiBadRequestResponse,
+  ApiBody,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { SignupDto } from '../users/dto/signup.dto';
 import { LoginOutputDto } from './dto/login-output.dto';
 import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { Public } from './decorators/public.decorator';
 
@@ -43,5 +47,22 @@ export class AuthController {
   })
   async login(@Body() loginDto: LoginDto): Promise<LoginOutputDto> {
     return this.authService.login(loginDto);
+  }
+
+  @Public()
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: RefreshTokenDto })
+  @ApiOkResponse({
+    description: 'Tokens refreshed successfully',
+    type: LoginOutputDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid or expired refresh token',
+  })
+  async refresh(
+    @Body(new ValidationPipe({ whitelist: true })) dto: RefreshTokenDto,
+  ): Promise<LoginOutputDto> {
+    return this.authService.refresh(dto.refreshToken);
   }
 }

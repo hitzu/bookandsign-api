@@ -10,13 +10,17 @@ import { Repository } from 'typeorm';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { EventResponseDto } from './dto/event-response.dto';
 import { Event } from './entities/event.entity';
+import { PinoLogger } from 'nestjs-pino';
 
 @Injectable()
 export class EventsService {
   constructor(
     @InjectRepository(Event)
     private readonly eventRepository: Repository<Event>,
-  ) {}
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(EventsService.name);
+  }
 
   async create(dto: {
     contractId: number;
@@ -38,7 +42,13 @@ export class EventsService {
       description: dto.description ?? null,
       token,
     });
-    const saved = await this.eventRepository.save(entity);
+    let saved: Event;
+    try {
+      saved = await this.eventRepository.save(entity);
+    } catch (error) {
+      this.logger.error(error, 'Error creating event');
+      throw error;
+    }
     return plainToInstance(EventResponseDto, saved, {
       excludeExtraneousValues: true,
     });
@@ -46,6 +56,16 @@ export class EventsService {
 
   async getByToken(token: string): Promise<EventResponseDto> {
     const event = await this.eventRepository.findOne({ where: { token } });
+    if (!event) {
+      throw new NotFoundException(EXCEPTION_RESPONSE.EVENT_NOT_FOUND);
+    }
+    return plainToInstance(EventResponseDto, event, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  async getByKey(key: string): Promise<EventResponseDto> {
+    const event = await this.eventRepository.findOne({ where: { key } });
     if (!event) {
       throw new NotFoundException(EXCEPTION_RESPONSE.EVENT_NOT_FOUND);
     }

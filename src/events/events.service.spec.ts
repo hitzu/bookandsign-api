@@ -83,4 +83,25 @@ describe('EventsService', () => {
       );
     });
   });
+
+  describe('getByKey', () => {
+    it('should return event when key exists', async () => {
+      const event = await eventFactory.create({ key: 'wedding-2025-001' });
+
+      const result = await service.getByKey('wedding-2025-001');
+
+      expect(result.id).toBe(event.id);
+      expect(result.key).toBe('wedding-2025-001');
+      expect(result.name).toBe(event.name);
+      expect(result.token).toBe(event.token);
+    });
+
+    it('should throw NotFoundException when key does not exist', async () => {
+      await expect(
+        service.getByKey('non-existent-key'),
+      ).rejects.toEqual(
+        new NotFoundException(EXCEPTION_RESPONSE.EVENT_NOT_FOUND),
+      );
+    });
+  });
 });

@@ -1,0 +1,31 @@
+meta {
+  name: refresh
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/auth/refresh
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "refreshToken": "{{refresh_token}}"
+  }
+}
+
+vars:pre-request {
+  refresh_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsImVtYWlsIjoicm9iZXJ0LnRvcnJlcy5sb3BlekBnbWFpbC5jb20iLCJ0eXBlIjoicmVmcmVzaCIsImlkIjoyLCJqdGkiOiJiNTY4OWY1OC03NjVjLTRiYzktYTIwZC1mOWM5OGE0MjVlOTciLCJpYXQiOjE3NzE4NjQ0NzQsImV4cCI6MTgwMzQwMDQ3NH0.BVYF3Sp4legmQUnhgpF3qlCwDuHUyCkfcZku_xbXiMM
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Valida el refresh token y devuelve nuevos access y refresh tokens.
+  Obtén refresh_token del response del login.
+}
