@@ -1,4 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { AppDataSource as TestDataSource } from '../config/database/data-source';
@@ -9,6 +10,7 @@ import { Event } from '../events/entities/event.entity';
 import { Photo } from './entities/photo.entity';
 import { EventsService } from '../events/events.service';
 import { PhotosService } from './photos.service';
+import { PinoLogger } from 'nestjs-pino';
 
 describe('PhotosService', () => {
   let service: PhotosService;
@@ -16,10 +18,21 @@ describe('PhotosService', () => {
   let photoFactory: PhotoFactory;
 
   beforeEach(async () => {
+    const loggerMock = {
+      setContext: jest.fn(),
+      error: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      debug: jest.fn(),
+    };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PhotosService,
         EventsService,
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn((key: string) => (key === 'SUPABASE_URL' ? 'https://test.supabase.co' : undefined)) },
+        },
         {
           provide: getRepositoryToken(Photo),
           useValue: TestDataSource.getRepository(Photo),
@@ -27,6 +40,10 @@ describe('PhotosService', () => {
         {
           provide: getRepositoryToken(Event),
           useValue: TestDataSource.getRepository(Event),
+        },
+        {
+          provide: PinoLogger,
+          useValue: loggerMock,
         },
       ],
     }).compile();

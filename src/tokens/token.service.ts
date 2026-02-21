@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Token } from './entities/token.entity';
@@ -121,5 +125,41 @@ export class TokenService {
 
   public decodeToken(token: string): DecodedTokenDto {
     return this.jwtService.decode(token);
+  }
+
+  /**
+   * Validates refresh token JWT and DB record, returns the user if valid.
+   * Throws UnauthorizedException if token is invalid, expired, or revoked.
+   */
+  public async validateRefreshTokenAndGetUser(
+    refreshToken: string,
+  ): Promise<User> {
+    let payload: { jti?: string; type?: string; sub?: number };
+    try {
+      payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: process.env.JWT_SECRET,
+      });
+    } catch {
+      throw new UnauthorizedException(EXCEPTION_RESPONSE.TOKEN_EXPIRED);
+    }
+
+    if (payload.type !== TOKEN_TYPE.REFRESH || !payload.jti) {
+      throw new UnauthorizedException(EXCEPTION_RESPONSE.INVALID_TOKEN);
+    }
+
+    const tokenEntity = await this.tokenRepository.findOne({
+      where: { token: payload.jti, type: TOKEN_TYPE.REFRESH },
+      relations: ['user'],
+    });
+
+    if (
+      !tokenEntity ||
+      !tokenEntity.user ||
+      (tokenEntity.expiresAt && tokenEntity.expiresAt < new Date())
+    ) {
+      throw new UnauthorizedException(EXCEPTION_RESPONSE.INVALID_TOKEN);
+    }
+
+    return tokenEntity.user;
   }
 }

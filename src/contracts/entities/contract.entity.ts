@@ -17,6 +17,7 @@ import { ContractPromotion } from './contract-promotion.entity';
 import { CONTRACT_STATUS } from '../types/contract-status.types';
 import { ContractSlot } from './contract-slot.entity';
 import { User } from '../../users/entities/user.entity';
+import { Event } from '../../events/entities/event.entity';
 
 @Entity('contracts')
 @UseDto(ContractDto)
@@ -101,4 +102,7 @@ export class Contract extends BaseTimeEntity {
   @ManyToOne(() => User, (user) => user.contracts)
   @JoinColumn({ name: 'user_id' })
   user!: User;
+
+  @OneToOne(() => Event, (event) => event.contract)
+  event?: Event | null;
 }

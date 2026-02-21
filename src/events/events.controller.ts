@@ -49,6 +49,19 @@ export class EventsController {
     });
   }
 
+  @Get('by-key/:key')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get event by key' })
+  @ApiParam({ name: 'key', type: String, description: 'Event key (unique identifier)' })
+  @ApiOkResponse({
+    description: 'Event found',
+    type: EventResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Event not found' })
+  getByKey(@Param('key') key: string) {
+    return this.eventsService.getByKey(key);
+  }
+
   @Get(':token')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get event by token' })

@@ -1,0 +1,34 @@
+meta {
+  name: bulk photos (test)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/photos/bulk-seed
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "eventToken": "{{event_token}}",
+    "storageBase": "local/photobooth/event_1",
+    "count": 82
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  [TEST ONLY] Inserta 82 fotos (1.jpg a 82.jpg) para el evento.
+  Sustituye Run with Parameters de Bruno (funcionalidad de pago).
+  Eliminar manualmente cuando termines las pruebas.
+}

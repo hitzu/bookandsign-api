@@ -7,18 +7,32 @@ import { ContractFactory } from '../../test/factories/contracts/contract.factory
 import { EventFactory } from '../../test/factories/events/event.factory';
 import { Event } from './entities/event.entity';
 import { EventsService } from './events.service';
+import { PinoLogger } from 'nestjs-pino';
 
 describe('EventsService', () => {
   let service: EventsService;
   let eventFactory: EventFactory;
 
   beforeEach(async () => {
+
+    const loggerMock = {
+      setContext: jest.fn(),
+      error: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      debug: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EventsService,
         {
           provide: getRepositoryToken(Event),
           useValue: TestDataSource.getRepository(Event),
+        },
+        {
+          provide: PinoLogger,
+          useValue: loggerMock,
         },
       ],
     }).compile();
@@ -78,6 +92,27 @@ describe('EventsService', () => {
     it('should throw NotFoundException when token does not exist', async () => {
       await expect(
         service.getByToken('00000000-0000-0000-0000-000000000000'),
+      ).rejects.toEqual(
+        new NotFoundException(EXCEPTION_RESPONSE.EVENT_NOT_FOUND),
+      );
+    });
+  });
+
+  describe('getByKey', () => {
+    it('should return event when key exists', async () => {
+      const event = await eventFactory.create({ key: 'wedding-2025-001' });
+
+      const result = await service.getByKey('wedding-2025-001');
+
+      expect(result.id).toBe(event.id);
+      expect(result.key).toBe('wedding-2025-001');
+      expect(result.name).toBe(event.name);
+      expect(result.token).toBe(event.token);
+    });
+
+    it('should throw NotFoundException when key does not exist', async () => {
+      await expect(
+        service.getByKey('non-existent-key'),
       ).rejects.toEqual(
         new NotFoundException(EXCEPTION_RESPONSE.EVENT_NOT_FOUND),
       );
