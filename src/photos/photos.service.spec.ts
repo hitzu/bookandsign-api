@@ -10,6 +10,7 @@ import { Event } from '../events/entities/event.entity';
 import { Photo } from './entities/photo.entity';
 import { EventsService } from '../events/events.service';
 import { PhotosService } from './photos.service';
+import { PinoLogger } from 'nestjs-pino';
 
 describe('PhotosService', () => {
   let service: PhotosService;
@@ -17,6 +18,13 @@ describe('PhotosService', () => {
   let photoFactory: PhotoFactory;
 
   beforeEach(async () => {
+    const loggerMock = {
+      setContext: jest.fn(),
+      error: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      debug: jest.fn(),
+    };
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PhotosService,
@@ -32,6 +40,10 @@ describe('PhotosService', () => {
         {
           provide: getRepositoryToken(Event),
           useValue: TestDataSource.getRepository(Event),
+        },
+        {
+          provide: PinoLogger,
+          useValue: loggerMock,
         },
       ],
     }).compile();

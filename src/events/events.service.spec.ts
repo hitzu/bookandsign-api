@@ -7,18 +7,32 @@ import { ContractFactory } from '../../test/factories/contracts/contract.factory
 import { EventFactory } from '../../test/factories/events/event.factory';
 import { Event } from './entities/event.entity';
 import { EventsService } from './events.service';
+import { PinoLogger } from 'nestjs-pino';
 
 describe('EventsService', () => {
   let service: EventsService;
   let eventFactory: EventFactory;
 
   beforeEach(async () => {
+
+    const loggerMock = {
+      setContext: jest.fn(),
+      error: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      debug: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EventsService,
         {
           provide: getRepositoryToken(Event),
           useValue: TestDataSource.getRepository(Event),
+        },
+        {
+          provide: PinoLogger,
+          useValue: loggerMock,
         },
       ],
     }).compile();
