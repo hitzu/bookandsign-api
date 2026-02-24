@@ -66,6 +66,11 @@ export class ContractDto {
   token!: string;
 
   @Expose()
+  @IsOptional()
+  @IsString()
+  eventToken?: string | null;
+
+  @Expose()
   @IsString()
   createdAt!: string;
 }

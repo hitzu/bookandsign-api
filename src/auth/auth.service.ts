@@ -68,4 +68,16 @@ export class AuthService {
       throw error;
     }
   }
+
+  public async refresh(refreshToken: string): Promise<LoginOutputDto> {
+    const user =
+      await this.tokenService.validateRefreshTokenAndGetUser(refreshToken);
+    const tokens = await this.tokenService.generateAuthTokens(user);
+    return {
+      accessAndRefreshToken: tokens,
+      userInfo: plainToInstance(UserInfo, user, {
+        excludeExtraneousValues: true,
+      }),
+    };
+  }
 }

@@ -24,6 +24,8 @@ import { SLOT_PERIOD } from '../slots/types/slot-period.types';
 import { SLOT_STATUS } from '../slots/types/slot-status.types';
 import { User } from '../users/entities/user.entity';
 import { ContractSlot } from './entities/contract-slot.entity';
+import { Event } from '../events/entities/event.entity';
+import { EventFactory } from '../../test/factories/events/event.factory';
 
 describe('ContractsService', () => {
   let service: ContractsService;
@@ -36,6 +38,7 @@ describe('ContractsService', () => {
   let brandFactory: BrandFactory;
   let slotFactory: SlotFactory;
   let userFactory: UserFactory;
+  let eventFactory: EventFactory;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -71,6 +74,10 @@ describe('ContractsService', () => {
           provide: getRepositoryToken(User),
           useValue: TestDataSource.getRepository(User),
         },
+        {
+          provide: getRepositoryToken(Event),
+          useValue: TestDataSource.getRepository(Event),
+        },
       ],
     }).compile();
 
@@ -91,6 +98,65 @@ describe('ContractsService', () => {
     brandFactory = new BrandFactory(TestDataSource);
     slotFactory = new SlotFactory(TestDataSource);
     userFactory = new UserFactory(TestDataSource);
+    eventFactory = new EventFactory(TestDataSource);
+  });
+
+  describe('list', () => {
+    it('should return contracts with eventToken when contract has an event', async () => {
+      const user = await userFactory.create();
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const contract = await contractsRepo.save(
+        contractsRepo.create({
+          userId: user.id,
+          sku: 'SKU-LIST-001',
+          token: 'list-token-001',
+          status: CONTRACT_STATUS.CONFIRMED,
+          slot,
+        }),
+      );
+
+      const eventToken = 'a1b2c3d4-e5f6-4789-a012-345678901234';
+      const event = await eventFactory.create({
+        contractId: contract.id,
+        token: eventToken,
+        name: 'Test Event',
+        key: 'list-test-key-001',
+      });
+
+      const list = await service.list();
+
+      const found = list.find((c) => c.id === contract.id);
+      expect(found).toBeDefined();
+      expect(found?.eventToken).toBe(eventToken);
+    });
+
+    it('should return eventToken as null when contract has no event', async () => {
+      const user = await userFactory.create();
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const contract = await contractsRepo.save(
+        contractsRepo.create({
+          userId: user.id,
+          sku: 'SKU-LIST-002',
+          token: 'list-token-002',
+          status: CONTRACT_STATUS.CONFIRMED,
+          slot,
+        }),
+      );
+
+      const list = await service.list();
+
+      const found = list.find((c) => c.id === contract.id);
+      expect(found).toBeDefined();
+      expect(found?.eventToken).toBeNull();
+    });
   });
 
   describe('createContract', () => {

@@ -1,0 +1,115 @@
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+  NotImplementedException,
+  Param,
+  Post,
+  ValidationPipe,
+} from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiNotImplementedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { BulkSeedPhotosDto } from './dto/bulk-seed-photos.dto';
+import { CreatePhotoDto } from './dto/create-photo.dto';
+import { PhotoResponseDto } from './dto/photo-response.dto';
+import { PhotosService } from './photos.service';
+import { Public } from '../auth/decorators/public.decorator';
+import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
+
+@Controller('photos')
+@ApiTags('photos')
+@ApiBearerAuth('access-token')
+export class PhotosController {
+  constructor(private readonly photosService: PhotosService) { }
+
+  @Get('event/:token')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'List photos for an event' })
+  @ApiParam({ name: 'token', type: String, description: 'Event token (UUID)' })
+  @ApiOkResponse({
+    description: 'Photos for the event (ordered by createdAt DESC)',
+    type: PhotoResponseDto,
+    isArray: true,
+  })
+  @ApiNotFoundResponse({ description: 'Event not found' })
+  listByEventToken(@Param('token') token: string) {
+    return this.photosService.listByEventToken(token);
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Register photo metadata after upload' })
+  @ApiBody({ type: CreatePhotoDto })
+  @ApiCreatedResponse({
+    description: 'Photo registered successfully',
+    type: PhotoResponseDto,
+  })
+  @ApiOkResponse({
+    description: 'Photo already exists (idempotent)',
+    type: PhotoResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid request body' })
+  @ApiNotFoundResponse({ description: 'Event not found' })
+  create(@Body(new ValidationPipe()) dto: CreatePhotoDto) {
+    return this.photosService.create({
+      eventToken: dto.eventToken,
+      storagePath: dto.storagePath,
+      publicUrl: dto.publicUrl,
+    });
+  }
+
+  @Post('bulk-seed')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: '[TEST ONLY] Seed 1.jpg to N.jpg for an event',
+    description:
+      'Inserts N photo records (1.jpg through N.jpg). For testing without Bruno Run with Parameters. Remove manually when done.',
+  })
+  @ApiBody({ type: BulkSeedPhotosDto })
+  @ApiCreatedResponse({
+    description: 'Photos seeded',
+    type: PhotoResponseDto,
+    isArray: true,
+  })
+  @ApiNotFoundResponse({ description: 'Event not found' })
+  bulkSeed(
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: BulkSeedPhotosDto,
+  ) {
+    if (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'local') {
+      throw new NotFoundException(EXCEPTION_RESPONSE.ENDPOINT_NOT_FOUND);
+    }
+    return this.photosService.bulkSeed({
+      eventToken: dto.eventToken,
+      storageBase: dto.storageBase,
+      count: dto.count,
+    });
+  }
+
+  @Post('presign')
+  @HttpCode(HttpStatus.NOT_IMPLEMENTED)
+  @ApiOperation({ summary: 'Get presigned upload URL (stub)' })
+  @ApiNotImplementedResponse({
+    description:
+      'Presigned URLs require SUPABASE_SERVICE_ROLE_KEY and ENABLE_SUPABASE_PRESIGN=true',
+  })
+  presign(): never {
+    throw new NotImplementedException(
+      'Presigned URLs require SUPABASE_SERVICE_ROLE_KEY and ENABLE_SUPABASE_PRESIGN=true',
+    );
+  }
+}

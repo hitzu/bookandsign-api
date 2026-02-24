@@ -553,4 +553,55 @@ describe('AuthService', () => {
       });
     });
   });
+
+  describe('refresh', () => {
+    it('should return new tokens and user info for valid refresh token', async () => {
+      const user = await userFactory.create();
+      jest
+        .spyOn(tokenService, 'validateRefreshTokenAndGetUser')
+        .mockResolvedValue(user);
+      jest
+        .spyOn(tokenService, 'generateAuthTokens')
+        .mockResolvedValue({
+          accessToken: 'new-access-token',
+          refreshToken: 'new-refresh-token',
+        });
+
+      const result = await service.refresh('valid-refresh-token');
+
+      expect(result).toBeDefined();
+      expect(result.accessAndRefreshToken.accessToken).toBe(
+        'new-access-token',
+      );
+      expect(result.accessAndRefreshToken.refreshToken).toBe(
+        'new-refresh-token',
+      );
+      expect(result.userInfo).toBeDefined();
+      expect(result.userInfo.email).toBe(user.email);
+      expect(result.userInfo.id).toBe(user.id);
+      expect(tokenService.validateRefreshTokenAndGetUser).toHaveBeenCalledWith(
+        'valid-refresh-token',
+      );
+    });
+
+    it('should throw UnauthorizedException for invalid refresh token', async () => {
+      jest
+        .spyOn(tokenService, 'validateRefreshTokenAndGetUser')
+        .mockRejectedValue(new UnauthorizedException());
+
+      await expect(
+        service.refresh('invalid-jwt-token'),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should propagate errors from TokenService', async () => {
+      jest
+        .spyOn(tokenService, 'validateRefreshTokenAndGetUser')
+        .mockRejectedValue(new Error('Token validation failed'));
+
+      await expect(
+        service.refresh('some-refresh-token'),
+      ).rejects.toThrow('Token validation failed');
+    });
+  });
 });

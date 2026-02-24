@@ -30,6 +30,7 @@ import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { CONTRACT_SLOT_PURPOSE } from './constants/slot_purpose.enum';
 import { AddContractSlotDto } from './dto/add-contract-slot.dto';
 import { ContractPromotion } from './entities/contract-promotion.entity';
+import { Event } from '../events/entities/event.entity';
 
 @Injectable()
 export class ContractsService {
@@ -46,6 +47,8 @@ export class ContractsService {
     private readonly packagesRepository: Repository<Package>,
     @InjectRepository(ContractSlot)
     private readonly contractSlotsRepository: Repository<ContractSlot>,
+    @InjectRepository(Event)
+    private readonly eventsRepository: Repository<Event>,
   ) { }
 
   private async recalculateTotals(contractId: number): Promise<void> {
@@ -377,9 +380,14 @@ export class ContractsService {
 
   async list(): Promise<ContractDto[]> {
     const contracts = await this.contractsRepository.find({
-      relations: ['slot', 'contractSlots', 'contractSlots.slot'],
+      relations: ['slot', 'contractSlots', 'contractSlots.slot', 'event'],
     });
-    return plainToInstance(ContractDto, contracts, {
+
+    const contractsWithEventToken = contracts.map((c) => ({
+      ...c,
+      eventToken: c.event?.token ?? null,
+    }));
+    return plainToInstance(ContractDto, contractsWithEventToken, {
       excludeExtraneousValues: true,
     });
   }

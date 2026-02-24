@@ -1,0 +1,29 @@
+meta {
+  name: create event
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/events
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "contractId": {{contract_id}},
+    "name": "Wedding Gallery 2025",
+    "key": "wedding-2025-001",
+    "description": "Photo gallery for wedding event"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
