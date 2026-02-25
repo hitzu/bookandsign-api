@@ -8,6 +8,7 @@ import {
   NotImplementedException,
   Param,
   Post,
+  Query,
   ValidationPipe,
 } from '@nestjs/common';
 import {
@@ -19,11 +20,14 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { BulkSeedPhotosDto } from './dto/bulk-seed-photos.dto';
 import { CreatePhotoDto } from './dto/create-photo.dto';
+import { ListPhotosQueryDto } from './dto/list-photos.dto';
+import { ListPhotosResponseDto } from './dto/list-photos-response.dto';
 import { PhotoResponseDto } from './dto/photo-response.dto';
 import { PhotosService } from './photos.service';
 import { Public } from '../auth/decorators/public.decorator';
@@ -40,14 +44,30 @@ export class PhotosController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'List photos for an event' })
   @ApiParam({ name: 'token', type: String, description: 'Event token (UUID)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Maximum number of photos to return',
+    example: 20,
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: 'Pagination cursor from previous response',
+  })
   @ApiOkResponse({
-    description: 'Photos for the event (ordered by createdAt DESC)',
-    type: PhotoResponseDto,
-    isArray: true,
+    description: 'Paginated photos for the event (ordered by createdAt DESC, id DESC)',
+    type: ListPhotosResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Event not found' })
-  listByEventToken(@Param('token') token: string) {
-    return this.photosService.listByEventToken(token);
+  listByEventToken(
+    @Param('token') token: string,
+    @Query(new ValidationPipe({ transform: true, whitelist: true }))
+    query: ListPhotosQueryDto,
+  ) {
+    return this.photosService.listByEventToken(token, query);
   }
 
   @Post()

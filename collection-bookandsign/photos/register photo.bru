@@ -17,9 +17,13 @@ headers {
 body:json {
   {
     "eventToken": "{{event_token}}",
-    "storagePath": "local/photobooth/event_1/red.jpg",
-    "publicUrl": "https://uljzbxuxzknilubykrlw.supabase.co/storage/v1/object/public/local/photobooth/event_1/red.jpg"
+    "storagePath": "{{env}}/photobooth/event_6/1.jpg",
+    "publicUrl": "https://uljzbxuxzknilubykrlw.supabase.co/storage/v1/object/public/{{env}}/photobooth/event_6/1.jpg"
   }
+}
+
+vars:pre-request {
+  event_token: 0c09296a-f791-4a31-97b7-1320891748fa
 }
 
 settings {

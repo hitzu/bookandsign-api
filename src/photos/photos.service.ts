@@ -1,11 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
+import { ListPhotosQueryDto } from './dto/list-photos.dto';
+import { ListPhotosResponseDto } from './dto/list-photos-response.dto';
 import { PhotoResponseDto } from './dto/photo-response.dto';
 import { Photo } from './entities/photo.entity';
 import { EventsService } from '../events/events.service';
+
+type PhotoCursor = {
+  createdAt: string;
+  id: number;
+};
 
 @Injectable()
 export class PhotosService {
@@ -16,15 +23,84 @@ export class PhotosService {
     private readonly configService: ConfigService,
   ) { }
 
-  async listByEventToken(eventToken: string): Promise<PhotoResponseDto[]> {
+  async listByEventToken(
+    eventToken: string,
+    query: ListPhotosQueryDto,
+  ): Promise<ListPhotosResponseDto> {
     const event = await this.eventsService.findOneByToken(eventToken);
-    const photos = await this.photoRepository.find({
-      where: { eventId: event.id },
-      order: { createdAt: 'DESC' },
-    });
-    return plainToInstance(PhotoResponseDto, photos, {
+    const limit = query.limit ?? 20;
+    const cursor = this.decodeCursor(query.cursor);
+    const queryBuilder = this.photoRepository
+      .createQueryBuilder('photo')
+      .where('photo.eventId = :eventId', { eventId: event.id })
+      .orderBy('photo.createdAt', 'DESC')
+      .addOrderBy('photo.id', 'DESC')
+      .take(limit + 1);
+    if (cursor) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.where('photo.createdAt < :cursorCreatedAt', {
+            cursorCreatedAt: cursor.createdAt,
+          }).orWhere(
+            'photo.createdAt = :cursorCreatedAt AND photo.id < :cursorId',
+            {
+              cursorCreatedAt: cursor.createdAt,
+              cursorId: cursor.id,
+            },
+          );
+        }),
+      );
+    }
+    const photos = await queryBuilder.getMany();
+    const hasMore = photos.length > limit;
+    const pageItems = hasMore ? photos.slice(0, limit) : photos;
+    const items = plainToInstance(PhotoResponseDto, pageItems, {
       excludeExtraneousValues: true,
     });
+    const lastItem = pageItems[pageItems.length - 1];
+    const nextCursor = hasMore && lastItem
+      ? this.encodeCursor({
+        createdAt: lastItem.createdAt.toISOString(),
+        id: lastItem.id,
+      })
+      : null;
+    return {
+      items,
+      hasMore,
+      nextCursor,
+    };
+  }
+
+  private decodeCursor(cursor?: string): PhotoCursor | null {
+    if (!cursor) {
+      return null;
+    }
+    try {
+      const decoded = Buffer.from(cursor, 'base64url').toString('utf8');
+      const parsed = JSON.parse(decoded) as Partial<PhotoCursor>;
+      if (
+        !parsed.createdAt
+        || typeof parsed.createdAt !== 'string'
+        || typeof parsed.id !== 'number'
+        || !Number.isInteger(parsed.id)
+      ) {
+        throw new Error('Invalid cursor payload');
+      }
+      const createdAt = new Date(parsed.createdAt);
+      if (Number.isNaN(createdAt.getTime())) {
+        throw new Error('Invalid cursor date');
+      }
+      return {
+        createdAt: createdAt.toISOString(),
+        id: parsed.id,
+      };
+    } catch {
+      throw new BadRequestException('Invalid cursor');
+    }
+  }
+
+  private encodeCursor(cursor: PhotoCursor): string {
+    return Buffer.from(JSON.stringify(cursor)).toString('base64url');
   }
 
   async create(dto: {

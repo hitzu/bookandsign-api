@@ -23,12 +23,13 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { CreateEventDto } from './dto/create-event.dto';
 import { EventResponseDto } from './dto/event-response.dto';
 import { EventsService } from './events.service';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('events')
 @ApiTags('events')
 @ApiBearerAuth('access-token')
 export class EventsController {
-  constructor(private readonly eventsService: EventsService) {}
+  constructor(private readonly eventsService: EventsService) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -63,6 +64,7 @@ export class EventsController {
   }
 
   @Get(':token')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get event by token' })
   @ApiParam({ name: 'token', type: String, description: 'Event token (UUID)' })

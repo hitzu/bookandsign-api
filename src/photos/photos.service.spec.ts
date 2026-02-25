@@ -65,16 +65,63 @@ describe('PhotosService', () => {
         storagePath: 'path2.jpg',
       });
 
-      const result = await service.listByEventToken(event.token);
+      const result = await service.listByEventToken(event.token, {});
 
-      expect(result).toHaveLength(2);
-      expect(result[0]?.id).toBe(photo2.id);
-      expect(result[1]?.id).toBe(photo1.id);
+      expect(result.items).toHaveLength(2);
+      expect(result.items[0]?.id).toBe(photo2.id);
+      expect(result.items[1]?.id).toBe(photo1.id);
+      expect(result.hasMore).toBe(false);
+      expect(result.nextCursor).toBeNull();
+    });
+
+    it('should paginate photos using limit and cursor', async () => {
+      const event = await eventFactory.create();
+      const oldestPhoto = await photoFactory.create({
+        eventId: event.id,
+        storagePath: 'path1.jpg',
+      });
+      const middlePhoto = await photoFactory.create({
+        eventId: event.id,
+        storagePath: 'path2.jpg',
+      });
+      const newestPhoto = await photoFactory.create({
+        eventId: event.id,
+        storagePath: 'path3.jpg',
+      });
+      const firstPage = await service.listByEventToken(event.token, {
+        limit: 2,
+      });
+
+      expect(firstPage.items).toHaveLength(2);
+      expect(firstPage.items[0]?.id).toBe(newestPhoto.id);
+      expect(firstPage.items[1]?.id).toBe(middlePhoto.id);
+      expect(firstPage.hasMore).toBe(true);
+      expect(firstPage.nextCursor).toBeTruthy();
+
+      const secondPage = await service.listByEventToken(event.token, {
+        limit: 1,
+        cursor: firstPage.nextCursor ?? undefined,
+      });
+
+      expect(secondPage.items).toHaveLength(1);
+      expect(secondPage.items[0]?.id).toBe(oldestPhoto.id);
+      expect(secondPage.hasMore).toBe(false);
+      expect(secondPage.nextCursor).toBeNull();
+    });
+
+    it('should throw when cursor is invalid', async () => {
+      const event = await eventFactory.create();
+
+      await expect(
+        service.listByEventToken(event.token, {
+          cursor: 'invalid-cursor',
+        }),
+      ).rejects.toThrow('Invalid cursor');
     });
 
     it('should throw NotFoundException when event token does not exist', async () => {
       await expect(
-        service.listByEventToken('00000000-0000-0000-0000-000000000000'),
+        service.listByEventToken('00000000-0000-0000-0000-000000000000', {}),
       ).rejects.toEqual(
         new NotFoundException(EXCEPTION_RESPONSE.EVENT_NOT_FOUND),
       );
@@ -83,9 +130,11 @@ describe('PhotosService', () => {
     it('should return empty array when event has no photos', async () => {
       const event = await eventFactory.create();
 
-      const result = await service.listByEventToken(event.token);
+      const result = await service.listByEventToken(event.token, {});
 
-      expect(result).toEqual([]);
+      expect(result.items).toEqual([]);
+      expect(result.hasMore).toBe(false);
+      expect(result.nextCursor).toBeNull();
     });
   });
 
