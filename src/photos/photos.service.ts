@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
@@ -183,5 +187,12 @@ export class PhotosService {
     }
 
     return results;
+  }
+
+  async remove(id: number): Promise<void> {
+    const result = await this.photoRepository.softDelete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException('Photo not found');
+    }
   }
 }

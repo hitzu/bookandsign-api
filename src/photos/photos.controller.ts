@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -15,6 +16,7 @@ import {
   ApiBadRequestResponse,
   ApiBody,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiNotImplementedResponse,
   ApiOkResponse,
@@ -118,6 +120,16 @@ export class PhotosController {
       storageBase: dto.storageBase,
       count: dto.count,
     });
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove (soft delete) a photo by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'Photo ID' })
+  @ApiNoContentResponse({ description: 'Photo deleted (soft delete)' })
+  @ApiNotFoundResponse({ description: 'Photo not found' })
+  async remove(@Param('id') id: string) {
+    await this.photosService.remove(+id);
   }
 
   @Post('presign')

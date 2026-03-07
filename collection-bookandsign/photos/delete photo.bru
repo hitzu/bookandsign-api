@@ -1,11 +1,11 @@
 meta {
-  name: get event by token
+  name: delete photo
   type: http
-  seq: 2
+  seq: 6
 }
 
-get {
-  url: {{base_url}}/events/{{event_token}}
+delete {
+  url: {{base_url}}/photos/{{id}}
   body: none
   auth: inherit
 }
@@ -15,7 +15,7 @@ headers {
 }
 
 vars:pre-request {
-  event_token: 8246efb8-6087-4db0-9d46-b316e07de874
+  id: 1
 }
 
 settings {
