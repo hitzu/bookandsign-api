@@ -4,4 +4,8 @@ export class FindPackagesQueryDto {
   @IsOptional()
   @IsString()
   brandId?: string;
+
+  @IsOptional()
+  @IsString()
+  term?: string;
 }

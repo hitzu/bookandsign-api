@@ -8,7 +8,7 @@ import { UpdatePackageDto } from './dto/update-package.dto';
 import { Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Package } from './entities/package.entity';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 import { AddProductsToPackageDto } from './dto/add-products-package.dto';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { PackageProduct } from './entities/package-product.entity';
@@ -66,6 +66,9 @@ export class PackagesService {
       const where: FindOptionsWhere<Package> = {};
       if (filters.brandId) {
         where.brandId = Number(filters.brandId);
+      }
+      if (filters.term) {
+        where.name = ILike(`%${filters.term}%`);
       }
       const packages = await this.packagesRepository.find({
         where,

@@ -12,7 +12,7 @@ import { CreateTermDto } from './dto/create-term.dto';
 import { UpdateTermDto } from './dto/update-term.dto';
 import { AddPackageTermDto } from './dto/add-package-term.dto';
 import { RemovePackageTermDto } from './dto/remove-package-term.dto';
-import { BulkUpsertPackageTermsDto } from './dto/bulk-upsert-package-terms.dto';
+import { BulkUpsertPackageTermsInput } from './dto/bulk-upsert-package-terms.dto';
 import { FindAllTermsQueryDto } from './dto/find-all-terms-query.dto';
 import { TERM_SCOPE } from './types/term-scope.types';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
@@ -198,7 +198,7 @@ export class TermsService {
     }
   }
 
-  async bulkUpsertPackageTerms(dto: BulkUpsertPackageTermsDto): Promise<void> {
+  async bulkUpsertPackageTerms(dto: BulkUpsertPackageTermsInput): Promise<void> {
     try {
       this.logger.log({ dto }, 'Bulk upserting package terms');
 

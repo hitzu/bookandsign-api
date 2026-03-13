@@ -20,10 +20,6 @@ export class CreatePackageDto {
   @IsOptional()
   basePrice: number | null = null;
 
-  @IsNumber()
-  @IsOptional()
-  discount: number | null = null;
-
   @IsEnum(PACKAGE_STATUS)
   @IsOptional()
   status?: PACKAGE_STATUS;

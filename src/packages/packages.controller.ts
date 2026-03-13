@@ -66,14 +66,20 @@ export class PackagesController {
     description: 'Filter packages by brand id',
     type: String,
   })
+  @ApiQuery({
+    name: 'term',
+    required: false,
+    description: 'Search packages by name',
+    type: String,
+  })
   @ApiOkResponse({
     description: 'Packages found successfully',
     type: PackageResponseDto,
     isArray: true,
   })
   findAll(@Query(new ValidationPipe()) query: FindPackagesQueryDto) {
-    if (query.brandId) {
-      return this.packagesService.findWithFilters({ brandId: query.brandId });
+    if (query.brandId || query.term) {
+      return this.packagesService.findWithFilters(query);
     }
 
     return this.packagesService.findAll();

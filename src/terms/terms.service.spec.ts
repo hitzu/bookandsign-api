@@ -13,7 +13,7 @@ import { CreateTermDto } from './dto/create-term.dto';
 import { UpdateTermDto } from './dto/update-term.dto';
 import { AddPackageTermDto } from './dto/add-package-term.dto';
 import { RemovePackageTermDto } from './dto/remove-package-term.dto';
-import { BulkUpsertPackageTermsDto } from './dto/bulk-upsert-package-terms.dto';
+import { BulkUpsertPackageTermsInput } from './dto/bulk-upsert-package-terms.dto';
 import { FindAllTermsQueryDto } from './dto/find-all-terms-query.dto';
 import { TERM_SCOPE } from './types/term-scope.types';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -455,7 +455,7 @@ describe('TermsService', () => {
         const package2 = await packageFactory.createForBrand(brand);
         const term = await termFactory.create();
 
-        const dto: BulkUpsertPackageTermsDto = {
+        const dto: BulkUpsertPackageTermsInput = {
           termId: term.id,
           packageIds: [package1.id, package2.id],
         };
@@ -480,7 +480,7 @@ describe('TermsService', () => {
         await packageTermFactory.createForPackageAndTerm(package1, term);
         await packageTermFactory.createForPackageAndTerm(package2, term);
 
-        const dto: BulkUpsertPackageTermsDto = {
+        const dto: BulkUpsertPackageTermsInput = {
           termId: term.id,
           packageIds: [package2.id, package3.id],
         };
@@ -503,7 +503,7 @@ describe('TermsService', () => {
         const term = await termFactory.create();
         await packageTermFactory.createForPackageAndTerm(package1, term);
 
-        const dto: BulkUpsertPackageTermsDto = {
+        const dto: BulkUpsertPackageTermsInput = {
           termId: term.id,
           packageIds: [],
         };
@@ -527,7 +527,7 @@ describe('TermsService', () => {
         );
         const term = await termFactory.create();
 
-        const dto: BulkUpsertPackageTermsDto = {
+        const dto: BulkUpsertPackageTermsInput = {
           termId: term.id,
           packageIds: packages.map((p) => p.id),
         };
