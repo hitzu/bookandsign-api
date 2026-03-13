@@ -25,5 +25,6 @@ export class CreatePackageDto {
   discount: number | null = null;
 
   @IsEnum(PACKAGE_STATUS)
-  status!: PACKAGE_STATUS;
+  @IsOptional()
+  status?: PACKAGE_STATUS;
 }

@@ -31,7 +31,10 @@ export class PackagesService {
   create(createPackageDto: CreatePackageDto) {
     try {
       this.logger.log({ createPackageDto }, 'Creating package');
-      const packageToSave = this.packagesRepository.create(createPackageDto);
+      const packageToSave = this.packagesRepository.create({
+        ...createPackageDto,
+        status: createPackageDto.status ?? PACKAGE_STATUS.ACTIVE,
+      });
       return this.packagesRepository.save(packageToSave);
     } catch (error) {
       this.logger.error(error, 'Error creating package');
