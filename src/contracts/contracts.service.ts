@@ -29,6 +29,7 @@ import { ContractSlot } from './entities/contract-slot.entity';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { CONTRACT_SLOT_PURPOSE } from './constants/slot_purpose.enum';
 import { AddContractSlotDto } from './dto/add-contract-slot.dto';
+import { ListContractsQueryDto } from './dto/list-contracts-query.dto';
 import { ContractPromotion } from './entities/contract-promotion.entity';
 import { Event } from '../events/entities/event.entity';
 
@@ -298,6 +299,29 @@ export class ContractsService {
     return await this.getDetail(contractId);
   }
 
+  async finalize(
+    contractId: number,
+    actorUserId: number,
+  ): Promise<ContractDetailDto> {
+    void actorUserId;
+    const contract = await this.contractsRepository.findOne({
+      where: { id: contractId },
+    });
+    if (!contract) {
+      throw new NotFoundException('Contract not found');
+    }
+    if (contract.status === CONTRACT_STATUS.CANCELLED) {
+      throw new ConflictException('Cannot finalize a cancelled contract');
+    }
+    if (contract.status === CONTRACT_STATUS.FINALIZED) {
+      return await this.getDetail(contractId);
+    }
+    await this.contractsRepository.update(contractId, {
+      status: CONTRACT_STATUS.FINALIZED,
+    });
+    return await this.getDetail(contractId);
+  }
+
   private maskEmail(email: string): string {
     const trimmed = email.trim();
     const at = trimmed.indexOf('@');
@@ -378,10 +402,39 @@ export class ContractsService {
     return await this.getDetail(contractId);
   }
 
-  async list(): Promise<ContractDto[]> {
-    const contracts = await this.contractsRepository.find({
-      relations: ['slot', 'contractSlots', 'contractSlots.slot', 'event'],
-    });
+  async list(query?: ListContractsQueryDto): Promise<ContractDto[]> {
+    const qb = this.contractsRepository
+      .createQueryBuilder('contract')
+      .leftJoinAndSelect('contract.slot', 'legacySlot')
+      .leftJoinAndSelect('contract.contractSlots', 'cs')
+      .leftJoinAndSelect('cs.slot', 'eventSlot')
+      .leftJoinAndSelect('contract.event', 'event')
+      .leftJoin(
+        'contract_slots',
+        'csEvent',
+        `csEvent.contract_id = contract.id
+         AND csEvent.purpose = :eventPurpose
+         AND csEvent.deleted_at IS NULL`,
+        { eventPurpose: CONTRACT_SLOT_PURPOSE.EVENT },
+      )
+      .leftJoin(
+        'slots',
+        'eventDateSlot',
+        'eventDateSlot.id = csEvent.slot_id AND eventDateSlot.deleted_at IS NULL',
+      );
+
+    if (!query?.includeFinalized) {
+      qb.andWhere('contract.status != :finalized', {
+        finalized: CONTRACT_STATUS.FINALIZED,
+      });
+    }
+
+    const contracts = await qb
+      .orderBy(
+        "COALESCE(eventDateSlot.event_date, legacySlot.event_date, '9999-12-31')",
+        'ASC',
+      )
+      .getMany();
 
     const contractsWithEventToken = contracts.map((c) => ({
       ...c,

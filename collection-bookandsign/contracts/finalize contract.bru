@@ -1,0 +1,20 @@
+meta {
+  name: finalize contract
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/contracts/:contract_id/finalize
+  body: json
+  auth: inherit
+}
+
+headers {
+  authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

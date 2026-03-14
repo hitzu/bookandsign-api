@@ -32,6 +32,7 @@ import { ContractDetailDto } from './dto/contract-detail.dto';
 import { CreateContractFromSlotsDto } from './dto/create-contract-from-slots.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { ContractDto } from './dto/contract.dto';
+import { ListContractsQueryDto } from './dto/list-contracts-query.dto';
 import { Public } from '../auth/decorators/public.decorator';
 import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
 import { PaymentDto } from '../payments/dto/payment.dto';
@@ -69,8 +70,12 @@ export class ContractsController {
 
   @Get()
   @ApiOkResponse({ type: ContractDto, isArray: true })
-  async list(): Promise<ContractDto[]> {
-    return await this.contractsService.list();
+  @ApiQuery({ name: 'includeFinalized', type: Boolean, required: false })
+  async list(
+    @Query(new ValidationPipe({ transform: true, whitelist: true }))
+    query: ListContractsQueryDto,
+  ): Promise<ContractDto[]> {
+    return await this.contractsService.list(query);
   }
 
   @Get(':id')
@@ -266,6 +271,15 @@ export class ContractsController {
     @AuthUser() user: DecodedTokenDto,
   ): Promise<ContractDetailDto> {
     return await this.contractsService.reopen(Number(id), user.id);
+  }
+
+  @Post(':id/finalize')
+  @ApiOkResponse({ type: ContractDetailDto })
+  async finalize(
+    @Param('id') id: string,
+    @AuthUser() user: DecodedTokenDto,
+  ): Promise<ContractDetailDto> {
+    return await this.contractsService.finalize(Number(id), user.id);
   }
 
   @Post(':id/slots')

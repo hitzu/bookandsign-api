@@ -3,4 +3,5 @@ export enum CONTRACT_STATUS {
   CANCELLED = 'cancelled',
   ACTIVE = 'active',
   INACTIVE = 'inactive',
+  FINALIZED = 'finalized',
 }

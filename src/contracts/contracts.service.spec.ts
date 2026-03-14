@@ -157,6 +157,51 @@ describe('ContractsService', () => {
       expect(found).toBeDefined();
       expect(found?.eventToken).toBeNull();
     });
+
+    it('should exclude finalized contracts by default', async () => {
+      const user = await userFactory.create();
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const finalizedContract = await contractsRepo.save(
+        contractsRepo.create({
+          userId: user.id,
+          sku: 'SKU-LIST-FINALIZED',
+          token: 'list-token-finalized',
+          status: CONTRACT_STATUS.FINALIZED,
+          slot,
+        }),
+      );
+
+      const list = await service.list();
+      const found = list.find((c) => c.id === finalizedContract.id);
+      expect(found).toBeUndefined();
+    });
+
+    it('should include finalized contracts when includeFinalized is true', async () => {
+      const user = await userFactory.create();
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const finalizedContract = await contractsRepo.save(
+        contractsRepo.create({
+          userId: user.id,
+          sku: 'SKU-LIST-FINALIZED-INCLUDE',
+          token: 'list-token-finalized-include',
+          status: CONTRACT_STATUS.FINALIZED,
+          slot,
+        }),
+      );
+
+      const list = await service.list({ includeFinalized: true });
+      const found = list.find((c) => c.id === finalizedContract.id);
+      expect(found).toBeDefined();
+      expect(found?.status).toBe(CONTRACT_STATUS.FINALIZED);
+    });
   });
 
   describe('createContract', () => {
@@ -371,6 +416,87 @@ describe('ContractsService', () => {
         [payment1.id, payment2.id].sort((a, b) => a - b),
       );
       expect(detail.paidAmount).toBeCloseTo(100);
+    });
+  });
+
+  describe('finalize', () => {
+    it('should finalize a confirmed contract and return status FINALIZED', async () => {
+      const user = await userFactory.create();
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const contract = await contractsRepo.save(
+        contractsRepo.create({
+          userId: user.id,
+          sku: 'SKU-FINALIZE-001',
+          token: 'finalize-token-001',
+          status: CONTRACT_STATUS.CONFIRMED,
+          slot,
+        }),
+      );
+
+      const result = await service.finalize(contract.id, user.id);
+
+      expect(result.contract.status).toBe(CONTRACT_STATUS.FINALIZED);
+
+      const updated = await contractsRepo.findOne({
+        where: { id: contract.id },
+      });
+      expect(updated?.status).toBe(CONTRACT_STATUS.FINALIZED);
+    });
+
+    it('should throw NotFoundException if contract is not found', async () => {
+      const user = await userFactory.create();
+      await expect(
+        service.finalize(999999, user.id),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('should throw ConflictException if contract is cancelled', async () => {
+      const user = await userFactory.create();
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const contract = await contractsRepo.save(
+        contractsRepo.create({
+          userId: user.id,
+          sku: 'SKU-FINALIZE-CANCELLED',
+          token: 'finalize-token-cancelled',
+          status: CONTRACT_STATUS.CANCELLED,
+          slot,
+        }),
+      );
+
+      await expect(
+        service.finalize(contract.id, user.id),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('should return detail without changes if contract is already finalized', async () => {
+      const user = await userFactory.create();
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const contract = await contractsRepo.save(
+        contractsRepo.create({
+          userId: user.id,
+          sku: 'SKU-FINALIZE-ALREADY',
+          token: 'finalize-token-already',
+          status: CONTRACT_STATUS.FINALIZED,
+          slot,
+        }),
+      );
+
+      const result = await service.finalize(contract.id, user.id);
+
+      expect(result.contract.status).toBe(CONTRACT_STATUS.FINALIZED);
+      expect(result.contract.id).toBe(contract.id);
     });
   });
 
