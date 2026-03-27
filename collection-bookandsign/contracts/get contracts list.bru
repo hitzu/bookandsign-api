@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: {{base_url}}/contracts
+  url: {{base_url}}/contracts?includeFinalized=true
   body: json
   auth: inherit
+}
+
+params:query {
+  includeFinalized: true
 }
 
 headers {

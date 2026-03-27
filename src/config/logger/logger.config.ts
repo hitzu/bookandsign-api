@@ -14,14 +14,14 @@ export const getLoggerConfigs = (): Params => {
 
       transport: isDevelopment
         ? {
-            target: 'pino-pretty',
-            options: {
-              colorize: true,
-              translateTime: 'HH:MM:ss',
-              ignore: 'pid,hostname',
-              singleLine: false,
-            },
-          }
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'HH:MM:ss',
+            ignore: 'pid,hostname',
+            singleLine: false,
+          },
+        }
         : undefined,
 
       serializers: {
@@ -31,6 +31,7 @@ export const getLoggerConfigs = (): Params => {
           url: req.url,
           query: req.query,
           params: req.params,
+          body: req.body,
         }),
         res: (res: any) => ({
           statusCode: res.statusCode as number,
@@ -41,10 +42,16 @@ export const getLoggerConfigs = (): Params => {
         paths: [
           'req.headers.authorization',
           'req.headers.cookie',
-          'password',
-          'token',
-          'secret',
-          'creditCard',
+          'req.body.password',
+          'req.body.token',
+          'req.body.secret',
+          'req.body.creditCard',
+          'req.body.credit_card',
+          'req.query.password',
+          'req.query.token',
+          'req.query.secret',
+          'req.query.creditCard',
+          'req.query.credit_card',
         ],
         censor: '[REDACTED]',
       },

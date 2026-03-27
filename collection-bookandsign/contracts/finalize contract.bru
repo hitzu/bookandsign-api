@@ -5,9 +5,13 @@ meta {
 }
 
 post {
-  url: {{base_url}}/contracts/:contract_id/finalize
+  url: {{base_url}}/contracts/:contractId/finalize
   body: json
   auth: inherit
+}
+
+params:path {
+  contractId: 4
 }
 
 headers {
