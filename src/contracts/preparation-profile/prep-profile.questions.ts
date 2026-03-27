@@ -85,9 +85,10 @@ const BRIDE_QUESTIONS: PrepProfileQuestionDefinition[] = [
     id: 'event_daypart',
     type: 'radio',
     group: 'celebracion',
-    label: '¿El evento es de día o de noche?',
+    label: '¿En qué momento del día es tu evento?',
     options: [
       { value: 'dia', label: 'Día' },
+      { value: 'tarde', label: 'Tarde' },
       { value: 'noche', label: 'Noche' },
     ],
   },
@@ -132,10 +133,14 @@ const BRIDE_QUESTIONS: PrepProfileQuestionDefinition[] = [
     group: 'concepto',
     label: '¿Qué estilo o concepto quieres proyectar como guía ese día?',
     options: [
-      { value: 'sexy', label: 'Sexy' },
-      { value: 'romantica', label: 'Romántica' },
+      { value: 'romantico', label: 'Romántico' },
       { value: 'elegante', label: 'Elegante' },
       { value: 'natural', label: 'Natural' },
+      { value: 'sensual', label: 'Sensual' },
+      { value: 'atrevida', label: 'Atrevida' },
+      { value: 'no_definido', label: 'No definido' },
+      { value: 'sexy', label: 'Sexy' },
+      { value: 'romantica', label: 'Romántica' },
       { value: 'glam', label: 'Glam' },
       { value: 'boho', label: 'Boho' },
       { value: 'minimal', label: 'Minimalista' },
@@ -266,8 +271,8 @@ const BRIDE_QUESTIONS: PrepProfileQuestionDefinition[] = [
     id: 'hair_photos',
     type: 'asset_array',
     group: 'peinado',
-    label: 'Fotos de tu cabello (3 fotos)',
-    placeholder: 'Sube 3 fotos: frontal, atrás y perfil (sin filtros).',
+    label: 'Fotos de tu cabello (2 fotos)',
+    placeholder: 'Sube 2 fotos: por ejemplo frontal y perfil (sin filtros).',
   },
   {
     id: 'hair_references',
@@ -366,6 +371,12 @@ export const PREP_PROFILE_QUESTION_BY_ID: Record<
 export const PREP_PROFILE_QUESTION_IDS = new Set<string>(
   PREP_PROFILE_QUESTIONS.map((q) => q.id),
 );
+
+/** Omitidas del chequeo de perfil completo (no se envían desde el formulario público actual). */
+export const PREP_PROFILE_QUESTION_IDS_OPTIONAL_FOR_COMPLETION = new Set<string>([
+  'event_setting',
+  'desired_feeling',
+]);
 
 export function isPrepAssetMetadata(value: unknown): value is PrepAssetMetadata {
   if (typeof value !== 'object' || value == null || Array.isArray(value)) {

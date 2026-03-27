@@ -12,7 +12,11 @@ import { ContractPreparationProfile } from '../entities/contract-preparation-pro
 import type { PrepProfileAssetsMode } from './dto/prep-profile-public.query.dto';
 import { PrepProfileDto } from './dto/prep-profile.dto';
 import { mapPrepProfileAnswersAssetsToUrls } from './prep-profile-assets.mapper';
-import { PREP_PROFILE_QUESTIONS, stripSocialPrefix } from './prep-profile.questions';
+import {
+  PREP_PROFILE_QUESTIONS,
+  PREP_PROFILE_QUESTION_IDS_OPTIONAL_FOR_COMPLETION,
+  stripSocialPrefix,
+} from './prep-profile.questions';
 import { assertPrepProfileQuestionId, validatePrepProfileAnswer } from './prep-profile.validation';
 import { PrepProfileUploadsService } from './prep-profile-uploads.service';
 
@@ -36,7 +40,7 @@ function isAssetLike(value: unknown): value is AssetLike {
 
 const SLOT_BASED_ASSET_ARRAY_LIMITS: Readonly<Record<string, number>> = {
   face_photos: 2,
-  hair_photos: 3,
+  hair_photos: 2,
   makeup_references: 2,
   hair_references: 2,
   gift_makeup_references: 2,
@@ -209,6 +213,10 @@ export class ContractsPreparationProfileService {
 
   private isComplete(answers: Record<string, unknown>): boolean {
     return PREP_PROFILE_QUESTIONS.every((q) => {
+      if (PREP_PROFILE_QUESTION_IDS_OPTIONAL_FOR_COMPLETION.has(q.id)) {
+        return true;
+      }
+
       // Business rule: when client accepts coming to the salon, location URL is optional.
       if (q.id === 'prep_location_maps_url') {
         if (answers.prep_at_salon === 'sucursal') {

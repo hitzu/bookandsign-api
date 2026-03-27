@@ -458,7 +458,7 @@ describe('ContractsPreparationProfileService (public slot-based assets)', () => 
     expect(persisted?.locked?.['face_photos']).toBe(true);
   });
 
-  it('should allow incremental uploads for hair_photos until 3/3, then lock', async () => {
+  it('should allow incremental uploads for hair_photos until 2/2, then lock', async () => {
     const contract = await contractFactory.create({
       token: 'token-hair',
       clientPhone: '2201752767',
@@ -480,18 +480,19 @@ describe('ContractsPreparationProfileService (public slot-based assets)', () => 
         { questionId: 'hair_photos', value: [{ path: 'h/2.png', mime: 'image/png' }] },
       ],
     });
-    expect(two.locked['hair_photos']).toBeUndefined();
+    expect(two.answers['hair_photos']).toHaveLength(2);
+    expect(two.locked['hair_photos']).toBe(true);
 
-    const three = await service.saveAnswersBulkByToken({
-      token: contract.token,
-      phone: '2201752767',
-      assets: 'none',
-      answers: [
-        { questionId: 'hair_photos', value: [{ path: 'h/3.png', mime: 'image/png' }] },
-      ],
-    });
-    expect(three.answers['hair_photos']).toHaveLength(3);
-    expect(three.locked['hair_photos']).toBe(true);
+    await expect(
+      service.saveAnswersBulkByToken({
+        token: contract.token,
+        phone: '2201752767',
+        assets: 'none',
+        answers: [
+          { questionId: 'hair_photos', value: [{ path: 'h/3.png', mime: 'image/png' }] },
+        ],
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('should NOT 409 when a slot-based field is locked but still incomplete (legacy), and should lock only when complete', async () => {
