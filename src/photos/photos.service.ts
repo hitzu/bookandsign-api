@@ -1,15 +1,20 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { createClient } from '@supabase/supabase-js';
 import { plainToInstance } from 'class-transformer';
+import { randomUUID } from 'crypto';
 import { Brackets, Repository } from 'typeorm';
+import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { ListPhotosQueryDto } from './dto/list-photos.dto';
 import { ListPhotosResponseDto } from './dto/list-photos-response.dto';
 import { PhotoResponseDto } from './dto/photo-response.dto';
+import { PresignResponseDto } from './dto/presign-response.dto';
 import { Photo } from './entities/photo.entity';
 import { EventsService } from '../events/events.service';
 
@@ -20,12 +25,48 @@ type PhotoCursor = {
 
 @Injectable()
 export class PhotosService {
+  private _client:
+    | ReturnType<typeof createClient>
+    | undefined;
+
   constructor(
     @InjectRepository(Photo)
     private readonly photoRepository: Repository<Photo>,
     private readonly eventsService: EventsService,
     private readonly configService: ConfigService,
   ) { }
+
+  private get client() {
+    if (this._client) {
+      return this._client;
+    }
+
+    const url = this.configService.get<string>('SUPABASE_URL');
+    const serviceKey = this.configService.get<string>('SUPABASE_SERVICE_ROLE_KEY');
+    if (!url || !serviceKey) {
+      throw new InternalServerErrorException(
+        EXCEPTION_RESPONSE.SUPABASE_STORAGE_NOT_CONFIGURED,
+      );
+    }
+
+    this._client = createClient(url, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    return this._client;
+  }
+
+  getPublicUrl(bucket: string, path: string): string {
+    const baseUrl = this.configService.get<string>('SUPABASE_URL');
+
+    if (!baseUrl) {
+      throw new InternalServerErrorException(
+        EXCEPTION_RESPONSE.SUPABASE_STORAGE_NOT_CONFIGURED,
+      );
+    }
+
+    return `${baseUrl.replace(/\/$/, '')}/storage/v1/object/public/${bucket}/${path}`;
+  }
 
   async listByEventToken(
     eventToken: string,
@@ -132,6 +173,45 @@ export class PhotosService {
     return plainToInstance(PhotoResponseDto, saved, {
       excludeExtraneousValues: true,
     });
+  }
+
+  async createPersonalizedUploadUrl(input: {
+    eventToken: string;
+    fileName: string;
+    mime: string;
+    storageEnv: string;
+  }): Promise<PresignResponseDto> {
+    if (input.mime !== 'image/jpeg') {
+      throw new BadRequestException('Only image/jpeg is allowed');
+    }
+
+    if (!['local', 'prod'].includes(input.storageEnv)) {
+      throw new BadRequestException('storageEnv must be local or prod');
+    }
+
+    const event = await this.eventsService.findOneByToken(input.eventToken);
+    const bucket = input.storageEnv;
+    const path = `personalized/event_${event.id}/${randomUUID()}.jpg`;
+
+    const { data, error } = await this.client.storage
+      .from(bucket)
+      .createSignedUploadUrl(path);
+
+    if (error || !data?.signedUrl) {
+      throw new InternalServerErrorException('Failed to create signed upload URL');
+    }
+
+    return plainToInstance(
+      PresignResponseDto,
+      {
+        eventId: event.id,
+        bucket,
+        path,
+        signedUrl: data.signedUrl,
+        publicUrl: this.getPublicUrl(bucket, path),
+      },
+      { excludeExtraneousValues: true },
+    );
   }
 
   /**

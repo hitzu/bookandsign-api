@@ -6,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
-  NotImplementedException,
   Param,
   Post,
   Query,
@@ -18,7 +17,6 @@ import {
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
-  ApiNotImplementedResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -27,10 +25,12 @@ import {
 } from '@nestjs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { BulkSeedPhotosDto } from './dto/bulk-seed-photos.dto';
+import { CreatePersonalizedUploadUrlDto } from './dto/create-personalized-upload-url.dto';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { ListPhotosQueryDto } from './dto/list-photos.dto';
 import { ListPhotosResponseDto } from './dto/list-photos-response.dto';
 import { PhotoResponseDto } from './dto/photo-response.dto';
+import { PresignResponseDto } from './dto/presign-response.dto';
 import { PhotosService } from './photos.service';
 import { Public } from '../auth/decorators/public.decorator';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
@@ -132,16 +132,34 @@ export class PhotosController {
     await this.photosService.remove(+id);
   }
 
-  @Post('presign')
-  @HttpCode(HttpStatus.NOT_IMPLEMENTED)
-  @ApiOperation({ summary: 'Get presigned upload URL (stub)' })
-  @ApiNotImplementedResponse({
-    description:
-      'Presigned URLs require SUPABASE_SERVICE_ROLE_KEY and ENABLE_SUPABASE_PRESIGN=true',
+  @Post('event/:eventToken/personalized/upload-url')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Generate a signed upload URL for a personalized event photo',
   })
-  presign(): never {
-    throw new NotImplementedException(
-      'Presigned URLs require SUPABASE_SERVICE_ROLE_KEY and ENABLE_SUPABASE_PRESIGN=true',
-    );
+  @ApiParam({
+    name: 'eventToken',
+    type: String,
+    description: 'Event token (UUID)',
+  })
+  @ApiBody({ type: CreatePersonalizedUploadUrlDto })
+  @ApiOkResponse({
+    description: 'Signed upload URL generated successfully',
+    type: PresignResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid request body' })
+  @ApiNotFoundResponse({ description: 'Event not found' })
+  presignPersonalizedUpload(
+    @Param('eventToken') eventToken: string,
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: CreatePersonalizedUploadUrlDto,
+  ) {
+    return this.photosService.createPersonalizedUploadUrl({
+      eventToken,
+      fileName: dto.fileName,
+      mime: dto.mime,
+      storageEnv: dto.storageEnv,
+    });
   }
 }

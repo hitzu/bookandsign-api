@@ -1,7 +1,12 @@
-import { NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { createClient } from '@supabase/supabase-js';
 import { AppDataSource as TestDataSource } from '../config/database/data-source';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { EventFactory } from '../../test/factories/events/event.factory';
@@ -12,10 +17,20 @@ import { EventsService } from '../events/events.service';
 import { PhotosService } from './photos.service';
 import { PinoLogger } from 'nestjs-pino';
 
+jest.mock('crypto', () => ({
+  randomUUID: jest.fn(() => 'uuid-123'),
+}));
+
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(),
+}));
+
 describe('PhotosService', () => {
   let service: PhotosService;
   let eventFactory: EventFactory;
   let photoFactory: PhotoFactory;
+  let storageCreateSignedUploadUrl: jest.Mock;
+  let storageFrom: jest.Mock;
 
   beforeEach(async () => {
     const loggerMock = {
@@ -25,13 +40,34 @@ describe('PhotosService', () => {
       warn: jest.fn(),
       debug: jest.fn(),
     };
+    storageCreateSignedUploadUrl = jest.fn();
+    storageFrom = jest.fn(() => ({
+      createSignedUploadUrl: storageCreateSignedUploadUrl,
+    }));
+    (createClient as jest.Mock).mockReturnValue({
+      storage: {
+        from: storageFrom,
+      },
+    });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PhotosService,
         EventsService,
         {
           provide: ConfigService,
-          useValue: { get: jest.fn((key: string) => (key === 'SUPABASE_URL' ? 'https://test.supabase.co' : undefined)) },
+          useValue: {
+            get: jest.fn((key: string) => {
+              if (key === 'SUPABASE_URL') {
+                return 'https://test.supabase.co';
+              }
+
+              if (key === 'SUPABASE_SERVICE_ROLE_KEY') {
+                return 'service-role-key';
+              }
+
+              return undefined;
+            }),
+          },
         },
         {
           provide: getRepositoryToken(Photo),
@@ -187,6 +223,99 @@ describe('PhotosService', () => {
         }),
       ).rejects.toEqual(
         new NotFoundException(EXCEPTION_RESPONSE.EVENT_NOT_FOUND),
+      );
+    });
+  });
+
+  describe('createPersonalizedUploadUrl', () => {
+    it('should throw when mime is invalid', async () => {
+      const event = await eventFactory.create();
+
+      await expect(
+        service.createPersonalizedUploadUrl({
+          eventToken: event.token,
+          fileName: 'custom.png',
+          mime: 'image/png',
+          storageEnv: 'prod',
+        }),
+      ).rejects.toEqual(new BadRequestException('Only image/jpeg is allowed'));
+    });
+
+    it('should throw when storageEnv is invalid', async () => {
+      const event = await eventFactory.create();
+
+      await expect(
+        service.createPersonalizedUploadUrl({
+          eventToken: event.token,
+          fileName: 'custom.jpg',
+          mime: 'image/jpeg',
+          storageEnv: 'staging',
+        }),
+      ).rejects.toEqual(
+        new BadRequestException('storageEnv must be local or prod'),
+      );
+    });
+
+    it('should throw NotFoundException when event token does not exist', async () => {
+      await expect(
+        service.createPersonalizedUploadUrl({
+          eventToken: '00000000-0000-0000-0000-000000000000',
+          fileName: 'custom.jpg',
+          mime: 'image/jpeg',
+          storageEnv: 'prod',
+        }),
+      ).rejects.toEqual(
+        new NotFoundException(EXCEPTION_RESPONSE.EVENT_NOT_FOUND),
+      );
+    });
+
+    it('should generate the expected personalized path and response', async () => {
+      const event = await eventFactory.create();
+
+      storageCreateSignedUploadUrl.mockResolvedValue({
+        data: { signedUrl: 'https://signed-upload-url', token: 'upload-token' },
+        error: null,
+      });
+
+      const result = await service.createPersonalizedUploadUrl({
+        eventToken: event.token,
+        fileName: 'custom.jpg',
+        mime: 'image/jpeg',
+        storageEnv: 'prod',
+      });
+
+      expect(storageFrom).toHaveBeenCalledWith('prod');
+      expect(storageCreateSignedUploadUrl).toHaveBeenCalledWith(
+        `personalized/event_${event.id}/uuid-123.jpg`,
+      );
+      expect(result).toEqual({
+        eventId: event.id,
+        bucket: 'prod',
+        path: `personalized/event_${event.id}/uuid-123.jpg`,
+        signedUrl: 'https://signed-upload-url',
+        publicUrl:
+          `https://test.supabase.co/storage/v1/object/public/prod/` +
+          `personalized/event_${event.id}/uuid-123.jpg`,
+      });
+    });
+
+    it('should throw when Supabase cannot create the signed upload url', async () => {
+      const event = await eventFactory.create();
+
+      storageCreateSignedUploadUrl.mockResolvedValue({
+        data: null,
+        error: { message: 'boom' },
+      });
+
+      await expect(
+        service.createPersonalizedUploadUrl({
+          eventToken: event.token,
+          fileName: 'custom.jpg',
+          mime: 'image/jpeg',
+          storageEnv: 'prod',
+        }),
+      ).rejects.toEqual(
+        new InternalServerErrorException('Failed to create signed upload URL'),
       );
     });
   });
