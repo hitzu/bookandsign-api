@@ -319,4 +319,36 @@ describe('PhotosService', () => {
       );
     });
   });
+
+  describe('createDevotedUploadUrl', () => {
+    it('should generate the expected devoted path and response', async () => {
+      const event = await eventFactory.create();
+
+      storageCreateSignedUploadUrl.mockResolvedValue({
+        data: { signedUrl: 'https://signed-upload-url', token: 'upload-token' },
+        error: null,
+      });
+
+      const result = await service.createDevotedUploadUrl({
+        eventToken: event.token,
+        fileName: 'dedicated.jpg',
+        mime: 'image/jpeg',
+        storageEnv: 'prod',
+      });
+
+      expect(storageFrom).toHaveBeenCalledWith('prod');
+      expect(storageCreateSignedUploadUrl).toHaveBeenCalledWith(
+        `devoted/event_${event.id}/uuid-123.jpg`,
+      );
+      expect(result).toEqual({
+        eventId: event.id,
+        bucket: 'prod',
+        path: `devoted/event_${event.id}/uuid-123.jpg`,
+        signedUrl: 'https://signed-upload-url',
+        publicUrl:
+          `https://test.supabase.co/storage/v1/object/public/prod/` +
+          `devoted/event_${event.id}/uuid-123.jpg`,
+      });
+    });
+  });
 });

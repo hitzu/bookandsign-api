@@ -162,4 +162,35 @@ export class PhotosController {
       storageEnv: dto.storageEnv,
     });
   }
+
+  @Post('event/:eventToken/devoted/upload-url')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Generate a signed upload URL for a devoted (dedicated) event photo',
+  })
+  @ApiParam({
+    name: 'eventToken',
+    type: String,
+    description: 'Event token (UUID)',
+  })
+  @ApiBody({ type: CreatePersonalizedUploadUrlDto })
+  @ApiOkResponse({
+    description: 'Signed upload URL generated successfully',
+    type: PresignResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid request body' })
+  @ApiNotFoundResponse({ description: 'Event not found' })
+  presignDevotedUpload(
+    @Param('eventToken') eventToken: string,
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: CreatePersonalizedUploadUrlDto,
+  ) {
+    return this.photosService.createDevotedUploadUrl({
+      eventToken,
+      fileName: dto.fileName,
+      mime: dto.mime,
+      storageEnv: dto.storageEnv,
+    });
+  }
 }

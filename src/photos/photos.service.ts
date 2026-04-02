@@ -23,6 +23,15 @@ type PhotoCursor = {
   id: number;
 };
 
+type EventPresignUploadInput = {
+  eventToken: string;
+  fileName: string;
+  mime: string;
+  storageEnv: string;
+};
+
+type EventPresignSegment = 'personalized' | 'devoted';
+
 @Injectable()
 export class PhotosService {
   private _client:
@@ -175,12 +184,22 @@ export class PhotosService {
     });
   }
 
-  async createPersonalizedUploadUrl(input: {
-    eventToken: string;
-    fileName: string;
-    mime: string;
-    storageEnv: string;
-  }): Promise<PresignResponseDto> {
+  async createPersonalizedUploadUrl(
+    input: EventPresignUploadInput,
+  ): Promise<PresignResponseDto> {
+    return this.createEventPresignedUploadUrl(input, 'personalized');
+  }
+
+  async createDevotedUploadUrl(
+    input: EventPresignUploadInput,
+  ): Promise<PresignResponseDto> {
+    return this.createEventPresignedUploadUrl(input, 'devoted');
+  }
+
+  private async createEventPresignedUploadUrl(
+    input: EventPresignUploadInput,
+    segment: EventPresignSegment,
+  ): Promise<PresignResponseDto> {
     if (input.mime !== 'image/jpeg') {
       throw new BadRequestException('Only image/jpeg is allowed');
     }
@@ -191,7 +210,7 @@ export class PhotosService {
 
     const event = await this.eventsService.findOneByToken(input.eventToken);
     const bucket = input.storageEnv;
-    const path = `personalized/event_${event.id}/${randomUUID()}.jpg`;
+    const path = `${segment}/event_${event.id}/${randomUUID()}.jpg`;
 
     const { data, error } = await this.client.storage
       .from(bucket)
