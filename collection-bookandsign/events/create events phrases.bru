@@ -1,0 +1,52 @@
+meta {
+  name: create events phrases
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{base_url}}/events/phrases/bulk
+  body: json
+  auth: inherit
+}
+
+headers {
+  authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "eventTypeId": 1,
+    "phrases": [
+      "Eres increíble ✨",
+  "Brilla siempre 🌟",
+  "Disfruta mucho 💃",
+  "Felices XV 💕",
+  "Con cariño, todos nosotros 🤍",
+  "Celebrando contigo 🎉",
+  "Cree en ti y todo será posible ✨",
+  "Este es solo el comienzo de algo increíble 💫",
+  "Nunca dejes de perseguir tus sueños 🌟",
+  "Sigue soñando en grande 🚀",
+  "¡Que nunca te falten razones para sonreír! 😄",
+  "Siempre serás nuestra niña hermosa 💗",
+  "Verte crecer ha sido un regalo ✨",
+  "Estamos muy orgullosos de ti 💖",
+  "Te queremos hoy y siempre 🤍",
+  "Gracias por permitirnos ser parte de este día tan especial ✨",
+  "Nos sentimos muy felices de acompañarte 💖",
+  "Es un honor celebrar contigo 🎉",
+  "Compartir este momento contigo lo hace aún más especial 💕",
+  "Estamos felices de ser parte de este día tan increíble ✨"
+    ]
+  }
+}
+
+vars:pre-request {
+  event-type: 1
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

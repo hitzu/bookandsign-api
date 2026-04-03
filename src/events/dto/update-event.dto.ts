@@ -1,35 +1,26 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsDate,
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUrl,
-} from 'class-validator';
+import { IsDate, IsOptional, IsString, IsUrl, IsNumber } from 'class-validator';
 
-export class CreateEventDto {
-  @ApiProperty({ type: Number, description: 'Contract id' })
-  @IsNumber()
-  contractId!: number;
 
-  @ApiProperty({ type: String, description: 'Event name' })
+export class UpdateEventDto {
+  @ApiPropertyOptional({ type: String, description: 'Event name' })
   @IsString()
-  name!: string;
-
-  @ApiProperty({ type: String, description: 'Internal key (unique)' })
-  @IsString()
-  key!: string;
+  @IsOptional()
+  name?: string;
 
   @ApiPropertyOptional({ type: String, description: 'Event description' })
   @IsString()
   @IsOptional()
   description?: string;
 
-  @ApiProperty({ type: Number, description: 'Event type id' })
+  @ApiPropertyOptional({
+    type: Number,
+    description: 'Event type id',
+  })
   @IsNumber()
-  eventTypeId!: number;
+  @IsOptional()
+  eventTypeId?: number;
 
   @ApiPropertyOptional({
     type: String,

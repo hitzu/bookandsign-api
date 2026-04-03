@@ -429,6 +429,10 @@ export class ContractsService {
       });
     }
 
+    if (query?.excludeWithEvents) {
+      qb.andWhere('event.id IS NULL');
+    }
+
     const contracts = await qb
       .orderBy(
         "COALESCE(eventDateSlot.event_date, legacySlot.event_date, '9999-12-31')",

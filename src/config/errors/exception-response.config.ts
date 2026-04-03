@@ -30,6 +30,7 @@ enum ErrorMessages {
   SUPABASE_STORAGE_NOT_CONFIGURED = 'SUPABASE_STORAGE_NOT_CONFIGURED',
   EVENT_NOT_FOUND = 'EVENT_NOT_FOUND',
   EVENT_KEY_ALREADY_EXISTS = 'EVENT_KEY_ALREADY_EXISTS',
+  EVENT_CONTRACT_ALREADY_HAS_EVENT = 'EVENT_CONTRACT_ALREADY_HAS_EVENT',
   ENDPOINT_NOT_FOUND = 'ENDPOINT_NOT_FOUND',
 }
 
@@ -161,6 +162,10 @@ export const EXCEPTION_RESPONSE: Record<
   [ErrorMessages.EVENT_KEY_ALREADY_EXISTS]: {
     code: 32,
     message: 'event key already exists',
+  },
+  [ErrorMessages.EVENT_CONTRACT_ALREADY_HAS_EVENT]: {
+    code: 34,
+    message: 'this contract already has an event',
   },
   [ErrorMessages.ENDPOINT_NOT_FOUND]: {
     code: 33,

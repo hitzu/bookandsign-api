@@ -1,0 +1,24 @@
+meta {
+  name: get events phrases
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{base_url}}/events/phrases/:token
+  body: none
+  auth: inherit
+}
+
+params:path {
+  token: 4b5afc47-18a8-4df2-a9eb-4855dea500de
+}
+
+headers {
+  authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

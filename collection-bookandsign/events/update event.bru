@@ -1,0 +1,34 @@
+meta {
+  name: update event
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{base_url}}/events/{{event_id}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "name": "Sinai & Eduardo - Updated",
+    "eventType": "boda",
+    "venueName": "Salón Nuevo",
+    "serviceStartsAt": "2026-06-15T19:00:00.000Z",
+    "serviceEndsAt": "2026-06-16T03:00:00.000Z"
+  }
+}
+
+vars:pre-request {
+  event_id: 1
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

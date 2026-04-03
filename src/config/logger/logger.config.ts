@@ -24,6 +24,10 @@ export const getLoggerConfigs = (): Params => {
         }
         : undefined,
 
+      customProps: (req: any) => ({
+        body: req.body,
+      }),
+
       serializers: {
         req: (req: any) => ({
           id: req.id,
@@ -31,7 +35,6 @@ export const getLoggerConfigs = (): Params => {
           url: req.url,
           query: req.query,
           params: req.params,
-          body: req.body,
         }),
         res: (res: any) => ({
           statusCode: res.statusCode as number,
@@ -42,11 +45,11 @@ export const getLoggerConfigs = (): Params => {
         paths: [
           'req.headers.authorization',
           'req.headers.cookie',
-          'req.body.password',
-          'req.body.token',
-          'req.body.secret',
-          'req.body.creditCard',
-          'req.body.credit_card',
+          'body.password',
+          'body.token',
+          'body.secret',
+          'body.creditCard',
+          'body.credit_card',
           'req.query.password',
           'req.query.token',
           'req.query.secret',
