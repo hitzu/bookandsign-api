@@ -1,0 +1,25 @@
+meta {
+  name: get actions
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/event-analytics/1487f80e-78db-426b-81de-ef56b1e62af8/actions?page=1&limit=50
+  body: json
+  auth: inherit
+}
+
+params:query {
+  page: 1
+  limit: 50
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

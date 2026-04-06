@@ -21,6 +21,7 @@ import { ContractsModule } from './contracts/contracts.module';
 import { PromotionsModule } from './promotions/promotions.module';
 import { EventsModule } from './events/events.module';
 import { PhotosModule } from './photos/photos.module';
+import { EventAnalyticsModule } from './event-analytics/event-analytics.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { PhotosModule } from './photos/photos.module';
     PromotionsModule,
     EventsModule,
     PhotosModule,
+    EventAnalyticsModule,
   ],
   controllers: [AppController],
   providers: [
