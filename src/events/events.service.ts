@@ -149,4 +149,14 @@ export class EventsService {
     }
     return event;
   }
+
+  async findActive(): Promise<Event | null> {
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+    return this.eventRepository
+      .createQueryBuilder('event')
+      .where('event.serviceStartsAt <= :now', { now })
+      .andWhere('event.serviceEndsAt >= :cutoff', { cutoff })
+      .getOne();
+  }
 }

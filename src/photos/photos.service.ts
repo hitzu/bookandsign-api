@@ -65,6 +65,19 @@ export class PhotosService {
     return this._client;
   }
 
+  async createStorageUploadUrl(
+    bucket: string,
+    path: string,
+  ): Promise<string> {
+    const { data, error } = await this.client.storage
+      .from(bucket)
+      .createSignedUploadUrl(path);
+    if (error || !data?.signedUrl) {
+      throw new InternalServerErrorException('Failed to create signed upload URL');
+    }
+    return data.signedUrl;
+  }
+
   getPublicUrl(bucket: string, path: string): string {
     const baseUrl = this.configService.get<string>('SUPABASE_URL');
 
@@ -286,6 +299,14 @@ export class PhotosService {
     }
 
     return results;
+  }
+
+  async listFiles(bucket: string, prefix: string): Promise<string[]> {
+    const { data, error } = await this.client.storage
+      .from(bucket)
+      .list(prefix, { limit: 1000 });
+    if (error) return [];
+    return (data ?? []).map((f) => `${prefix}/${f.name}`);
   }
 
   async remove(id: number): Promise<void> {

@@ -1,0 +1,26 @@
+meta {
+  name: get presigned url
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/sessions/photos/presigned
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "sessionToken": "{{session_token}}"
+  }
+}
+
+vars:pre-request {
+  session_token: c1d2e3f4-0000-4000-8000-babbccddeeff
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

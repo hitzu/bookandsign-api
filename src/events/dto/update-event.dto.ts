@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDate, IsOptional, IsString, IsUrl, IsNumber } from 'class-validator';
+import { IsDate, IsInt, IsOptional, IsString, IsUrl, IsNumber, Max, Min } from 'class-validator';
 
 
 export class UpdateEventDto {
@@ -81,4 +81,14 @@ export class UpdateEventDto {
   @IsString()
   @IsOptional()
   delegateName?: string;
+
+  @ApiPropertyOptional({
+    type: Number,
+    description: 'Número de fotos por sesión (1-10)',
+  })
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  @IsOptional()
+  photoCount?: number;
 }

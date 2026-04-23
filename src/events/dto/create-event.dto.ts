@@ -3,10 +3,13 @@ import { Type } from 'class-transformer';
 import {
   IsDate,
   IsEnum,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
   IsUrl,
+  Max,
+  Min,
 } from 'class-validator';
 
 export class CreateEventDto {
@@ -90,4 +93,15 @@ export class CreateEventDto {
   @IsString()
   @IsOptional()
   delegateName?: string;
+
+  @ApiPropertyOptional({
+    type: Number,
+    description: 'Número de fotos por sesión (1-10, default 2)',
+    default: 2,
+  })
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  @IsOptional()
+  photoCount?: number = 2;
 }

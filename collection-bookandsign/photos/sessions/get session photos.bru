@@ -1,0 +1,20 @@
+meta {
+  name: get session photos
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{base_url}}/sessions/{{session_token}}
+  body: none
+  auth: none
+}
+
+vars:pre-request {
+  session_token: c1d2e3f4-0000-4000-8000-aabbccddeeff
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

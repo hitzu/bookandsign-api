@@ -1,0 +1,24 @@
+meta {
+  name: admin reconcile
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/admin/reconcile
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+vars:pre-request {
+  admin_api_key: your-secret-key-here
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

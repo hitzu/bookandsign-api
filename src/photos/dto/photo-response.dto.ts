@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsDate, IsNumber, IsString } from 'class-validator';
+import { IsDate, IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class PhotoResponseDto {
   @Expose()
@@ -14,9 +14,15 @@ export class PhotoResponseDto {
   storagePath!: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ type: String, nullable: true })
+  @IsOptional()
   @IsString()
-  publicUrl!: string;
+  publicUrl!: string | null;
+
+  @Expose()
+  @ApiProperty({ enum: ['processing', 'ready', 'error'] })
+  @IsIn(['processing', 'ready', 'error'])
+  status!: 'processing' | 'ready' | 'error';
 
   @Expose()
   @ApiProperty()

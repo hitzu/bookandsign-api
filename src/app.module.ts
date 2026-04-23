@@ -22,6 +22,7 @@ import { PromotionsModule } from './promotions/promotions.module';
 import { EventsModule } from './events/events.module';
 import { PhotosModule } from './photos/photos.module';
 import { EventAnalyticsModule } from './event-analytics/event-analytics.module';
+import { ReconciliationModule } from './reconciliation/reconciliation.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { EventAnalyticsModule } from './event-analytics/event-analytics.module';
     EventsModule,
     PhotosModule,
     EventAnalyticsModule,
+    ReconciliationModule,
   ],
   controllers: [AppController],
   providers: [

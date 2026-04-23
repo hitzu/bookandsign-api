@@ -1,0 +1,26 @@
+meta {
+  name: complete session
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/sessions/complete
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "sessionToken": "{{session_token}}"
+  }
+}
+
+vars:pre-request {
+  session_token: c1d2e3f4-0000-4000-8000-babbccddeeff
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

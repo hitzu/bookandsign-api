@@ -88,6 +88,11 @@ export class EventResponseDto {
   delegateName?: string | null;
 
   @Expose()
+  @ApiProperty({ type: Number, description: 'Fotos por sesión', default: 2 })
+  @IsNumber()
+  photoCount!: number;
+
+  @Expose()
   @ApiProperty()
   createdAt!: Date;
 

@@ -50,6 +50,9 @@ export class Event extends BaseTimeEntity {
   @Column('varchar', { name: 'delegate_name', length: 255, nullable: true })
   delegateName!: string | null;
 
+  @Column('integer', { name: 'photo_count', default: 2 })
+  photoCount!: number;
+
   @ManyToOne(() => EventType, (eventType) => eventType.events)
   @JoinColumn({ name: 'event_type_id' })
   eventType?: EventType | null;

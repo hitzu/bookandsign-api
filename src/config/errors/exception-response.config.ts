@@ -32,6 +32,9 @@ enum ErrorMessages {
   EVENT_KEY_ALREADY_EXISTS = 'EVENT_KEY_ALREADY_EXISTS',
   EVENT_CONTRACT_ALREADY_HAS_EVENT = 'EVENT_CONTRACT_ALREADY_HAS_EVENT',
   ENDPOINT_NOT_FOUND = 'ENDPOINT_NOT_FOUND',
+  SESSION_NOT_FOUND = 'SESSION_NOT_FOUND',
+  SESSION_ALREADY_EXISTS = 'SESSION_ALREADY_EXISTS',
+  EVENT_EXPIRED = 'EVENT_EXPIRED',
 }
 
 export const EXCEPTION_RESPONSE: Record<
@@ -170,5 +173,17 @@ export const EXCEPTION_RESPONSE: Record<
   [ErrorMessages.ENDPOINT_NOT_FOUND]: {
     code: 33,
     message: 'endpoint not found',
+  },
+  [ErrorMessages.SESSION_NOT_FOUND]: {
+    code: 35,
+    message: 'session not found',
+  },
+  [ErrorMessages.SESSION_ALREADY_EXISTS]: {
+    code: 36,
+    message: 'session already exists',
+  },
+  [ErrorMessages.EVENT_EXPIRED]: {
+    code: 37,
+    message: 'event has expired',
   },
 };
