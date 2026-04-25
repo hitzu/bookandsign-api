@@ -66,6 +66,7 @@ export class EventsService {
       serviceStartsAt: dto.serviceStartsAt ?? null,
       serviceEndsAt: dto.serviceEndsAt ?? null,
       delegateName: dto.delegateName ?? null,
+      eventThemeId: dto.eventThemeId ?? null,
     });
     let saved: Event;
     try {
@@ -89,7 +90,7 @@ export class EventsService {
   }
 
   async getByToken(token: string): Promise<EventResponseDto> {
-    const event = await this.eventRepository.findOne({ where: { token } });
+    const event = await this.eventRepository.findOne({ where: { token }, relations: { eventTheme: true } });
     if (!event) {
       throw new NotFoundException(EXCEPTION_RESPONSE.EVENT_NOT_FOUND);
     }
@@ -99,7 +100,7 @@ export class EventsService {
   }
 
   async getByKey(key: string): Promise<EventResponseDto> {
-    const event = await this.eventRepository.findOne({ where: { key } });
+    const event = await this.eventRepository.findOne({ where: { key }, relations: { eventTheme: true } });
     if (!event) {
       throw new NotFoundException(EXCEPTION_RESPONSE.EVENT_NOT_FOUND);
     }

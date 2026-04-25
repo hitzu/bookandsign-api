@@ -5,6 +5,7 @@ import { UseDto } from '../../common/dto/use-dto.decorator';
 import { Contract } from '../../contracts/entities/contract.entity';
 import { EventResponseDto } from '../dto/event-response.dto';
 import { EventType } from './event-type.entity';
+import { EventTheme } from './event-themes.entity';
 
 @Entity('events')
 @UseDto(EventResponseDto)
@@ -53,6 +54,9 @@ export class Event extends BaseTimeEntity {
   @Column('integer', { name: 'photo_count', default: 2 })
   photoCount!: number;
 
+  @Column('number', { name: 'event_theme_id', nullable: true })
+  eventThemeId!: number | null;
+
   @ManyToOne(() => EventType, (eventType) => eventType.events)
   @JoinColumn({ name: 'event_type_id' })
   eventType?: EventType | null;
@@ -60,4 +64,8 @@ export class Event extends BaseTimeEntity {
   @OneToOne(() => Contract, (contract) => contract.event, { nullable: true })
   @JoinColumn({ name: 'contract_id' })
   contract?: Contract | null;
+
+  @ManyToOne(() => EventTheme, (eventTheme) => eventTheme.events)
+  @JoinColumn({ name: 'event_theme_id' })
+  eventTheme?: EventTheme | null;
 }

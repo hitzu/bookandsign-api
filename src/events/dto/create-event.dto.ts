@@ -104,4 +104,9 @@ export class CreateEventDto {
   @Max(10)
   @IsOptional()
   photoCount?: number = 2;
+
+  @ApiProperty({ type: Number, description: 'Event type id' })
+  @IsOptional()
+  @IsNumber()
+  eventThemeId?: number;
 }

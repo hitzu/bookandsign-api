@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
-import { IsDate, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
+import { EventThemeDto } from './event-theme/event-theme.dto';
 
 
 export class EventResponseDto {
@@ -93,10 +94,25 @@ export class EventResponseDto {
   photoCount!: number;
 
   @Expose()
+  @ApiPropertyOptional({
+    type: Number,
+    description: 'Event theme id',
+    nullable: true,
+  })
+  @IsNumber()
+  @IsOptional()
+  eventThemeId?: number | null;
+
+  @Expose()
   @ApiProperty()
   createdAt!: Date;
 
   @Expose()
   @ApiProperty()
   updatedAt!: Date;
+
+  @Expose()
+  @ApiProperty()
+  @Type(() => EventThemeDto)
+  eventTheme: EventThemeDto
 }
