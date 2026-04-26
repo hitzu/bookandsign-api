@@ -25,15 +25,7 @@ import { CreateSessionDto } from './dto/create-session.dto';
 import { ConfirmPhotoDto } from './dto/confirm-photo.dto';
 import { PresignedUploadDto, PresignedUploadResponseDto } from './dto/presigned-upload.dto';
 import {
-  CreateSessionUploadUrlDto,
-  SessionUploadUrlResponseDto,
-} from './dto/create-session-upload-url.dto';
-import { PhotoResponseDto } from './dto/photo-response.dto';
-import {
-  CreateSessionResponseDto,
   GalleryResponseDto,
-  ListSessionsResponseDto,
-  SessionDetailResponseDto,
   SessionResponseDto,
 } from './dto/session-response.dto';
 import { SessionsService } from './sessions.service';

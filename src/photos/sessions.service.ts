@@ -303,7 +303,7 @@ export class SessionsService {
 
     const session = await this.sessionRepository.findOne({
       where: { sessionToken },
-      relations: ['event'],
+      relations: ['event', 'event.eventTheme'],
     });
     if (!session) {
       throw new NotFoundException(EXCEPTION_RESPONSE.SESSION_NOT_FOUND);
@@ -321,6 +321,7 @@ export class SessionsService {
       event: {
         honoreesNames: session.event?.honoreesNames ?? '',
         date: session.event?.serviceStartsAt?.toISOString() ?? '',
+        eventTheme: session.event?.eventTheme
       },
     };
 
@@ -335,7 +336,7 @@ export class SessionsService {
     const cached = this.cache.getGallery(eventToken);
     if (cached) return cached;
 
-    const event = await this.eventsService.findOneByToken(eventToken);
+    const event = await this.eventsService.getByToken(eventToken);
 
     const sessions = await this.sessionRepository.find({
       where: { eventId: event.id, status: 'complete' },
@@ -364,6 +365,7 @@ export class SessionsService {
       event: {
         honoreesNames: event.honoreesNames ?? '',
         date: event.serviceStartsAt?.toISOString() ?? '',
+        eventTheme: event.eventTheme
       },
       sessions: sessions.map((s) => ({
         sessionToken: s.sessionToken,
