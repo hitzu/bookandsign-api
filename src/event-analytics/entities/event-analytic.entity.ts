@@ -7,11 +7,10 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Event } from '../../events/entities/event.entity';
+import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 
 @Entity('event_analytics')
-export class EventAnalytic {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class EventAnalytic extends BaseTimeEntity {
 
   @Column({ name: 'event_token', type: 'uuid' })
   eventToken: string;
@@ -32,6 +31,4 @@ export class EventAnalytic {
   @Column({ name: 'user_agent', type: 'text', nullable: true })
   userAgent: string | null;
 
-  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  createdAt: Date;
 }

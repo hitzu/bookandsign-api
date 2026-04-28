@@ -24,7 +24,10 @@ describe('EventAnalyticsController', () => {
             track: trackMock,
             getSummary: getSummaryMock,
             getActions: getActionsMock,
-          } satisfies Pick<EventAnalyticsService, 'track' | 'getSummary' | 'getActions'>,
+          } satisfies Pick<
+            EventAnalyticsService,
+            'track' | 'getSummary' | 'getActions'
+          >,
         },
       ],
     }).compile();
@@ -36,7 +39,7 @@ describe('EventAnalyticsController', () => {
     it('should delegate to EventAnalyticsService.track with dto and userAgent', async () => {
       trackMock.mockResolvedValue(undefined);
       const dto: TrackActionDto = {
-        action: AnalyticsAction.DESCARGAR,
+        action: AnalyticsAction.DOWNLOAD,
         eventToken: 'a1b2c3d4-0000-0000-0000-000000000000',
       };
 
@@ -52,11 +55,11 @@ describe('EventAnalyticsController', () => {
       const expected = {
         eventToken: 'token-123',
         totalActions: 5,
-        byAction: { descargar: 5 },
+        byAction: { download: 5 },
         conversionRates: {
-          descarga_a_cta_modal: '0%',
-          descarga_a_cta_post_descarga: '0%',
-          share_open_a_ejecutado: '0%',
+          download_to_cta_modal: '0%',
+          download_to_cta_post_download: '0%',
+          share_open_to_executed: '0%',
         },
       };
       getSummaryMock.mockResolvedValue(expected);

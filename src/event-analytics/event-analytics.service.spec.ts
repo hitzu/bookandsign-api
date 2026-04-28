@@ -34,7 +34,7 @@ describe('EventAnalyticsService', () => {
 
       await service.track(
         {
-          action: AnalyticsAction.DESCARGAR,
+          action: AnalyticsAction.DOWNLOAD,
           eventToken: event.token,
           sessionId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
         },
@@ -45,7 +45,7 @@ describe('EventAnalyticsService', () => {
       const rows = await repo.find({ where: { eventToken: event.token } });
 
       expect(rows).toHaveLength(1);
-      expect(rows[0].action).toBe(AnalyticsAction.DESCARGAR);
+      expect(rows[0].action).toBe(AnalyticsAction.DOWNLOAD);
       expect(rows[0].sessionId).toBe('a1b2c3d4-e5f6-7890-abcd-ef1234567890');
       expect(rows[0].userAgent).toBe('Mozilla/5.0 Test');
     });
@@ -56,7 +56,7 @@ describe('EventAnalyticsService', () => {
 
       await service.track(
         {
-          action: AnalyticsAction.PERSONALIZAR,
+          action: AnalyticsAction.CUSTOMIZE,
           eventToken: event.token,
           metadata,
         },
@@ -74,7 +74,7 @@ describe('EventAnalyticsService', () => {
 
       await service.track(
         {
-          action: AnalyticsAction.DEDICAR,
+          action: AnalyticsAction.DEDICATE,
           eventToken: event.token,
         },
         'TestAgent',
@@ -91,11 +91,11 @@ describe('EventAnalyticsService', () => {
       const event = await eventFactory.create();
 
       await service.track(
-        { action: AnalyticsAction.DESCARGAR, eventToken: event.token },
+        { action: AnalyticsAction.DOWNLOAD, eventToken: event.token },
         'Agent1',
       );
       await service.track(
-        { action: AnalyticsAction.DESCARGAR, eventToken: event.token },
+        { action: AnalyticsAction.DOWNLOAD, eventToken: event.token },
         'Agent2',
       );
       await service.track(
@@ -124,69 +124,111 @@ describe('EventAnalyticsService', () => {
     it('should return correct counts grouped by action', async () => {
       const event = await eventFactory.create();
 
-      await analyticFactory.createForEvent(event.token, AnalyticsAction.DESCARGAR);
-      await analyticFactory.createForEvent(event.token, AnalyticsAction.DESCARGAR);
-      await analyticFactory.createForEvent(event.token, AnalyticsAction.DESCARGAR);
-      await analyticFactory.createForEvent(event.token, AnalyticsAction.CTA_WA_MODAL);
-      await analyticFactory.createForEvent(event.token, AnalyticsAction.PERSONALIZAR);
+      await analyticFactory.createForEvent(
+        event.token,
+        AnalyticsAction.DOWNLOAD,
+      );
+      await analyticFactory.createForEvent(
+        event.token,
+        AnalyticsAction.DOWNLOAD,
+      );
+      await analyticFactory.createForEvent(
+        event.token,
+        AnalyticsAction.DOWNLOAD,
+      );
+      await analyticFactory.createForEvent(
+        event.token,
+        AnalyticsAction.CTA_WA_MODAL,
+      );
+      await analyticFactory.createForEvent(
+        event.token,
+        AnalyticsAction.CUSTOMIZE,
+      );
 
       const result = await service.getSummary(event.token);
 
       expect(result.totalActions).toBe(5);
-      expect(result.byAction['descargar']).toBe(3);
+      expect(result.byAction['download']).toBe(3);
       expect(result.byAction['cta_whatsapp_modal']).toBe(1);
-      expect(result.byAction['personalizar']).toBe(1);
+      expect(result.byAction['customize']).toBe(1);
     });
 
     it('should calculate conversion rates correctly', async () => {
       const event = await eventFactory.create();
 
-      // 10 descargas
+      // 10 downloads
       for (let i = 0; i < 10; i++) {
-        await analyticFactory.createForEvent(event.token, AnalyticsAction.DESCARGAR);
+        await analyticFactory.createForEvent(
+          event.token,
+          AnalyticsAction.DOWNLOAD,
+        );
       }
-      // 3 cta_whatsapp_modal (30% of descargas)
+      // 3 cta_whatsapp_modal (30% of downloads)
       for (let i = 0; i < 3; i++) {
-        await analyticFactory.createForEvent(event.token, AnalyticsAction.CTA_WA_MODAL);
+        await analyticFactory.createForEvent(
+          event.token,
+          AnalyticsAction.CTA_WA_MODAL,
+        );
       }
-      // 2 cta_whatsapp_post_descarga (20% of descargas)
+      // 2 cta_whatsapp_post_download (20% of downloads)
       for (let i = 0; i < 2; i++) {
-        await analyticFactory.createForEvent(event.token, AnalyticsAction.CTA_WA_POST_DESCARGA);
+        await analyticFactory.createForEvent(
+          event.token,
+          AnalyticsAction.CTA_WA_POST_DOWNLOAD,
+        );
       }
-      // 5 share_confirm_open, 3 share_confirm_ejecutado (60%)
+      // 5 share_confirm_open, 3 share_confirm_executed (60%)
       for (let i = 0; i < 5; i++) {
-        await analyticFactory.createForEvent(event.token, AnalyticsAction.SHARE_CONFIRM_OPEN);
+        await analyticFactory.createForEvent(
+          event.token,
+          AnalyticsAction.SHARE_CONFIRM_OPEN,
+        );
       }
       for (let i = 0; i < 3; i++) {
-        await analyticFactory.createForEvent(event.token, AnalyticsAction.SHARE_CONFIRM_EJECUTADO);
+        await analyticFactory.createForEvent(
+          event.token,
+          AnalyticsAction.SHARE_CONFIRM_EXECUTED,
+        );
       }
 
       const result = await service.getSummary(event.token);
 
-      expect(result.conversionRates.descarga_a_cta_modal).toBe('30%');
-      expect(result.conversionRates.descarga_a_cta_post_descarga).toBe('20%');
-      expect(result.conversionRates.share_open_a_ejecutado).toBe('60%');
+      expect(result.conversionRates.download_to_cta_modal).toBe('30%');
+      expect(result.conversionRates.download_to_cta_post_download).toBe('20%');
+      expect(result.conversionRates.share_open_to_executed).toBe('60%');
     });
 
     it('should return 0% conversion when denominator is zero', async () => {
       const event = await eventFactory.create();
 
-      // Only modal clicks, no descargas
-      await analyticFactory.createForEvent(event.token, AnalyticsAction.CTA_WA_MODAL);
+      // Only modal clicks, no downloads
+      await analyticFactory.createForEvent(
+        event.token,
+        AnalyticsAction.CTA_WA_MODAL,
+      );
 
       const result = await service.getSummary(event.token);
 
-      expect(result.conversionRates.descarga_a_cta_modal).toBe('0%');
-      expect(result.conversionRates.descarga_a_cta_post_descarga).toBe('0%');
+      expect(result.conversionRates.download_to_cta_modal).toBe('0%');
+      expect(result.conversionRates.download_to_cta_post_download).toBe('0%');
     });
 
     it('should not mix actions from different events', async () => {
       const event1 = await eventFactory.create();
       const event2 = await eventFactory.create();
 
-      await analyticFactory.createForEvent(event1.token, AnalyticsAction.DESCARGAR);
-      await analyticFactory.createForEvent(event1.token, AnalyticsAction.DESCARGAR);
-      await analyticFactory.createForEvent(event2.token, AnalyticsAction.DESCARGAR);
+      await analyticFactory.createForEvent(
+        event1.token,
+        AnalyticsAction.DOWNLOAD,
+      );
+      await analyticFactory.createForEvent(
+        event1.token,
+        AnalyticsAction.DOWNLOAD,
+      );
+      await analyticFactory.createForEvent(
+        event2.token,
+        AnalyticsAction.DOWNLOAD,
+      );
 
       const result1 = await service.getSummary(event1.token);
       const result2 = await service.getSummary(event2.token);
@@ -200,9 +242,18 @@ describe('EventAnalyticsService', () => {
     it('should return paginated results ordered by createdAt DESC', async () => {
       const event = await eventFactory.create();
 
-      await analyticFactory.createForEvent(event.token, AnalyticsAction.DESCARGAR);
-      await analyticFactory.createForEvent(event.token, AnalyticsAction.PERSONALIZAR);
-      await analyticFactory.createForEvent(event.token, AnalyticsAction.DEDICAR);
+      await analyticFactory.createForEvent(
+        event.token,
+        AnalyticsAction.DOWNLOAD,
+      );
+      await analyticFactory.createForEvent(
+        event.token,
+        AnalyticsAction.CUSTOMIZE,
+      );
+      await analyticFactory.createForEvent(
+        event.token,
+        AnalyticsAction.DEDICATE,
+      );
 
       const result = await service.getActions(event.token, 1, 2);
 
@@ -215,9 +266,18 @@ describe('EventAnalyticsService', () => {
     it('should return second page correctly', async () => {
       const event = await eventFactory.create();
 
-      await analyticFactory.createForEvent(event.token, AnalyticsAction.DESCARGAR);
-      await analyticFactory.createForEvent(event.token, AnalyticsAction.PERSONALIZAR);
-      await analyticFactory.createForEvent(event.token, AnalyticsAction.DEDICAR);
+      await analyticFactory.createForEvent(
+        event.token,
+        AnalyticsAction.DOWNLOAD,
+      );
+      await analyticFactory.createForEvent(
+        event.token,
+        AnalyticsAction.CUSTOMIZE,
+      );
+      await analyticFactory.createForEvent(
+        event.token,
+        AnalyticsAction.DEDICATE,
+      );
 
       const result = await service.getActions(event.token, 2, 2);
 
@@ -239,8 +299,14 @@ describe('EventAnalyticsService', () => {
       const event1 = await eventFactory.create();
       const event2 = await eventFactory.create();
 
-      await analyticFactory.createForEvent(event1.token, AnalyticsAction.DESCARGAR);
-      await analyticFactory.createForEvent(event2.token, AnalyticsAction.DESCARGAR);
+      await analyticFactory.createForEvent(
+        event1.token,
+        AnalyticsAction.DOWNLOAD,
+      );
+      await analyticFactory.createForEvent(
+        event2.token,
+        AnalyticsAction.DOWNLOAD,
+      );
 
       const result = await service.getActions(event1.token, 1, 50);
 

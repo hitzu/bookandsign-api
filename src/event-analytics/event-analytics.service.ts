@@ -4,6 +4,11 @@ import { Repository } from 'typeorm';
 import { EventAnalytic } from './entities/event-analytic.entity';
 import { TrackActionDto } from './dto/track-action.dto';
 
+type AnalyticsSummaryRow = {
+  action: string;
+  count: string;
+};
+
 @Injectable()
 export class EventAnalyticsService {
   constructor(
@@ -28,31 +33,31 @@ export class EventAnalyticsService {
       .addSelect('COUNT(*)', 'count')
       .where('ea.event_token = :eventToken', { eventToken })
       .groupBy('ea.action')
-      .getRawMany();
+      .getRawMany<AnalyticsSummaryRow>();
 
-    const byAction = Object.fromEntries(
-      rows.map((r) => [r.action, parseInt(r.count)]),
+    const byAction: Record<string, number> = Object.fromEntries(
+      rows.map((r) => [r.action, parseInt(r.count, 10)]),
     );
 
-    const descargas = byAction['descargar'] || 0;
+    const downloads = byAction['download'] || 0;
     const pct = (n: number, d: number) =>
       d ? `${Math.round((n / d) * 100)}%` : '0%';
 
     return {
       eventToken,
-      totalActions: rows.reduce((acc, r) => acc + parseInt(r.count), 0),
+      totalActions: rows.reduce((acc, r) => acc + parseInt(r.count, 10), 0),
       byAction,
       conversionRates: {
-        descarga_a_cta_modal: pct(
+        download_to_cta_modal: pct(
           byAction['cta_whatsapp_modal'] || 0,
-          descargas,
+          downloads,
         ),
-        descarga_a_cta_post_descarga: pct(
-          byAction['cta_whatsapp_post_descarga'] || 0,
-          descargas,
+        download_to_cta_post_download: pct(
+          byAction['cta_whatsapp_post_download'] || 0,
+          downloads,
         ),
-        share_open_a_ejecutado: pct(
-          byAction['share_confirm_ejecutado'] || 0,
+        share_open_to_executed: pct(
+          byAction['share_confirm_executed'] || 0,
           byAction['share_confirm_open'] || 0,
         ),
       },

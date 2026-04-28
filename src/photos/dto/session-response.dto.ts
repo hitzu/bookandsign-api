@@ -71,10 +71,16 @@ export class SessionDetailResponseDto {
 
 export class SessionEventDto {
   @ApiProperty()
+  eventToken!: string;
+
+  @ApiProperty()
   honoreesNames!: string;
 
   @ApiProperty()
   date!: string;
+
+  @ApiProperty()
+  albumPhase!: string
 
   @ApiPropertyOptional({ type: EventThemeDto, nullable: true })
   eventTheme?: EventThemeDto | null;

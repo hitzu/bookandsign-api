@@ -319,8 +319,10 @@ export class SessionsService {
       status: session.status,
       photos: photos.map((p) => ({ url: p.publicUrl ?? '', position: p.id })),
       event: {
+        eventToken: session.event?.token ?? '',
         honoreesNames: session.event?.honoreesNames ?? '',
         date: session.event?.serviceStartsAt?.toISOString() ?? '',
+        albumPhase: session.event?.albumPhrase ?? '',
         eventTheme: session.event?.eventTheme
       },
     };
@@ -363,8 +365,10 @@ export class SessionsService {
 
     const result: GalleryResponseDto = {
       event: {
+        eventToken: event.token ?? '',
         honoreesNames: event.honoreesNames ?? '',
         date: event.serviceStartsAt?.toISOString() ?? '',
+        albumPhase: event.albumPhrase ?? '',
         eventTheme: event.eventTheme
       },
       sessions: sessions.map((s) => ({
