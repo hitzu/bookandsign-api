@@ -29,6 +29,7 @@ import { BulkPhrasesDto } from './dto/event-phases/bulk-phrases.dto'
 import { EventsService } from './events.service';
 import { EventTypeService } from './event-type.service';
 import { EventPhrasesService } from './event-phrases.service';
+import { EventThemeService } from './event-theme.service';
 import { Public } from '../auth/decorators/public.decorator';
 import { EventTypeDto } from './dto/event-types/event-types.dto';
 import { PhraseByEventTokenDto } from './dto/event-phases/phrase-by-event-token.dto';
@@ -41,6 +42,7 @@ export class EventsController {
     private readonly eventsService: EventsService,
     private readonly eventTypeService: EventTypeService,
     private readonly eventPhraseService: EventPhrasesService,
+    private readonly eventTheme: EventThemeService,
   ) { }
 
   @Post()
@@ -86,6 +88,13 @@ export class EventsController {
     return this.eventsService.list();
   }
 
+  @Get('themes')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get themes events' })
+  getEventThemes() {
+    return this.eventTheme.listEventThemes()
+  }
+
   @Get('by-key/:key')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get event by key' })
@@ -97,6 +106,19 @@ export class EventsController {
   @ApiNotFoundResponse({ description: 'Event not found' })
   getByKey(@Param('key') key: string) {
     return this.eventsService.getByKey(key);
+  }
+
+  @Get('id/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get event by id' })
+  @ApiParam({ name: 'id', type: Number, description: 'Event id' })
+  @ApiOkResponse({
+    description: 'Event found',
+    type: EventResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Event not found' })
+  getById(@Param('id', ParseIntPipe) id: number) {
+    return this.eventsService.getById(id);
   }
 
 

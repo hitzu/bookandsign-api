@@ -7,11 +7,13 @@ import { EventsController } from './events.controller';
 import { EventsService } from './events.service';
 import { EventTypeService } from './event-type.service';
 import { EventPhrasesService } from './event-phrases.service';
+import { EventThemeService } from './event-theme.service'
+import { EventTheme } from './entities/event-themes.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Event, EventType, EventPhrase])],
+  imports: [TypeOrmModule.forFeature([Event, EventType, EventPhrase, EventTheme])],
   controllers: [EventsController],
-  providers: [EventsService, EventTypeService, EventPhrasesService],
+  providers: [EventsService, EventTypeService, EventPhrasesService, EventThemeService],
   exports: [EventsService],
 })
 export class EventsModule { }

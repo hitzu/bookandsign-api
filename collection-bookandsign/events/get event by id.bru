@@ -1,17 +1,21 @@
 meta {
-  name: list events
+  name: get event by id
   type: http
-  seq: 4
+  seq: 9
 }
 
 get {
-  url: {{base_url}}/events
+  url: {{base_url}}/events/1
   body: none
   auth: inherit
 }
 
 headers {
   Authorization: Bearer {{token}}
+}
+
+vars:pre-request {
+  event_key: 26-04-26
 }
 
 settings {

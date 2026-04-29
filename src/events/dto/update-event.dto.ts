@@ -91,4 +91,21 @@ export class UpdateEventDto {
   @Max(10)
   @IsOptional()
   photoCount?: number;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Plantilla de impresión (polaroid_2 | keychain_2)',
+  })
+  @IsString()
+  @IsOptional()
+  printTemplate?: string;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Ícono decorativo (rings | balloon | graduation | baby | xv | null)',
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  decorativeIcon?: string | null;
 }

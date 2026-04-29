@@ -57,6 +57,12 @@ export class Event extends BaseTimeEntity {
   @Column('number', { name: 'event_theme_id', nullable: true })
   eventThemeId!: number | null;
 
+  @Column('varchar', { name: 'print_template', length: 50, default: 'polaroid_2' })
+  printTemplate!: string;
+
+  @Column('varchar', { name: 'decorative_icon', length: 50, nullable: true })
+  decorativeIcon!: string | null;
+
   @ManyToOne(() => EventType, (eventType) => eventType.events)
   @JoinColumn({ name: 'event_type_id' })
   eventType?: EventType | null;

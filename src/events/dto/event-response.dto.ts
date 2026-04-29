@@ -104,6 +104,17 @@ export class EventResponseDto {
   eventThemeId?: number | null;
 
   @Expose()
+  @ApiProperty({ type: String, description: 'Print template', default: 'polaroid_2' })
+  @IsString()
+  printTemplate!: string;
+
+  @Expose()
+  @ApiPropertyOptional({ type: String, description: 'Decorative icon', nullable: true })
+  @IsString()
+  @IsOptional()
+  decorativeIcon?: string | null;
+
+  @Expose()
   @ApiProperty()
   createdAt!: Date;
 

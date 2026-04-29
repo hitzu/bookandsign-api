@@ -99,6 +99,19 @@ export class EventsService {
     });
   }
 
+  async getById(id: number): Promise<EventResponseDto> {
+    const event = await this.eventRepository.findOne({
+      where: { id },
+      relations: { eventTheme: true },
+    });
+    if (!event) {
+      throw new NotFoundException(EXCEPTION_RESPONSE.EVENT_NOT_FOUND);
+    }
+    return plainToInstance(EventResponseDto, event, {
+      excludeExtraneousValues: true,
+    });
+  }
+
   async getByKey(key: string): Promise<EventResponseDto> {
     const event = await this.eventRepository.findOne({ where: { key }, relations: { eventTheme: true } });
     if (!event) {
