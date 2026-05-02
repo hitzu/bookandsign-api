@@ -391,7 +391,7 @@ export class SessionsService {
       throw new NotFoundException(EXCEPTION_RESPONSE.SESSION_NOT_FOUND);
     }
 
-    const bucket = this.resolveBucket();
+    const bucket = dto.storageEnv;
     const storagePath = `photobooth/${session.event!.id}/${randomUUID()}.jpg`;
     const presignedUrl = await this.photosService.createStorageUploadUrl(bucket, storagePath);
 
@@ -406,7 +406,7 @@ export class SessionsService {
       }),
     );
 
-    return { photoId: photo.id, presignedUrl, photoPath: storagePath };
+    return { photoId: photo.id, presignedUrl, photoPath: `${bucket}/${storagePath}` };
   }
 
   async confirmPhotoV2(dto: ConfirmPhotoDto): Promise<{ ok: boolean }> {

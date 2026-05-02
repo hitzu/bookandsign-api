@@ -1,10 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsUUID, Min } from 'class-validator';
+import { IsIn, IsUUID } from 'class-validator';
 
 export class PresignedUploadDto {
   @ApiProperty({ description: 'Session UUID', example: 'b5f4a6e2-3c1d-4f8a-9b1e-1a2b3c4d5e6f' })
   @IsUUID('4')
   sessionToken!: string;
+
+  @ApiProperty({
+    type: String,
+    enum: ['local', 'prod'],
+    description: 'Storage path environment prefix',
+    example: 'prod',
+  })
+  @IsIn(['local', 'prod'])
+  storageEnv!: string;
 }
 
 export class PresignedUploadResponseDto {
