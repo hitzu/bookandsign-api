@@ -32,6 +32,7 @@ import { ListPhotosResponseDto } from './dto/list-photos-response.dto';
 import { PhotoResponseDto } from './dto/photo-response.dto';
 import { PresignResponseDto } from './dto/presign-response.dto';
 import { PhotosService } from './photos.service';
+import { Photobooth } from '../auth/decorators/photobooth.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 
@@ -120,6 +121,18 @@ export class PhotosController {
       storageBase: dto.storageBase,
       count: dto.count,
     });
+  }
+
+  @Delete('/photobooth/:id')
+  @Public()
+  @Photobooth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove (soft delete) a photo by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'Photo ID' })
+  @ApiNoContentResponse({ description: 'Photo deleted (soft delete)' })
+  @ApiNotFoundResponse({ description: 'Photo not found' })
+  async publicRemove(@Param('id') id: string) {
+    await this.photosService.remove(+id);
   }
 
   @Delete(':id')

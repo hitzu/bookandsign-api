@@ -12,6 +12,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './users/user.module';
 import { TokenModule } from './tokens/token.module';
 import { AuthGuard } from './auth/auth.guard';
+import { PhotoboothGuard } from './auth/photobooth.guard';
 import { ProductsModule } from './products/products.module';
 import { PackagesModule } from './packages/packages.module';
 import { TermsModule } from './terms/terms.module';
@@ -60,6 +61,10 @@ import { ReconciliationModule } from './reconciliation/reconciliation.module';
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PhotoboothGuard,
     },
   ],
 })

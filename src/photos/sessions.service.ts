@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   GoneException,
   Injectable,
@@ -29,6 +30,11 @@ import { SessionUploadUrlResponseDto } from './dto/create-session-upload-url.dto
 import { ConfirmPhotoDto } from './dto/confirm-photo.dto';
 import { PresignedUploadDto, PresignedUploadResponseDto } from './dto/presigned-upload.dto';
 import { PhotoResponseDto } from './dto/photo-response.dto';
+import {
+  ConfirmGifDto,
+  PresignedGifUploadDto,
+  PresignedGifUploadResponseDto,
+} from './dto/session-gif.dto';
 import { PhotosService } from './photos.service';
 import { SessionsCache } from './sessions.cache';
 
@@ -38,6 +44,10 @@ const UPLOAD_URL_TTL_SECONDS = 300;
 const ALLOWED_MIMES: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
+};
+const SESSION_UPLOAD_MIME_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
 };
 
 @Injectable()
@@ -314,10 +324,24 @@ export class SessionsService {
       order: { createdAt: 'ASC' },
     });
 
+    const photoItems = photos.map((p) => ({ url: p.publicUrl ?? '', position: p.id }));
+    const hasReadyGifPhoto = photos.some((photo) => photo.storagePath.endsWith('.gif'));
+
+    if (session.status === 'complete' && !hasReadyGifPhoto) {
+      const gifPosition = photoItems.length
+        ? Math.max(...photoItems.map((photo) => photo.position)) + 1
+        : 1;
+
+      photoItems.push({
+        url: this.buildGifPublicUrl(session.event?.id ?? session.eventId, session.sessionToken),
+        position: gifPosition,
+      });
+    }
+
     const result: SessionResponseDto = {
       sessionToken: session.sessionToken,
       status: session.status,
-      photos: photos.map((p) => ({ url: p.publicUrl ?? '', position: p.id })),
+      photos: photoItems,
       event: {
         eventToken: session.event?.token ?? '',
         honoreesNames: session.event?.honoreesNames ?? '',
@@ -392,7 +416,12 @@ export class SessionsService {
     }
 
     const bucket = dto.storageEnv;
-    const storagePath = `photobooth/${session.event!.id}/${randomUUID()}.jpg`;
+    const extension = SESSION_UPLOAD_MIME_EXTENSIONS[dto.mime];
+    if (!extension) {
+      throw new BadRequestException('Only image/jpeg and image/gif are allowed');
+    }
+
+    const storagePath = `photobooth/${session.event!.id}/${randomUUID()}.${extension}`;
     const presignedUrl = await this.photosService.createStorageUploadUrl(bucket, storagePath);
 
     const photo = await this.photoRepository.save(
@@ -407,6 +436,26 @@ export class SessionsService {
     );
 
     return { photoId: photo.id, presignedUrl, photoPath: `${bucket}/${storagePath}` };
+  }
+
+  async getPresignedGifUploadUrl(dto: PresignedGifUploadDto): Promise<PresignedGifUploadResponseDto> {
+    const session = await this.sessionRepository.findOne({
+      where: { sessionToken: dto.sessionToken },
+      relations: ['event'],
+    });
+    if (!session) {
+      throw new NotFoundException(EXCEPTION_RESPONSE.SESSION_NOT_FOUND);
+    }
+
+    const bucket = dto.storageEnv;
+    const gifPath = this.buildGifStoragePath(session.event?.id ?? session.eventId, session.sessionToken);
+    const presignedUrl = await this.photosService.createStorageUploadUrl(bucket, gifPath);
+
+    return {
+      presignedUrl,
+      gifPath: `${bucket}/${gifPath}`,
+      gifUrl: this.photosService.getPublicUrl(bucket, gifPath),
+    };
   }
 
   async confirmPhotoV2(dto: ConfirmPhotoDto): Promise<{ ok: boolean }> {
@@ -434,9 +483,33 @@ export class SessionsService {
     return { ok: true };
   }
 
+  async confirmGifUpload(dto: ConfirmGifDto): Promise<{ ok: boolean }> {
+    const session = await this.sessionRepository.findOne({
+      where: { sessionToken: dto.sessionToken },
+    });
+    if (!session) {
+      throw new NotFoundException(EXCEPTION_RESPONSE.SESSION_NOT_FOUND);
+    }
+
+    this.cache.invalidateSession(session.sessionToken);
+    return { ok: true };
+  }
+
+  private buildGifStoragePath(eventId: number, sessionToken: string): string {
+    return `photobooth/${eventId}/gifs/${sessionToken}.gif`;
+  }
+
+  private buildGifPublicUrl(eventId: number, sessionToken: string): string {
+    const bucket = this.resolveBucket();
+    return this.photosService.getPublicUrl(
+      bucket,
+      this.buildGifStoragePath(eventId, sessionToken),
+    );
+  }
+
   private resolveBucket(): string {
     const nodeEnv = this.configService.get<string>('NODE_ENV') ?? 'local';
-    return nodeEnv === 'production' ? 'prod' : 'local';
+    return nodeEnv === 'production' || nodeEnv === 'prod' ? 'prod' : 'local';
   }
 
   private assertEventNotExpired(event: Event): void {

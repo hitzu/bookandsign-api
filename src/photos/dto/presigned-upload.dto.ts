@@ -14,6 +14,14 @@ export class PresignedUploadDto {
   })
   @IsIn(['local', 'prod'])
   storageEnv!: string;
+
+  @ApiProperty({
+    description: 'Mime type for the asset being uploaded',
+    enum: ['image/jpeg', 'image/gif'],
+    example: 'image/jpeg',
+  })
+  @IsIn(['image/jpeg', 'image/gif'])
+  mime!: string;
 }
 
 export class PresignedUploadResponseDto {

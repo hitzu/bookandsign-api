@@ -25,6 +25,11 @@ import { CreateSessionDto } from './dto/create-session.dto';
 import { ConfirmPhotoDto } from './dto/confirm-photo.dto';
 import { PresignedUploadDto, PresignedUploadResponseDto } from './dto/presigned-upload.dto';
 import {
+  ConfirmGifDto,
+  PresignedGifUploadDto,
+  PresignedGifUploadResponseDto,
+} from './dto/session-gif.dto';
+import {
   GalleryResponseDto,
   SessionResponseDto,
 } from './dto/session-response.dto';
@@ -104,6 +109,19 @@ export class SessionsController {
     return this.sessionsService.getPresignedUploadUrl(dto);
   }
 
+  @Post('gif/presigned')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get presigned URL to upload a session GIF directly to Supabase' })
+  @ApiBody({ type: PresignedGifUploadDto })
+  @ApiOkResponse({ type: PresignedGifUploadResponseDto })
+  @ApiNotFoundResponse({ description: 'Session not found' })
+  getPresignedGifUrl(
+    @Body(new ValidationPipe({ whitelist: true })) dto: PresignedGifUploadDto,
+  ): Promise<PresignedGifUploadResponseDto> {
+    return this.sessionsService.getPresignedGifUploadUrl(dto);
+  }
+
   @Post('photos/confirm')
   @Public()
   @HttpCode(HttpStatus.OK)
@@ -114,5 +132,18 @@ export class SessionsController {
     @Body(new ValidationPipe({ whitelist: true })) dto: ConfirmPhotoDto,
   ): Promise<{ ok: boolean }> {
     return this.sessionsService.confirmPhotoV2(dto);
+  }
+
+  @Post('gif/confirm')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Confirm a session GIF uploaded to Supabase' })
+  @ApiBody({ type: ConfirmGifDto })
+  @ApiOkResponse({ schema: { example: { ok: true } } })
+  @ApiNotFoundResponse({ description: 'Session not found' })
+  confirmGif(
+    @Body(new ValidationPipe({ whitelist: true })) dto: ConfirmGifDto,
+  ): Promise<{ ok: boolean }> {
+    return this.sessionsService.confirmGifUpload(dto);
   }
 }

@@ -13,13 +13,15 @@ post {
 body:json {
   {
     "sessionToken": "{{session_token}}",
-    "storageEnv": "{{env}}"
+    "storageEnv": "{{env}}",
+    "mime": "{{mime}}"
   }
 }
 
 vars:pre-request {
   session_token: c1d2e3f4-0000-4000-8000-cabbccddeeff
   env: local
+  mime: image/jpeg
 }
 
 settings {

@@ -76,6 +76,6 @@ export class ReconciliationService {
 
   private resolveBucket(): string {
     const nodeEnv = this.configService.get<string>('NODE_ENV') ?? 'local';
-    return nodeEnv === 'production' ? 'prod' : 'local';
+    return nodeEnv === 'production' || nodeEnv === 'prod' ? 'prod' : 'local';
   }
 }
