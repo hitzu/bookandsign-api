@@ -1,0 +1,20 @@
+meta {
+  name: get source summary
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{base_url}}/event-analytics/{{event_token}}/source-summary
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
