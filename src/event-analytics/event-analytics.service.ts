@@ -1,13 +1,36 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventAnalytic } from './entities/event-analytic.entity';
 import { TrackActionDto } from './dto/track-action.dto';
+import { AnalyticsAction } from './enums/analytics-action.enum';
+import { AnalyticsSource } from './enums/analytics-source.enum';
 
 type AnalyticsSummaryRow = {
   action: string;
   count: string;
 };
+
+type AnalyticsSourceSummaryRow = {
+  action: AnalyticsAction;
+  source: AnalyticsSource;
+  count: string;
+};
+
+type SourceActionBreakdown = Record<AnalyticsSource, number> & {
+  total: number;
+};
+
+const SOURCE_SUMMARY_ACTIONS = [
+  AnalyticsAction.GALLERY_OPENED,
+  AnalyticsAction.SESSION_OPENED,
+];
+
+const TRACKED_SOURCES = [
+  AnalyticsSource.QR,
+  AnalyticsSource.GALLERY,
+  AnalyticsSource.DIRECT,
+];
 
 @Injectable()
 export class EventAnalyticsService {
@@ -17,10 +40,13 @@ export class EventAnalyticsService {
   ) {}
 
   async track(dto: TrackActionDto, userAgent: string): Promise<void> {
+    this.assertTrackRequirements(dto);
+
     await this.repo.save({
       eventToken: dto.eventToken,
       sessionId: dto.sessionId ?? null,
       action: dto.action,
+      source: dto.source ?? null,
       metadata: dto.metadata ?? null,
       userAgent: userAgent ?? null,
     });
@@ -72,5 +98,58 @@ export class EventAnalyticsService {
       take: limit,
     });
     return { data, total, page, limit };
+  }
+
+  async getSourceSummary(eventToken: string) {
+    const rows = await this.repo
+      .createQueryBuilder('ea')
+      .select('ea.action', 'action')
+      .addSelect('ea.source', 'source')
+      .addSelect('COUNT(*)', 'count')
+      .where('ea.event_token = :eventToken', { eventToken })
+      .andWhere('ea.action IN (:...actions)', { actions: SOURCE_SUMMARY_ACTIONS })
+      .andWhere('ea.source IN (:...sources)', { sources: TRACKED_SOURCES })
+      .groupBy('ea.action')
+      .addGroupBy('ea.source')
+      .getRawMany<AnalyticsSourceSummaryRow>();
+
+    const actions = {
+      [AnalyticsAction.GALLERY_OPENED]: this.buildEmptySourceBreakdown(),
+      [AnalyticsAction.SESSION_OPENED]: this.buildEmptySourceBreakdown(),
+    };
+
+    for (const row of rows) {
+      const action = actions[row.action];
+      if (!action || !row.source) continue;
+
+      const count = parseInt(row.count, 10);
+      action[row.source] = count;
+      action.total += count;
+    }
+
+    return { eventToken, actions };
+  }
+
+  private assertTrackRequirements(dto: TrackActionDto): void {
+    const requiresSource =
+      dto.action === AnalyticsAction.GALLERY_OPENED ||
+      dto.action === AnalyticsAction.SESSION_OPENED;
+
+    if (requiresSource && !dto.source) {
+      throw new BadRequestException('source is required for gallery_opened and session_opened');
+    }
+
+    if (dto.action === AnalyticsAction.SESSION_OPENED && !dto.sessionId) {
+      throw new BadRequestException('sessionId is required for session_opened');
+    }
+  }
+
+  private buildEmptySourceBreakdown(): SourceActionBreakdown {
+    return {
+      [AnalyticsSource.QR]: 0,
+      [AnalyticsSource.GALLERY]: 0,
+      [AnalyticsSource.DIRECT]: 0,
+      total: 0,
+    };
   }
 }

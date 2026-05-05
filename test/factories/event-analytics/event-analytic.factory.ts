@@ -6,6 +6,7 @@ import type { DataSource } from 'typeorm';
 import { EventAnalytic } from '../../../src/event-analytics/entities/event-analytic.entity';
 import { EventFactory } from '../events/event.factory';
 import { AnalyticsAction } from '../../../src/event-analytics/enums/analytics-action.enum';
+import { AnalyticsSource } from '../../../src/event-analytics/enums/analytics-source.enum';
 
 export class EventAnalyticFactory extends Factory<EventAnalytic> {
   protected entity = EventAnalytic;
@@ -21,6 +22,7 @@ export class EventAnalyticFactory extends Factory<EventAnalytic> {
       eventToken: faker.string.uuid(),
       sessionId: faker.string.uuid(),
       action: faker.helpers.arrayElement(Object.values(AnalyticsAction)),
+      source: faker.helpers.arrayElement([...Object.values(AnalyticsSource), null]),
       metadata: null,
       userAgent: faker.internet.userAgent(),
     };
@@ -38,10 +40,15 @@ export class EventAnalyticFactory extends Factory<EventAnalytic> {
     return this.dataSource.getRepository(EventAnalytic).save(analytic);
   }
 
-  async createForEvent(eventToken: string, action?: AnalyticsAction): Promise<EventAnalytic> {
+  async createForEvent(
+    eventToken: string,
+    action?: AnalyticsAction,
+    attrs?: Partial<EventAnalytic>,
+  ): Promise<EventAnalytic> {
     const analytic = await this.make({
       eventToken,
       action: action ?? faker.helpers.arrayElement(Object.values(AnalyticsAction)),
+      ...attrs,
     });
     return this.dataSource.getRepository(EventAnalytic).save(analytic);
   }

@@ -7,6 +7,7 @@ import {
   Query,
   Headers,
   HttpCode,
+  ValidationPipe,
 } from '@nestjs/common';
 import { Public } from '../auth/decorators/public.decorator';
 import { EventAnalyticsService } from './event-analytics.service';
@@ -20,7 +21,7 @@ export class EventAnalyticsController {
   @Post('track')
   @HttpCode(204)
   async track(
-    @Body() dto: TrackActionDto,
+    @Body(new ValidationPipe({ whitelist: true })) dto: TrackActionDto,
     @Headers('user-agent') userAgent: string,
   ): Promise<void> {
     await this.analyticsService.track(dto, userAgent);
@@ -38,5 +39,10 @@ export class EventAnalyticsController {
     @Query('limit') limit = 50,
   ) {
     return this.analyticsService.getActions(eventToken, +page, +limit);
+  }
+
+  @Get(':eventToken/source-summary')
+  async sourceSummary(@Param('eventToken') eventToken: string) {
+    return this.analyticsService.getSourceSummary(eventToken);
   }
 }

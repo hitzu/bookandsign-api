@@ -2,6 +2,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { EventAnalyticsController } from './event-analytics.controller';
 import { EventAnalyticsService } from './event-analytics.service';
 import { AnalyticsAction } from './enums/analytics-action.enum';
+import { AnalyticsSource } from './enums/analytics-source.enum';
 import type { TrackActionDto } from './dto/track-action.dto';
 
 describe('EventAnalyticsController', () => {
@@ -9,11 +10,13 @@ describe('EventAnalyticsController', () => {
   let trackMock: jest.MockedFunction<EventAnalyticsService['track']>;
   let getSummaryMock: jest.MockedFunction<EventAnalyticsService['getSummary']>;
   let getActionsMock: jest.MockedFunction<EventAnalyticsService['getActions']>;
+  let getSourceSummaryMock: jest.MockedFunction<EventAnalyticsService['getSourceSummary']>;
 
   beforeEach(async () => {
     trackMock = jest.fn();
     getSummaryMock = jest.fn();
     getActionsMock = jest.fn();
+    getSourceSummaryMock = jest.fn();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EventAnalyticsController],
@@ -24,9 +27,10 @@ describe('EventAnalyticsController', () => {
             track: trackMock,
             getSummary: getSummaryMock,
             getActions: getActionsMock,
+            getSourceSummary: getSourceSummaryMock,
           } satisfies Pick<
             EventAnalyticsService,
-            'track' | 'getSummary' | 'getActions'
+            'track' | 'getSummary' | 'getActions' | 'getSourceSummary'
           >,
         },
       ],
@@ -39,8 +43,9 @@ describe('EventAnalyticsController', () => {
     it('should delegate to EventAnalyticsService.track with dto and userAgent', async () => {
       trackMock.mockResolvedValue(undefined);
       const dto: TrackActionDto = {
-        action: AnalyticsAction.DOWNLOAD,
+        action: AnalyticsAction.GALLERY_OPENED,
         eventToken: 'a1b2c3d4-0000-0000-0000-000000000000',
+        source: AnalyticsSource.QR,
       };
 
       await controller.track(dto, 'Mozilla/5.0 Test');
@@ -82,6 +87,25 @@ describe('EventAnalyticsController', () => {
       expect(result).toBe(expected);
       expect(getActionsMock).toHaveBeenCalledTimes(1);
       expect(getActionsMock).toHaveBeenCalledWith('token-123', 1, 50);
+    });
+  });
+
+  describe('sourceSummary', () => {
+    it('should delegate to EventAnalyticsService.getSourceSummary', async () => {
+      const expected = {
+        eventToken: 'token-123',
+        actions: {
+          gallery_opened: { qr: 1, gallery: 0, direct: 0, total: 1 },
+          session_opened: { qr: 0, gallery: 1, direct: 0, total: 1 },
+        },
+      };
+      getSourceSummaryMock.mockResolvedValue(expected);
+
+      const result = await controller.sourceSummary('token-123');
+
+      expect(result).toBe(expected);
+      expect(getSourceSummaryMock).toHaveBeenCalledTimes(1);
+      expect(getSourceSummaryMock).toHaveBeenCalledWith('token-123');
     });
   });
 });

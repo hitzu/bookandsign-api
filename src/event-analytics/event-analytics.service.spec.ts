@@ -6,6 +6,7 @@ import { EventAnalyticFactory } from '../../test/factories/event-analytics/event
 import { EventAnalytic } from './entities/event-analytic.entity';
 import { EventAnalyticsService } from './event-analytics.service';
 import { AnalyticsAction } from './enums/analytics-action.enum';
+import { AnalyticsSource } from './enums/analytics-source.enum';
 
 describe('EventAnalyticsService', () => {
   let service: EventAnalyticsService;
@@ -34,9 +35,9 @@ describe('EventAnalyticsService', () => {
 
       await service.track(
         {
-          action: AnalyticsAction.DOWNLOAD,
+          action: AnalyticsAction.GALLERY_OPENED,
           eventToken: event.token,
-          sessionId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          source: AnalyticsSource.QR,
         },
         'Mozilla/5.0 Test',
       );
@@ -45,9 +46,25 @@ describe('EventAnalyticsService', () => {
       const rows = await repo.find({ where: { eventToken: event.token } });
 
       expect(rows).toHaveLength(1);
-      expect(rows[0].action).toBe(AnalyticsAction.DOWNLOAD);
-      expect(rows[0].sessionId).toBe('a1b2c3d4-e5f6-7890-abcd-ef1234567890');
+      expect(rows[0].action).toBe(AnalyticsAction.GALLERY_OPENED);
+      expect(rows[0].source).toBe(AnalyticsSource.QR);
+      expect(rows[0].sessionId).toBeNull();
       expect(rows[0].userAgent).toBe('Mozilla/5.0 Test');
+    });
+
+    it('should require sessionId for session_opened', async () => {
+      const event = await eventFactory.create();
+
+      await expect(
+        service.track(
+          {
+            action: AnalyticsAction.SESSION_OPENED,
+            eventToken: event.token,
+            source: AnalyticsSource.GALLERY,
+          },
+          'Mozilla/5.0 Test',
+        ),
+      ).rejects.toThrow('sessionId is required for session_opened');
     });
 
     it('should persist metadata when provided', async () => {
@@ -84,6 +101,7 @@ describe('EventAnalyticsService', () => {
       const [row] = await repo.find({ where: { eventToken: event.token } });
 
       expect(row.sessionId).toBeNull();
+      expect(row.source).toBeNull();
       expect(row.metadata).toBeNull();
     });
 
@@ -312,6 +330,45 @@ describe('EventAnalyticsService', () => {
 
       expect(result.total).toBe(1);
       expect(result.data[0].eventToken).toBe(event1.token);
+    });
+  });
+
+  describe('getSourceSummary', () => {
+    it('should group openings by action and source', async () => {
+      const event = await eventFactory.create();
+
+      await analyticFactory.createForEvent(event.token, AnalyticsAction.GALLERY_OPENED, {
+        source: AnalyticsSource.QR,
+      });
+      await analyticFactory.createForEvent(event.token, AnalyticsAction.GALLERY_OPENED, {
+        source: AnalyticsSource.QR,
+      });
+      await analyticFactory.createForEvent(event.token, AnalyticsAction.GALLERY_OPENED, {
+        source: AnalyticsSource.DIRECT,
+      });
+      await analyticFactory.createForEvent(event.token, AnalyticsAction.SESSION_OPENED, {
+        source: AnalyticsSource.GALLERY,
+      });
+
+      const result = await service.getSourceSummary(event.token);
+
+      expect(result).toEqual({
+        eventToken: event.token,
+        actions: {
+          gallery_opened: {
+            qr: 2,
+            gallery: 0,
+            direct: 1,
+            total: 3,
+          },
+          session_opened: {
+            qr: 0,
+            gallery: 1,
+            direct: 0,
+            total: 1,
+          },
+        },
+      });
     });
   });
 });

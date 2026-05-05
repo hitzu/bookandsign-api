@@ -10,6 +10,8 @@ export enum AnalyticsAction {
   GALLERY_VIEW = 'gallery_view',
   GALLERY_EMPTY_VIEW = 'gallery_empty_view',
   GALLERY_SESSION_CLICK = 'gallery_session_click',
+  GALLERY_OPENED = 'gallery_opened',
   SESSION_VIEW = 'session_view',
+  SESSION_OPENED = 'session_opened',
   PHOTO_VIEW = 'photo_view',
 }

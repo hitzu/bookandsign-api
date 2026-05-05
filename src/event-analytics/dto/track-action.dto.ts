@@ -1,5 +1,6 @@
 import { IsEnum, IsUUID, IsOptional, IsObject } from 'class-validator';
 import { AnalyticsAction } from '../enums/analytics-action.enum';
+import { AnalyticsSource } from '../enums/analytics-source.enum';
 
 export class TrackActionDto {
   @IsEnum(AnalyticsAction)
@@ -11,6 +12,10 @@ export class TrackActionDto {
   @IsUUID()
   @IsOptional()
   sessionId?: string;
+
+  @IsEnum(AnalyticsSource)
+  @IsOptional()
+  source?: AnalyticsSource;
 
   @IsObject()
   @IsOptional()
