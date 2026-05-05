@@ -15,6 +15,7 @@ jest.mock('node:crypto', () => ({
 
 describe('SessionsService', () => {
   let service: SessionsService;
+  let env: { STAGE?: string; NODE_ENV?: string };
   let sessionRepository: {
     findOne: jest.Mock;
     increment: jest.Mock;
@@ -40,6 +41,7 @@ describe('SessionsService', () => {
   };
 
   beforeEach(() => {
+    env = { NODE_ENV: 'local' };
     sessionRepository = {
       findOne: jest.fn(),
       increment: jest.fn(),
@@ -55,13 +57,7 @@ describe('SessionsService', () => {
       getPublicUrl: jest.fn((bucket: string, path: string) => `https://public.example/${bucket}/${path}`),
     };
     configService = {
-      get: jest.fn((key: string) => {
-        if (key === 'NODE_ENV') {
-          return 'local';
-        }
-
-        return undefined;
-      }),
+      get: jest.fn((key: string) => env[key as keyof typeof env]),
     };
     cache = {
       getSession: jest.fn(() => null),
@@ -82,7 +78,7 @@ describe('SessionsService', () => {
     );
   });
 
-  it('should create a processing photo row for GIF uploads via photos/presigned', async () => {
+  it('should create a processing photo row for GIF uploads via photos/presigned using the server bucket', async () => {
     const session = {
       id: 7,
       sessionToken: '5c95cf10-7e7e-4101-aa24-b7a4d3145df4',
@@ -102,10 +98,10 @@ describe('SessionsService', () => {
     sessionRepository.findOne.mockResolvedValue(session);
     photosService.createStorageUploadUrl.mockResolvedValue('https://signed.example/upload');
     photoRepository.save.mockResolvedValue(savedPhoto);
+    env.STAGE = 'production';
 
     const result = await service.getPresignedUploadUrl({
       sessionToken: session.sessionToken,
-      storageEnv: 'prod',
       mime: 'image/gif',
     });
 
@@ -129,6 +125,41 @@ describe('SessionsService', () => {
     });
   });
 
+  it('should resolve staging to the local bucket for presigned uploads', async () => {
+    const session = {
+      id: 7,
+      sessionToken: '5c95cf10-7e7e-4101-aa24-b7a4d3145df4',
+      eventId: 12,
+      event: { id: 12 },
+    } as Session;
+    const savedPhoto = {
+      id: 100,
+      eventId: 12,
+      sessionId: 7,
+      storagePath: 'photobooth/12/uuid-123.jpg',
+      publicUrl: null,
+      consentAt: new Date(),
+      status: PhotoStatus.PROCESSING,
+    } as Photo;
+
+    env.STAGE = 'staging';
+    env.NODE_ENV = 'production';
+    sessionRepository.findOne.mockResolvedValue(session);
+    photosService.createStorageUploadUrl.mockResolvedValue('https://signed.example/upload');
+    photoRepository.save.mockResolvedValue(savedPhoto);
+
+    const result = await service.getPresignedUploadUrl({
+      sessionToken: session.sessionToken,
+      mime: 'image/jpeg',
+    });
+
+    expect(photosService.createStorageUploadUrl).toHaveBeenCalledWith(
+      'local',
+      'photobooth/12/uuid-123.jpg',
+    );
+    expect(result.photoPath).toBe('local/photobooth/12/uuid-123.jpg');
+  });
+
   it('should reject unsupported mimes for photos/presigned', async () => {
     const session = {
       id: 7,
@@ -142,7 +173,6 @@ describe('SessionsService', () => {
     await expect(
       service.getPresignedUploadUrl({
         sessionToken: session.sessionToken,
-        storageEnv: 'prod',
         mime: 'image/png',
       }),
     ).rejects.toEqual(new BadRequestException('Only image/jpeg and image/gif are allowed'));

@@ -415,7 +415,7 @@ export class SessionsService {
       throw new NotFoundException(EXCEPTION_RESPONSE.SESSION_NOT_FOUND);
     }
 
-    const bucket = dto.storageEnv;
+    const bucket = this.resolveBucket();
     const extension = SESSION_UPLOAD_MIME_EXTENSIONS[dto.mime];
     if (!extension) {
       throw new BadRequestException('Only image/jpeg and image/gif are allowed');
@@ -508,8 +508,11 @@ export class SessionsService {
   }
 
   private resolveBucket(): string {
-    const nodeEnv = this.configService.get<string>('NODE_ENV') ?? 'local';
-    return nodeEnv === 'production' || nodeEnv === 'prod' ? 'prod' : 'local';
+    const stage = this.configService.get<string>('STAGE');
+    const nodeEnv = this.configService.get<string>('NODE_ENV');
+    const current = (stage ?? nodeEnv ?? 'local').toLowerCase();
+
+    return current === 'production' || current === 'prod' ? 'prod' : 'local';
   }
 
   private assertEventNotExpired(event: Event): void {

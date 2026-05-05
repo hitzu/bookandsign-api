@@ -7,15 +7,6 @@ export class PresignedUploadDto {
   sessionToken!: string;
 
   @ApiProperty({
-    type: String,
-    enum: ['local', 'prod'],
-    description: 'Storage path environment prefix',
-    example: 'prod',
-  })
-  @IsIn(['local', 'prod'])
-  storageEnv!: string;
-
-  @ApiProperty({
     description: 'Mime type for the asset being uploaded',
     enum: ['image/jpeg', 'image/gif'],
     example: 'image/jpeg',
