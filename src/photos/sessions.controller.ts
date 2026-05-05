@@ -24,11 +24,7 @@ import { Public } from '../auth/decorators/public.decorator';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { ConfirmPhotoDto } from './dto/confirm-photo.dto';
 import { PresignedUploadDto, PresignedUploadResponseDto } from './dto/presigned-upload.dto';
-import {
-  ConfirmGifDto,
-  PresignedGifUploadDto,
-  PresignedGifUploadResponseDto,
-} from './dto/session-gif.dto';
+import { ConfirmGifDto } from './dto/session-gif.dto';
 import {
   GalleryResponseDto,
   SessionResponseDto,
@@ -107,19 +103,6 @@ export class SessionsController {
     @Body(new ValidationPipe({ whitelist: true })) dto: PresignedUploadDto,
   ): Promise<PresignedUploadResponseDto> {
     return this.sessionsService.getPresignedUploadUrl(dto);
-  }
-
-  @Post('gif/presigned')
-  @Public()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get presigned URL to upload a session GIF directly to Supabase' })
-  @ApiBody({ type: PresignedGifUploadDto })
-  @ApiOkResponse({ type: PresignedGifUploadResponseDto })
-  @ApiNotFoundResponse({ description: 'Session not found' })
-  getPresignedGifUrl(
-    @Body(new ValidationPipe({ whitelist: true })) dto: PresignedGifUploadDto,
-  ): Promise<PresignedGifUploadResponseDto> {
-    return this.sessionsService.getPresignedGifUploadUrl(dto);
   }
 
   @Post('photos/confirm')

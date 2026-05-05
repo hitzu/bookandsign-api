@@ -30,11 +30,7 @@ import { SessionUploadUrlResponseDto } from './dto/create-session-upload-url.dto
 import { ConfirmPhotoDto } from './dto/confirm-photo.dto';
 import { PresignedUploadDto, PresignedUploadResponseDto } from './dto/presigned-upload.dto';
 import { PhotoResponseDto } from './dto/photo-response.dto';
-import {
-  ConfirmGifDto,
-  PresignedGifUploadDto,
-  PresignedGifUploadResponseDto,
-} from './dto/session-gif.dto';
+import { ConfirmGifDto } from './dto/session-gif.dto';
 import { PhotosService } from './photos.service';
 import { SessionsCache } from './sessions.cache';
 
@@ -436,26 +432,6 @@ export class SessionsService {
     );
 
     return { photoId: photo.id, presignedUrl, photoPath: `${bucket}/${storagePath}` };
-  }
-
-  async getPresignedGifUploadUrl(dto: PresignedGifUploadDto): Promise<PresignedGifUploadResponseDto> {
-    const session = await this.sessionRepository.findOne({
-      where: { sessionToken: dto.sessionToken },
-      relations: ['event'],
-    });
-    if (!session) {
-      throw new NotFoundException(EXCEPTION_RESPONSE.SESSION_NOT_FOUND);
-    }
-
-    const bucket = dto.storageEnv;
-    const gifPath = this.buildGifStoragePath(session.event?.id ?? session.eventId, session.sessionToken);
-    const presignedUrl = await this.photosService.createStorageUploadUrl(bucket, gifPath);
-
-    return {
-      presignedUrl,
-      gifPath: `${bucket}/${gifPath}`,
-      gifUrl: this.photosService.getPublicUrl(bucket, gifPath),
-    };
   }
 
   async confirmPhotoV2(dto: ConfirmPhotoDto): Promise<{ ok: boolean }> {
