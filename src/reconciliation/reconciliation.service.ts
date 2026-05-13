@@ -44,6 +44,7 @@ export class ReconciliationService {
     });
 
     let reconciled = 0;
+    let shouldInvalidateGallery = false;
 
     for (const photo of processingPhotos) {
       if (!supabaseFiles.has(photo.storagePath)) continue;
@@ -61,10 +62,20 @@ export class ReconciliationService {
         const session = await this.sessionRepository.findOne({
           where: { id: photo.sessionId },
         });
-        if (session) this.cache.invalidateSession(session.sessionToken);
+        if (session) {
+          this.cache.invalidateSession(session.sessionToken);
+
+          if (session.status === 'complete') {
+            shouldInvalidateGallery = true;
+          }
+        }
       }
 
       reconciled++;
+    }
+
+    if (shouldInvalidateGallery) {
+      this.cache.invalidateGallery(activeEvent.token);
     }
 
     if (reconciled > 0) {

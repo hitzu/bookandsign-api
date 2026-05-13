@@ -126,3 +126,19 @@ export class GalleryResponseDto {
   @ApiProperty({ type: [GallerySessionItemDto] })
   sessions!: GallerySessionItemDto[];
 }
+
+export class ClearedSessionsCacheDto {
+  @ApiProperty()
+  sessions!: number;
+
+  @ApiProperty()
+  galleries!: number;
+}
+
+export class ClearSessionsCacheResponseDto {
+  @ApiProperty()
+  ok!: boolean;
+
+  @ApiProperty({ type: ClearedSessionsCacheDto })
+  cleared!: ClearedSessionsCacheDto;
+}

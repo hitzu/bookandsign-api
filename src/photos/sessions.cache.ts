@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { GalleryResponseDto, SessionResponseDto } from './dto/session-response.dto';
 
+export interface ClearedSessionsCacheCounts {
+  sessions: number;
+  galleries: number;
+}
+
 @Injectable()
 export class SessionsCache {
   private readonly sessions = new Map<string, SessionResponseDto>();
@@ -24,5 +29,17 @@ export class SessionsCache {
   }
   invalidateGallery(token: string): void {
     this.galleries.delete(token);
+  }
+
+  clearAll(): ClearedSessionsCacheCounts {
+    const cleared = {
+      sessions: this.sessions.size,
+      galleries: this.galleries.size,
+    };
+
+    this.sessions.clear();
+    this.galleries.clear();
+
+    return cleared;
   }
 }

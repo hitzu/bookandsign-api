@@ -38,6 +38,7 @@ describe('SessionsService', () => {
     getGallery: jest.Mock;
     setGallery: jest.Mock;
     invalidateGallery: jest.Mock;
+    clearAll: jest.Mock;
   };
 
   beforeEach(() => {
@@ -66,6 +67,7 @@ describe('SessionsService', () => {
       getGallery: jest.fn(() => null),
       setGallery: jest.fn(),
       invalidateGallery: jest.fn(),
+      clearAll: jest.fn(),
     };
 
     service = new SessionsService(
@@ -196,6 +198,10 @@ describe('SessionsService', () => {
     const session = {
       id: 7,
       sessionToken: 'ce0b5bb4-a448-441a-a48a-a7c2cf32d282',
+      status: 'complete',
+      event: {
+        token: '0fe6c6df-f177-4e9b-a427-651c6d325d3e',
+      },
     } as Session;
 
     photoRepository.findOne.mockResolvedValueOnce(photo).mockResolvedValueOnce(savedPhoto);
@@ -218,6 +224,55 @@ describe('SessionsService', () => {
     );
     expect(sessionRepository.increment).toHaveBeenCalledWith({ id: 7 }, 'photoCount', 1);
     expect(cache.invalidateSession).toHaveBeenCalledWith(session.sessionToken);
+    expect(cache.invalidateGallery).toHaveBeenCalledWith(session.event!.token);
+  });
+
+  it('should not invalidate gallery cache when the updated session is still active', async () => {
+    const photo = {
+      id: 42,
+      eventId: 12,
+      sessionId: 7,
+      storagePath: 'photobooth/12/active-upload.jpg',
+      publicUrl: null,
+      consentAt: new Date(),
+      status: PhotoStatus.PROCESSING,
+    } as Photo;
+    const savedPhoto = {
+      ...photo,
+      publicUrl: 'https://public.example/local/photobooth/12/active-upload.jpg',
+      status: PhotoStatus.READY,
+    } as Photo;
+    const session = {
+      id: 7,
+      sessionToken: 'f6f08798-45ca-46dd-bf8d-e95c4c247218',
+      status: 'active',
+      event: {
+        token: '6e76e415-b5c3-4dca-b17e-24a4f0435a75',
+      },
+    } as Session;
+
+    photoRepository.findOne.mockResolvedValueOnce(photo).mockResolvedValueOnce(savedPhoto);
+    photoRepository.save.mockResolvedValue(savedPhoto);
+    sessionRepository.findOne.mockResolvedValue(session);
+    sessionRepository.increment.mockResolvedValue({ affected: 1 });
+
+    await expect(service.confirmPhotoV2({ photoId: 42 })).resolves.toEqual({ ok: true });
+
+    expect(cache.invalidateSession).toHaveBeenCalledWith(session.sessionToken);
+    expect(cache.invalidateGallery).not.toHaveBeenCalled();
+  });
+
+  it('should clear the in-memory sessions cache through the cache service', () => {
+    cache.clearAll.mockReturnValue({ sessions: 2, galleries: 1 });
+
+    expect(service.clearCache()).toEqual({
+      ok: true,
+      cleared: {
+        sessions: 2,
+        galleries: 1,
+      },
+    });
+    expect(cache.clearAll).toHaveBeenCalledTimes(1);
   });
 
   it('should not append the synthetic session GIF when a real GIF photo already exists', async () => {

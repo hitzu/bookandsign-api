@@ -18,6 +18,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { Public } from '../auth/decorators/public.decorator';
@@ -26,6 +27,7 @@ import { ConfirmPhotoDto } from './dto/confirm-photo.dto';
 import { PresignedUploadDto, PresignedUploadResponseDto } from './dto/presigned-upload.dto';
 import { ConfirmGifDto } from './dto/session-gif.dto';
 import {
+  ClearSessionsCacheResponseDto,
   GalleryResponseDto,
   SessionResponseDto,
 } from './dto/session-response.dto';
@@ -77,6 +79,15 @@ export class SessionsController {
     @Param('eventToken', new ParseUUIDPipe({ version: '4' })) eventToken: string,
   ): Promise<GalleryResponseDto> {
     return this.sessionsService.getGallery(eventToken);
+  }
+
+  @Post('cache/clear')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Clear the in-memory sessions and galleries cache' })
+  @ApiOkResponse({ type: ClearSessionsCacheResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
+  clearCache(): ClearSessionsCacheResponseDto {
+    return this.sessionsService.clearCache();
   }
 
   @Get(':sessionToken')

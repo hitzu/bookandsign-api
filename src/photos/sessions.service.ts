@@ -32,7 +32,7 @@ import { PresignedUploadDto, PresignedUploadResponseDto } from './dto/presigned-
 import { PhotoResponseDto } from './dto/photo-response.dto';
 import { ConfirmGifDto } from './dto/session-gif.dto';
 import { PhotosService } from './photos.service';
-import { SessionsCache } from './sessions.cache';
+import { ClearedSessionsCacheCounts, SessionsCache } from './sessions.cache';
 
 const EVENT_EXPIRATION_DAYS = 15;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -402,6 +402,13 @@ export class SessionsService {
     return result;
   }
 
+  clearCache(): { ok: true; cleared: ClearedSessionsCacheCounts } {
+    return {
+      ok: true,
+      cleared: this.cache.clearAll(),
+    };
+  }
+
   async getPresignedUploadUrl(dto: PresignedUploadDto): Promise<PresignedUploadResponseDto> {
     const session = await this.sessionRepository.findOne({
       where: { sessionToken: dto.sessionToken },
@@ -452,8 +459,18 @@ export class SessionsService {
     );
 
     if (photo.sessionId) {
-      const session = await this.sessionRepository.findOne({ where: { id: photo.sessionId } });
-      if (session) this.cache.invalidateSession(session.sessionToken);
+      const session = await this.sessionRepository.findOne({
+        where: { id: photo.sessionId },
+        relations: ['event'],
+      });
+
+      if (session) {
+        this.cache.invalidateSession(session.sessionToken);
+
+        if (session.status === 'complete' && session.event?.token) {
+          this.cache.invalidateGallery(session.event.token);
+        }
+      }
     }
 
     return { ok: true };
