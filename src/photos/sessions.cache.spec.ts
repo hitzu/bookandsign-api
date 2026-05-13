@@ -12,7 +12,7 @@ describe('SessionsCache', () => {
       event: {
         eventToken: 'event-token',
         honoreesNames: 'Alex y Sam',
-        date: '2026-05-04T12:00:00.000Z',
+        date: '2026-05-04T06:00:00',
         albumPhase: 'Nuestro album',
         eventTheme: null,
       },
@@ -21,7 +21,7 @@ describe('SessionsCache', () => {
       event: {
         eventToken: 'event-token',
         honoreesNames: 'Alex y Sam',
-        date: '2026-05-04T12:00:00.000Z',
+        date: '2026-05-04T06:00:00',
         albumPhase: 'Nuestro album',
         eventTheme: null,
       },

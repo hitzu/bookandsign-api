@@ -58,7 +58,10 @@ describe('SessionsService', () => {
       getPublicUrl: jest.fn((bucket: string, path: string) => `https://public.example/${bucket}/${path}`),
     };
     configService = {
-      get: jest.fn((key: string) => env[key as keyof typeof env]),
+      get: jest.fn((key: string, defaultValue?: unknown) => {
+        const v = env[key as keyof typeof env];
+        return v !== undefined ? v : defaultValue;
+      }),
     };
     cache = {
       getSession: jest.fn(() => null),

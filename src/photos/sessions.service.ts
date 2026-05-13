@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto';
 import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
 
+import { formatDateTimeInTimeZone } from '../common/utils/format-datetime-in-time-zone';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { EventsService } from '../events/events.service';
 import { Event } from '../events/entities/event.entity';
@@ -341,7 +342,10 @@ export class SessionsService {
       event: {
         eventToken: session.event?.token ?? '',
         honoreesNames: session.event?.honoreesNames ?? '',
-        date: session.event?.serviceStartsAt?.toISOString() ?? '',
+        date:
+          session.event?.serviceStartsAt != null
+            ? formatDateTimeInTimeZone(session.event.serviceStartsAt, this.eventDisplayTimeZone())
+            : '',
         albumPhase: session.event?.albumPhrase ?? '',
         eventTheme: session.event?.eventTheme
       },
@@ -387,7 +391,10 @@ export class SessionsService {
       event: {
         eventToken: event.token ?? '',
         honoreesNames: event.honoreesNames ?? '',
-        date: event.serviceStartsAt?.toISOString() ?? '',
+        date:
+          event.serviceStartsAt != null
+            ? formatDateTimeInTimeZone(event.serviceStartsAt, this.eventDisplayTimeZone())
+            : '',
         albumPhase: event.albumPhrase ?? '',
         eventTheme: event.eventTheme
       },
@@ -506,6 +513,10 @@ export class SessionsService {
     const current = (stage ?? nodeEnv ?? 'local').toLowerCase();
 
     return current === 'production' || current === 'prod' ? 'prod' : 'local';
+  }
+
+  private eventDisplayTimeZone(): string {
+    return this.configService.get<string>('EVENT_DISPLAY_TIMEZONE', 'America/Mexico_City');
   }
 
   private assertEventNotExpired(event: Event): void {
