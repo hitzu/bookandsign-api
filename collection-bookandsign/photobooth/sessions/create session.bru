@@ -18,11 +18,15 @@ body:json {
 }
 
 vars:pre-request {
-  session_token: c3d2e3f4-0000-4000-8000-cabbccddeeff
+  session_token: c9d2e3f4-0000-4000-8000-cabbccddeeff
   event_token: 45ac4c18-9311-42e5-ba09-02b76c6e44c0
 }
 
 settings {
   encodeUrl: true
   timeout: 0
+}
+
+docs {
+  Este endpoint solo esta en caso de que necesitemos crear una sesion, pero la sesion se crea en automatico con el primer presigned url cargado
 }

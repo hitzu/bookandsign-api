@@ -271,7 +271,7 @@ export class SessionsService {
   async createSession(
     sessionToken: string,
     eventToken: string,
-  ): Promise<{ sessionToken: string }> {
+  ): Promise<Session> {
     const event = await this.eventsService.findOneByToken(eventToken);
 
     const existing = await this.sessionRepository.findOne({ where: { sessionToken } });
@@ -279,11 +279,11 @@ export class SessionsService {
       throw new ConflictException(EXCEPTION_RESPONSE.SESSION_ALREADY_EXISTS);
     }
 
-    await this.sessionRepository.save(
-      this.sessionRepository.create({ sessionToken, eventId: event.id }),
-    );
+    const session = this.sessionRepository.create({ sessionToken, eventId: event.id })
 
-    return { sessionToken };
+    await this.sessionRepository.save(session);
+
+    return session;
   }
 
   async completeSession(sessionToken: string): Promise<{ ok: boolean }> {
@@ -420,18 +420,26 @@ export class SessionsService {
   }
 
   async getPresignedUploadUrl(dto: PresignedUploadDto): Promise<PresignedUploadResponseDto> {
-    const session = await this.sessionRepository.findOne({
-      where: { sessionToken: dto.sessionToken },
-      relations: ['event'],
-    });
-    if (!session) {
-      throw new NotFoundException(EXCEPTION_RESPONSE.SESSION_NOT_FOUND);
+    if (!dto.sessionToken && !dto.eventToken) {
+      throw new BadRequestException('Either sessionToken or eventToken must be provided');
     }
 
     const bucket = this.resolveBucket();
     const extension = SESSION_UPLOAD_MIME_EXTENSIONS[dto.mime];
     if (!extension) {
       throw new BadRequestException('Only image/jpeg and image/gif are allowed');
+    }
+
+
+    let session: Session | null
+
+    session = await this.sessionRepository.findOne({
+      where: { sessionToken: dto.sessionToken },
+      relations: ['event'],
+    });
+
+    if (!session) {
+      session = await this.createSession(dto.sessionToken, dto.eventToken)
     }
 
     const storagePath = `photobooth/${session.event!.id}/${randomUUID()}.${extension}`;
@@ -448,7 +456,11 @@ export class SessionsService {
       }),
     );
 
-    return { photoId: photo.id, presignedUrl, photoPath: `${bucket}/${storagePath}` };
+    return {
+      photoId: photo.id,
+      presignedUrl,
+      photoPath: `${bucket}/${storagePath}`,
+    };
   }
 
   async confirmPhotoV2(dto: ConfirmPhotoDto): Promise<{ ok: boolean }> {

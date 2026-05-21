@@ -1,10 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsUUID } from 'class-validator';
+import { IsIn, IsOptional, IsUUID } from 'class-validator';
 
 export class PresignedUploadDto {
-  @ApiProperty({ description: 'Session UUID', example: 'b5f4a6e2-3c1d-4f8a-9b1e-1a2b3c4d5e6f' })
+  @ApiProperty({ description: 'Session UUID created by photobooth', example: 'b5f4a6e2-3c1d-4f8a-9b1e-1a2b3c4d5e6f' })
   @IsUUID('4')
   sessionToken!: string;
+
+  @ApiProperty({ description: 'token UUID', example: 'b5f4a6e2-3c1d-4f8a-9b1e-1a2b3c4d5e6f' })
+  @IsUUID('4')
+  eventToken!: string;
 
   @ApiProperty({
     description: 'Mime type for the asset being uploaded',

@@ -32,6 +32,7 @@ import {
   SessionResponseDto,
 } from './dto/session-response.dto';
 import { SessionsService } from './sessions.service';
+import { Session } from './entities/session.entity';
 
 @Controller('sessions')
 @ApiTags('sessions')
@@ -48,10 +49,10 @@ export class SessionsController {
   @ApiCreatedResponse({ schema: { example: { sessionToken: 'uuid' } } })
   @ApiConflictResponse({ description: 'Session UUID already exists' })
   @ApiNotFoundResponse({ description: 'Event not found' })
-  createSession(
+  async createSession(
     @Body(new ValidationPipe({ whitelist: true })) dto: CreateSessionDto,
-  ): Promise<{ sessionToken: string }> {
-    return this.sessionsService.createSession(dto.sessionToken, dto.eventToken);
+  ): Promise<void> {
+    await this.sessionsService.createSession(dto.sessionToken, dto.eventToken);
   }
 
   @Post('complete')

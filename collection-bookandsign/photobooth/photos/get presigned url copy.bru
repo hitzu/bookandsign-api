@@ -13,12 +13,13 @@ post {
 body:json {
   {
     "sessionToken": "{{session_token}}",
-    "mime": "{{mime}}"
+    "mime": "{{mime}}",
+    "eventToken": "{{event_token}}"
   }
 }
 
 vars:pre-request {
-  session_token: c2d2e3f4-0000-4000-8000-cabbccddeeff
+  session_token: c3d2e3f4-0000-4000-8000-cabbccddeeff
   mime: image/jpeg
 }
 
