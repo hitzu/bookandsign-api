@@ -9,7 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { plainToInstance } from 'class-transformer';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 
 import { formatDateTimeInTimeZone } from '../common/utils/format-datetime-in-time-zone';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
@@ -315,6 +315,9 @@ export class SessionsService {
     if (!session) {
       throw new NotFoundException(EXCEPTION_RESPONSE.SESSION_NOT_FOUND);
     }
+    if (session.status === 'complete' && session.photoCount === 0) {
+      throw new NotFoundException(EXCEPTION_RESPONSE.SESSION_NOT_FOUND);
+    }
 
     const photos = await this.photoRepository.find({
       where: { sessionId: session.id, status: PhotoStatus.READY },
@@ -365,7 +368,7 @@ export class SessionsService {
     const event = await this.eventsService.getByToken(eventToken);
 
     const sessions = await this.sessionRepository.find({
-      where: { eventId: event.id, status: 'complete' },
+      where: { eventId: event.id, status: 'complete', photoCount: MoreThan(0) },
       order: { createdAt: 'DESC' },
     });
 
