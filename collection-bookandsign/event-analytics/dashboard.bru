@@ -1,13 +1,17 @@
 meta {
-  name: track action (public) finish session
+  name: dashboard
   type: http
-  seq: 7
+  seq: 8
 }
 
-post {
-  url: {{base_url}}/event-analytics/track
-  body: json
+get {
+  url: {{base_url}}/event-analytics/db69c995-b30b-40b4-85e7-c01a79eff1a1/dashboard
+  body: none
   auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
 }
 
 body:json {

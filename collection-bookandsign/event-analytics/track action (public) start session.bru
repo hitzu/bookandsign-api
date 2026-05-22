@@ -12,20 +12,15 @@ post {
 
 body:json {
   {
-    "action": "photo_view",
-    "eventToken": "{{event_token}}",
+    "action": "session_started",
+   "eventToken": "{{event_token}}",
     "sessionId": "{{event_token}}",
     "source": "photobooth",
-    "surface": "session-carousel",
-    "itemType": "photo",
-    "variant": "portrait",
-    "itemIndex": 2,
-    "itemCount": 12,
-    "photoCount": 8,
-    "personCount": 3,
+    "surface": "booth",
+    "photoCount": 0,
+    "personCount": 1,
     "metadata": {
-      "referrer": "share-link",
-      "locale": "es-MX"
+      "boothId": "booth-01"
     }
   }
 }

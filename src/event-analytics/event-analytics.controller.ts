@@ -45,4 +45,9 @@ export class EventAnalyticsController {
   async sourceSummary(@Param('eventToken') eventToken: string) {
     return this.analyticsService.getSourceSummary(eventToken);
   }
+
+  @Get(':eventToken/dashboard')
+  async dashboard(@Param('eventToken') eventToken: string) {
+    return this.analyticsService.getDashboard(eventToken);
+  }
 }

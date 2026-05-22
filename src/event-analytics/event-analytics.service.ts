@@ -140,6 +140,204 @@ export class EventAnalyticsService {
     return { eventToken, actions };
   }
 
+  async getDashboard(eventToken: string) {
+    const [
+      funnel,
+      duration,
+      groupSize,
+      trafficSource,
+      surfaceEngagement,
+      sessionsByHour,
+      sessionEngagement,
+      postExpiration,
+    ] = await Promise.all([
+      this.queryFunnel(eventToken),
+      this.queryDuration(eventToken),
+      this.queryGroupSize(eventToken),
+      this.queryTrafficSource(eventToken),
+      this.querySurfaceEngagement(eventToken),
+      this.querySessionsByHour(eventToken),
+      this.querySessionEngagement(eventToken),
+      this.queryPostExpiration(eventToken),
+    ]);
+
+    return {
+      eventToken,
+      funnel,
+      duration,
+      groupSize,
+      trafficSource,
+      surfaceEngagement,
+      sessionsByHour,
+      sessionEngagement,
+      postExpiration,
+    };
+  }
+
+  private async queryFunnel(eventToken: string) {
+    const rows = await this.repo
+      .createQueryBuilder('ea')
+      .select('ea.action', 'action')
+      .addSelect('COUNT(*)', 'count')
+      .where('ea.event_token = :eventToken', { eventToken })
+      .andWhere('ea.action IN (:...actions)', {
+        actions: ['gallery_opened', 'gallery_view', 'session_view', 'download', 'share_confirm_executed'],
+      })
+      .groupBy('ea.action')
+      .getRawMany<{ action: string; count: string }>();
+
+    const byAction: Record<string, number> = Object.fromEntries(
+      rows.map((r) => [r.action, parseInt(r.count, 10)]),
+    );
+
+    return {
+      galleryOpens:   byAction['gallery_opened']            ?? 0,
+      galleryViews:   byAction['gallery_view']              ?? 0,
+      sessionViews:   byAction['session_view']              ?? 0,
+      conversions:    (byAction['download'] ?? 0) + (byAction['share_confirm_executed'] ?? 0),
+    };
+  }
+
+  private async queryDuration(eventToken: string) {
+    const row = await this.repo.manager.query<{
+      avg_seconds: string;
+      median_seconds: string;
+      completed_sessions: string;
+    }[]>(`
+      SELECT
+        ROUND(AVG(EXTRACT(EPOCH FROM (c.created_at - s.created_at))))::TEXT  AS avg_seconds,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (
+          ORDER BY EXTRACT(EPOCH FROM (c.created_at - s.created_at))
+        )::TEXT                                                              AS median_seconds,
+        COUNT(*)::TEXT                                                       AS completed_sessions
+      FROM event_analytics s
+      JOIN event_analytics c ON s.session_id = c.session_id
+      WHERE s.action      = 'session_started'
+        AND c.action      = 'session_completed'
+        AND s.event_token = $1
+    `, [eventToken]);
+
+    const r = row[0];
+    return {
+      completedSessions: parseInt(r?.completed_sessions ?? '0', 10),
+      avgSeconds:        parseFloat(r?.avg_seconds       ?? '0'),
+      medianSeconds:     parseFloat(r?.median_seconds    ?? '0'),
+    };
+  }
+
+  private async queryGroupSize(eventToken: string) {
+    const rows = await this.repo.manager.query<{ person_count: string; sessions: string }[]>(`
+      SELECT person_count, COUNT(*) AS sessions
+      FROM event_analytics
+      WHERE event_token = $1
+        AND action      = 'session_completed'
+      GROUP BY person_count
+      ORDER BY person_count
+    `, [eventToken]);
+
+    return rows.map((r) => ({
+      personCount: r.person_count !== null ? parseInt(r.person_count, 10) : null,
+      sessions:    parseInt(r.sessions, 10),
+    }));
+  }
+
+  private async queryTrafficSource(eventToken: string) {
+    const rows = await this.repo.manager.query<{
+      source: string; opens: string; downloads: string;
+    }[]>(`
+      SELECT
+        source,
+        COUNT(*) AS opens,
+        SUM(CASE WHEN action = 'download' THEN 1 ELSE 0 END) AS downloads
+      FROM event_analytics
+      WHERE event_token = $1
+        AND source IS NOT NULL
+      GROUP BY source
+    `, [eventToken]);
+
+    return rows.map((r) => ({
+      source:         r.source,
+      opens:          parseInt(r.opens, 10),
+      downloads:      parseInt(r.downloads, 10),
+      conversionPct:  parseInt(r.opens, 10)
+        ? Math.round((parseInt(r.downloads, 10) / parseInt(r.opens, 10)) * 100)
+        : 0,
+    }));
+  }
+
+  private async querySessionsByHour(eventToken: string) {
+    const rows = await this.repo.manager.query<{ hour: string; sessions: string }[]>(`
+      SELECT DATE_TRUNC('hour', created_at) AS hour, COUNT(DISTINCT session_id) AS sessions
+      FROM event_analytics
+      WHERE event_token = $1
+        AND action      = 'session_started'
+      GROUP BY hour
+      ORDER BY hour
+    `, [eventToken]);
+
+    return rows.map((r) => ({ hour: r.hour, sessions: parseInt(r.sessions, 10) }));
+  }
+
+  private async querySurfaceEngagement(eventToken: string) {
+    const rows = await this.repo.manager.query<{
+      surface: string; events: string; conversions: string;
+    }[]>(`
+      SELECT
+        surface,
+        COUNT(*) AS events,
+        SUM(CASE WHEN action IN ('download', 'share_confirm_executed') THEN 1 ELSE 0 END) AS conversions
+      FROM event_analytics
+      WHERE event_token = $1
+        AND surface IS NOT NULL
+      GROUP BY surface
+      ORDER BY conversions DESC
+    `, [eventToken]);
+
+    return rows.map((r) => ({
+      surface:     r.surface,
+      events:      parseInt(r.events, 10),
+      conversions: parseInt(r.conversions, 10),
+    }));
+  }
+
+  private async querySessionEngagement(eventToken: string) {
+    const rows = await this.repo.manager.query<{
+      session_id: string; photo_views: string; downloads: string; shares: string;
+    }[]>(`
+      SELECT
+        session_id,
+        COUNT(*) FILTER (WHERE action = 'photo_view')             AS photo_views,
+        COUNT(*) FILTER (WHERE action = 'download')               AS downloads,
+        COUNT(*) FILTER (WHERE action = 'share_confirm_executed') AS shares
+      FROM event_analytics
+      WHERE event_token = $1
+        AND session_id IS NOT NULL
+      GROUP BY session_id
+    `, [eventToken]);
+
+    return rows.map((r) => ({
+      sessionId:  r.session_id,
+      photoViews: parseInt(r.photo_views, 10),
+      downloads:  parseInt(r.downloads, 10),
+      shares:     parseInt(r.shares, 10),
+    }));
+  }
+
+  private async queryPostExpiration(eventToken: string) {
+    const rows = await this.repo
+      .createQueryBuilder('ea')
+      .select('ea.action', 'action')
+      .addSelect('COUNT(*)', 'count')
+      .where('ea.event_token = :eventToken', { eventToken })
+      .andWhere('ea.action IN (:...actions)', {
+        actions: ['event_expired_view', 'imagina_cta_clicked', 'recover_photos_cta_clicked'],
+      })
+      .groupBy('ea.action')
+      .getRawMany<{ action: string; count: string }>();
+
+    return Object.fromEntries(rows.map((r) => [r.action, parseInt(r.count, 10)]));
+  }
+
   private assertTrackRequirements(dto: TrackActionDto): void {
     const requiresSource =
       dto.action === AnalyticsAction.GALLERY_OPENED ||
