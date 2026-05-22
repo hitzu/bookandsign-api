@@ -22,6 +22,27 @@ export class EventAnalytic extends BaseTimeEntity {
   @Column({ type: 'varchar', length: 32, nullable: true })
   source: AnalyticsSource | null;
 
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  surface: string | null;
+
+  @Column({ name: 'item_type', type: 'varchar', length: 16, nullable: true })
+  itemType: string | null;
+
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  variant: string | null;
+
+  @Column({ name: 'item_index', type: 'int', nullable: true })
+  itemIndex: number | null;
+
+  @Column({ name: 'item_count', type: 'int', nullable: true })
+  itemCount: number | null;
+
+  @Column({ name: 'photo_count', type: 'int', nullable: true })
+  photoCount: number | null;
+
+  @Column({ name: 'person_count', type: 'int', nullable: true })
+  personCount: number | null;
+
   @Column({ type: 'jsonb', nullable: true })
   metadata: Record<string, unknown> | null;
 

@@ -1,7 +1,7 @@
 meta {
-  name: track action (public)
+  name: track action (public) finish session
   type: http
-  seq: 1
+  seq: 7
 }
 
 post {
@@ -15,7 +15,7 @@ body:json {
     "action": "photo_view",
     "eventToken": "{{event_token}}",
     "sessionId": "{{event_token}}",
-    "source": "gallery",
+    "source": "photobooth",
     "surface": "session-carousel",
     "itemType": "photo",
     "variant": "portrait",

@@ -14,4 +14,6 @@ export enum AnalyticsAction {
   SESSION_VIEW = 'session_view',
   SESSION_OPENED = 'session_opened',
   PHOTO_VIEW = 'photo_view',
+  SESSION_STARTED = 'session_started',
+  SESSION_COMPLETED = 'session_completed',
 }

@@ -1,4 +1,4 @@
-import { IsEnum, IsUUID, IsOptional, IsObject } from 'class-validator';
+import { IsEnum, IsUUID, IsOptional, IsObject, IsString, IsInt } from 'class-validator';
 import { AnalyticsAction } from '../enums/analytics-action.enum';
 import { AnalyticsSource } from '../enums/analytics-source.enum';
 
@@ -16,6 +16,34 @@ export class TrackActionDto {
   @IsEnum(AnalyticsSource)
   @IsOptional()
   source?: AnalyticsSource;
+
+  @IsString()
+  @IsOptional()
+  surface?: string;
+
+  @IsString()
+  @IsOptional()
+  itemType?: string;
+
+  @IsString()
+  @IsOptional()
+  variant?: string;
+
+  @IsInt()
+  @IsOptional()
+  itemIndex?: number;
+
+  @IsInt()
+  @IsOptional()
+  itemCount?: number;
+
+  @IsInt()
+  @IsOptional()
+  photoCount?: number;
+
+  @IsInt()
+  @IsOptional()
+  personCount?: number;
 
   @IsObject()
   @IsOptional()

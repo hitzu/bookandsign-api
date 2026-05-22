@@ -35,6 +35,9 @@ enum ErrorMessages {
   SESSION_NOT_FOUND = 'SESSION_NOT_FOUND',
   SESSION_ALREADY_EXISTS = 'SESSION_ALREADY_EXISTS',
   EVENT_EXPIRED = 'EVENT_EXPIRED',
+  REQUIRED_SOURCE = 'REQUIRED_SOURCE',
+  SESSION_ID_REQUIRED = 'SESSION_ID_REQUIRED'
+
 }
 
 export const EXCEPTION_RESPONSE: Record<
@@ -185,5 +188,13 @@ export const EXCEPTION_RESPONSE: Record<
   [ErrorMessages.EVENT_EXPIRED]: {
     code: 37,
     message: 'event has expired',
+  },
+  [ErrorMessages.REQUIRED_SOURCE]: {
+    code: 38,
+    message: 'source is required for gallery_opened and session_opened'
+  },
+  [ErrorMessages.SESSION_ID_REQUIRED]: {
+    code: 38,
+    message: 'sessionId is required for this event'
   },
 };

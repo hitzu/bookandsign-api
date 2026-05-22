@@ -5,6 +5,7 @@ import { EventAnalytic } from './entities/event-analytic.entity';
 import { TrackActionDto } from './dto/track-action.dto';
 import { AnalyticsAction } from './enums/analytics-action.enum';
 import { AnalyticsSource } from './enums/analytics-source.enum';
+import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 
 type AnalyticsSummaryRow = {
   action: string;
@@ -37,19 +38,28 @@ export class EventAnalyticsService {
   constructor(
     @InjectRepository(EventAnalytic)
     private readonly repo: Repository<EventAnalytic>,
-  ) {}
+  ) { }
 
   async track(dto: TrackActionDto, userAgent: string): Promise<void> {
     this.assertTrackRequirements(dto);
 
-    await this.repo.save({
+    const track = this.repo.create({
       eventToken: dto.eventToken,
       sessionId: dto.sessionId ?? null,
       action: dto.action,
       source: dto.source ?? null,
+      surface: dto.surface ?? null,
+      itemType: dto.itemType ?? null,
+      variant: dto.variant ?? null,
+      itemIndex: dto.itemIndex ?? null,
+      itemCount: dto.itemCount ?? null,
+      photoCount: dto.photoCount ?? null,
+      personCount: dto.personCount ?? null,
       metadata: dto.metadata ?? null,
       userAgent: userAgent ?? null,
     });
+
+    await this.repo.save(track)
   }
 
   async getSummary(eventToken: string) {
@@ -136,11 +146,19 @@ export class EventAnalyticsService {
       dto.action === AnalyticsAction.SESSION_OPENED;
 
     if (requiresSource && !dto.source) {
-      throw new BadRequestException('source is required for gallery_opened and session_opened');
+      throw new BadRequestException(EXCEPTION_RESPONSE.REQUIRED_SOURCE,);
     }
 
     if (dto.action === AnalyticsAction.SESSION_OPENED && !dto.sessionId) {
-      throw new BadRequestException('sessionId is required for session_opened');
+      throw new BadRequestException(EXCEPTION_RESPONSE.SESSION_ID_REQUIRED);
+    }
+
+    const requiresSessionId =
+      dto.action === AnalyticsAction.SESSION_STARTED ||
+      dto.action === AnalyticsAction.SESSION_COMPLETED;
+
+    if (requiresSessionId && !dto.sessionId) {
+      throw new BadRequestException(EXCEPTION_RESPONSE.SESSION_ID_REQUIRED);
     }
   }
 
@@ -149,6 +167,8 @@ export class EventAnalyticsService {
       [AnalyticsSource.QR]: 0,
       [AnalyticsSource.GALLERY]: 0,
       [AnalyticsSource.DIRECT]: 0,
+      [AnalyticsSource.PHOTOBOOTH]: 0,
+      [AnalyticsSource.SIGN]: 0,
       total: 0,
     };
   }
