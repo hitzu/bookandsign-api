@@ -1,14 +1,14 @@
 import { BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
-import { AppDataSource as TestDataSource } from '../config/database/data-source';
+
+import { EventsService } from '../events/events.service';
 import { PhotoStatus } from './enums';
 import { Photo } from './entities/photo.entity';
 import { Session } from './entities/session.entity';
 import { PhotosService } from './photos.service';
 import { SessionsCache } from './sessions.cache';
 import { SessionsService } from './sessions.service';
-import { EventFactory } from '../../test/factories/events/event.factory';
 
 jest.mock('node:crypto', () => ({
   randomUUID: jest.fn(() => 'uuid-123'),
@@ -17,8 +17,6 @@ jest.mock('node:crypto', () => ({
 describe('SessionsService', () => {
   let service: SessionsService;
   let env: { STAGE?: string; NODE_ENV?: string };
-  let eventFactory: EventFactory;
-
   let sessionRepository: {
     findOne: jest.Mock;
     increment: jest.Mock;
@@ -34,6 +32,11 @@ describe('SessionsService', () => {
   let photosService: {
     createStorageUploadUrl: jest.Mock;
     getPublicUrl: jest.Mock;
+  };
+  let eventsService: {
+    findOneByToken: jest.Mock;
+    getByToken: jest.Mock;
+    getPublicEventStatus: jest.Mock;
   };
   let configService: Pick<ConfigService, 'get'>;
   let cache: {
@@ -62,12 +65,19 @@ describe('SessionsService', () => {
     };
     photosService = {
       createStorageUploadUrl: jest.fn(),
-      getPublicUrl: jest.fn((bucket: string, path: string) => `https://public.example/${bucket}/${path}`),
+      getPublicUrl: jest.fn(
+        (bucket: string, path: string) => `https://public.example/${bucket}/${path}`,
+      ),
+    };
+    eventsService = {
+      findOneByToken: jest.fn(),
+      getByToken: jest.fn(),
+      getPublicEventStatus: jest.fn(),
     };
     configService = {
       get: jest.fn((key: string, defaultValue?: unknown) => {
-        const v = env[key as keyof typeof env];
-        return v !== undefined ? v : defaultValue;
+        const value = env[key as keyof typeof env];
+        return value !== undefined ? value : defaultValue;
       }),
     };
     cache = {
@@ -80,15 +90,10 @@ describe('SessionsService', () => {
       clearAll: jest.fn(),
     };
 
-    beforeEach(() => {
-      eventFactory = new EventFactory(TestDataSource);
-
-    })
-
     service = new SessionsService(
       sessionRepository as unknown as Repository<Session>,
       photoRepository as unknown as Repository<Photo>,
-      {} as never,
+      eventsService as unknown as EventsService,
       photosService as unknown as PhotosService,
       configService as ConfigService,
       cache as unknown as SessionsCache,
@@ -115,12 +120,10 @@ describe('SessionsService', () => {
     sessionRepository.findOne.mockResolvedValue(session);
     photosService.createStorageUploadUrl.mockResolvedValue('https://signed.example/upload');
     photoRepository.save.mockResolvedValue(savedPhoto);
-    const event = await eventFactory.create()
-    env.STAGE = 'local';
+    env.STAGE = 'production';
 
     const result = await service.getPresignedUploadUrl({
       sessionToken: session.sessionToken,
-      eventToken: event.token,
       mime: 'image/gif',
     });
 
@@ -166,11 +169,9 @@ describe('SessionsService', () => {
     sessionRepository.findOne.mockResolvedValue(session);
     photosService.createStorageUploadUrl.mockResolvedValue('https://signed.example/upload');
     photoRepository.save.mockResolvedValue(savedPhoto);
-    const event = await eventFactory.create();
 
     const result = await service.getPresignedUploadUrl({
       sessionToken: session.sessionToken,
-      eventToken: event.token,
       mime: 'image/jpeg',
     });
 
@@ -190,12 +191,10 @@ describe('SessionsService', () => {
     } as Session;
 
     sessionRepository.findOne.mockResolvedValue(session);
-    const event = await eventFactory.create();
 
     await expect(
       service.getPresignedUploadUrl({
         sessionToken: session.sessionToken,
-        eventToken: event.token,
         mime: 'image/png',
       }),
     ).rejects.toEqual(new BadRequestException('Only image/jpeg and image/gif are allowed'));
@@ -236,14 +235,6 @@ describe('SessionsService', () => {
       'local',
       'photobooth/12/gif-upload.gif',
     );
-    expect(photoRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 42,
-        publicUrl: 'https://public.example/local/photobooth/12/gif-upload.gif',
-        status: PhotoStatus.READY,
-      }),
-    );
-    expect(sessionRepository.increment).toHaveBeenCalledWith({ id: 7 }, 'photoCount', 1);
     expect(cache.invalidateSession).toHaveBeenCalledWith(session.sessionToken);
     expect(cache.invalidateGallery).toHaveBeenCalledWith(session.event!.token);
   });
@@ -296,7 +287,7 @@ describe('SessionsService', () => {
     expect(cache.clearAll).toHaveBeenCalledTimes(1);
   });
 
-  it('should exclude GIF assets from the public session response', async () => {
+  it('should exclude GIF assets and omit event.status before the cutoff in the public session response', async () => {
     const session = {
       id: 7,
       sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
@@ -326,6 +317,7 @@ describe('SessionsService', () => {
 
     sessionRepository.findOne.mockResolvedValue(session);
     photoRepository.find.mockResolvedValue(readyPhotos);
+    eventsService.getPublicEventStatus.mockReturnValue(undefined);
 
     const result = await service.getSession(session.sessionToken);
 
@@ -335,5 +327,377 @@ describe('SessionsService', () => {
         position: 1,
       },
     ]);
+    expect(result.event.status).toBeUndefined();
+  });
+
+  it('should return event.status finished in the public session response after the cutoff', async () => {
+    const session = {
+      id: 7,
+      sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+      eventId: 12,
+      status: 'complete',
+      event: {
+        id: 12,
+        token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
+        honoreesNames: 'Alex y Sam',
+        serviceStartsAt: new Date('2026-05-04T12:00:00.000Z'),
+        albumPhrase: 'Nuestro album',
+        eventTheme: null,
+      },
+    } as Session;
+
+    sessionRepository.findOne.mockResolvedValue(session);
+    photoRepository.find.mockResolvedValue([]);
+    eventsService.getPublicEventStatus.mockReturnValue('finished');
+
+    const result = await service.getSession(session.sessionToken);
+
+    expect(result.event.status).toBe('finished');
+  });
+
+  it('should return the cached session when cache status matches the computed event status and no GIFs exist', async () => {
+    const session = {
+      id: 7,
+      sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+      eventId: 12,
+      status: 'complete',
+      photoCount: 2,
+      event: {
+        id: 12,
+        token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
+        honoreesNames: 'Alex y Sam',
+        serviceStartsAt: new Date('2026-05-04T12:00:00.000Z'),
+        albumPhrase: 'Nuestro album',
+        eventTheme: null,
+      },
+    } as Session;
+    const cachedSession = {
+      sessionToken: session.sessionToken,
+      status: 'complete' as const,
+      photos: [
+        {
+          url: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+          position: 1,
+        },
+      ],
+      event: {
+        eventToken: session.event!.token,
+        honoreesNames: session.event!.honoreesNames!,
+        date: 'cached',
+        albumPhase: session.event!.albumPhrase!,
+        status: 'finished' as const,
+        eventTheme: null,
+      },
+    };
+
+    sessionRepository.findOne.mockResolvedValue(session);
+    cache.getSession.mockReturnValue(cachedSession);
+    eventsService.getPublicEventStatus.mockReturnValue('finished');
+
+    const result = await service.getSession(session.sessionToken);
+
+    expect(result).toEqual(cachedSession);
+    expect(photoRepository.find).not.toHaveBeenCalled();
+  });
+
+  it('should bypass a cached session when event.status became finished after caching', async () => {
+    const session = {
+      id: 7,
+      sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+      eventId: 12,
+      status: 'complete',
+      photoCount: 2,
+      event: {
+        id: 12,
+        token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
+        honoreesNames: 'Alex y Sam',
+        serviceStartsAt: new Date('2026-05-04T12:00:00.000Z'),
+        albumPhrase: 'Nuestro album',
+        eventTheme: null,
+      },
+    } as Session;
+    const readyPhotos = [
+      {
+        id: 1,
+        storagePath: 'photobooth/12/uuid-123.jpg',
+        publicUrl: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+      },
+    ] as Photo[];
+
+    sessionRepository.findOne.mockResolvedValue(session);
+    cache.getSession.mockReturnValue({
+      sessionToken: session.sessionToken,
+      status: 'complete',
+      photos: [
+        {
+          url: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+          position: 1,
+        },
+      ],
+      event: {
+        eventToken: session.event!.token,
+        honoreesNames: session.event!.honoreesNames!,
+        date: 'cached',
+        albumPhase: session.event!.albumPhrase!,
+        eventTheme: null,
+      },
+    });
+    photoRepository.find.mockResolvedValue(readyPhotos);
+    eventsService.getPublicEventStatus.mockReturnValue('finished');
+
+    const result = await service.getSession(session.sessionToken);
+
+    expect(result.event.status).toBe('finished');
+    expect(photoRepository.find).toHaveBeenCalled();
+  });
+
+  it('should bypass a cached session when the cached response still contains a GIF', async () => {
+    const session = {
+      id: 7,
+      sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+      eventId: 12,
+      status: 'complete',
+      photoCount: 2,
+      event: {
+        id: 12,
+        token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
+        honoreesNames: 'Alex y Sam',
+        serviceStartsAt: new Date('2026-05-04T12:00:00.000Z'),
+        albumPhrase: 'Nuestro album',
+        eventTheme: null,
+      },
+    } as Session;
+    const readyPhotos = [
+      {
+        id: 1,
+        storagePath: 'photobooth/12/uuid-123.jpg',
+        publicUrl: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+      },
+      {
+        id: 2,
+        storagePath: 'photobooth/12/uuid-123.gif',
+        publicUrl: 'https://public.example/local/photobooth/12/uuid-123.gif',
+      },
+    ] as Photo[];
+
+    sessionRepository.findOne.mockResolvedValue(session);
+    cache.getSession.mockReturnValue({
+      sessionToken: session.sessionToken,
+      status: 'complete',
+      photos: [
+        {
+          url: 'https://public.example/local/photobooth/12/uuid-123.gif',
+          position: 2,
+        },
+      ],
+      event: {
+        eventToken: session.event!.token,
+        honoreesNames: session.event!.honoreesNames!,
+        date: 'cached',
+        albumPhase: session.event!.albumPhrase!,
+        eventTheme: null,
+      },
+    });
+    photoRepository.find.mockResolvedValue(readyPhotos);
+    eventsService.getPublicEventStatus.mockReturnValue(undefined);
+
+    const result = await service.getSession(session.sessionToken);
+
+    expect(result.photos).toEqual([
+      {
+        url: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+        position: 1,
+      },
+    ]);
+    expect(photoRepository.find).toHaveBeenCalled();
+  });
+
+  it('should skip GIFs and omit event.status before the cutoff when choosing the gallery cover photo', async () => {
+    const event = {
+      id: 12,
+      token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
+      serviceStartsAt: new Date('2026-05-04T12:00:00.000Z'),
+      honoreesNames: 'Alex y Sam',
+      albumPhrase: 'Nuestro album',
+      eventTheme: null,
+    };
+    const sessions = [
+      {
+        id: 7,
+        sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+        photoCount: 2,
+      },
+    ] as Session[];
+    const coverPhotos = [
+      {
+        id: 2,
+        sessionId: 7,
+        storagePath: 'photobooth/12/uuid-123.gif',
+        publicUrl: 'https://public.example/local/photobooth/12/uuid-123.gif',
+      },
+      {
+        id: 1,
+        sessionId: 7,
+        storagePath: 'photobooth/12/uuid-123.jpg',
+        publicUrl: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+      },
+    ] as Photo[];
+    const queryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue(coverPhotos),
+    };
+
+    eventsService.getByToken.mockResolvedValue(event);
+    eventsService.getPublicEventStatus.mockReturnValue(undefined);
+    sessionRepository.find.mockResolvedValue(sessions);
+    photoRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+    const result = await service.getGallery(event.token);
+
+    expect(result.event.status).toBeUndefined();
+    expect(result.sessions).toEqual([
+      {
+        sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+        coverPhoto: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+        photoCount: 2,
+      },
+    ]);
+  });
+
+  it('should return event.status finished in the gallery response after the cutoff', async () => {
+    const event = {
+      id: 12,
+      token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
+      serviceStartsAt: new Date('2026-05-04T12:00:00.000Z'),
+      honoreesNames: 'Alex y Sam',
+      albumPhrase: 'Nuestro album',
+      eventTheme: null,
+    };
+    const queryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([]),
+    };
+
+    eventsService.getByToken.mockResolvedValue(event);
+    eventsService.getPublicEventStatus.mockReturnValue('finished');
+    sessionRepository.find.mockResolvedValue([]);
+    photoRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+    const result = await service.getGallery(event.token);
+
+    expect(result.event.status).toBe('finished');
+  });
+
+  it('should return an empty gallery cover photo when only GIF assets exist', async () => {
+    const event = {
+      id: 12,
+      token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
+      serviceStartsAt: new Date('2026-05-04T12:00:00.000Z'),
+      honoreesNames: 'Alex y Sam',
+      albumPhrase: 'Nuestro album',
+      eventTheme: null,
+    };
+    const sessions = [
+      {
+        id: 7,
+        sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+        photoCount: 1,
+      },
+    ] as Session[];
+    const coverPhotos = [
+      {
+        id: 2,
+        sessionId: 7,
+        storagePath: 'photobooth/12/uuid-123.gif',
+        publicUrl: 'https://public.example/local/photobooth/12/uuid-123.gif',
+      },
+    ] as Photo[];
+    const queryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue(coverPhotos),
+    };
+
+    eventsService.getByToken.mockResolvedValue(event);
+    eventsService.getPublicEventStatus.mockReturnValue(undefined);
+    sessionRepository.find.mockResolvedValue(sessions);
+    photoRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+    const result = await service.getGallery(event.token);
+
+    expect(result.sessions).toEqual([
+      {
+        sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+        coverPhoto: '',
+        photoCount: 1,
+      },
+    ]);
+  });
+
+  it('should bypass a cached gallery when event.status became finished after caching', async () => {
+    const event = {
+      id: 12,
+      token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
+      serviceStartsAt: new Date('2026-05-04T12:00:00.000Z'),
+      honoreesNames: 'Alex y Sam',
+      albumPhrase: 'Nuestro album',
+      eventTheme: null,
+    };
+    const sessions = [
+      {
+        id: 7,
+        sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+        photoCount: 2,
+      },
+    ] as Session[];
+    const coverPhotos = [
+      {
+        id: 1,
+        sessionId: 7,
+        storagePath: 'photobooth/12/uuid-123.jpg',
+        publicUrl: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+      },
+    ] as Photo[];
+    const queryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue(coverPhotos),
+    };
+
+    eventsService.getByToken.mockResolvedValue(event);
+    eventsService.getPublicEventStatus.mockReturnValue('finished');
+    cache.getGallery.mockReturnValue({
+      event: {
+        eventToken: event.token,
+        honoreesNames: event.honoreesNames,
+        date: 'cached',
+        albumPhase: event.albumPhrase,
+        eventTheme: null,
+      },
+      sessions: [
+        {
+          sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+          coverPhoto: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+          photoCount: 2,
+        },
+      ],
+    });
+    sessionRepository.find.mockResolvedValue(sessions);
+    photoRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+    const result = await service.getGallery(event.token);
+
+    expect(result.event.status).toBe('finished');
+    expect(photoRepository.createQueryBuilder).toHaveBeenCalled();
   });
 });

@@ -319,4 +319,39 @@ describe('EventsService', () => {
       );
     });
   });
+
+  describe('getPublicEventStatus', () => {
+    it('should return undefined when serviceStartsAt is null', () => {
+      expect(
+        service.getPublicEventStatus({ serviceStartsAt: null }),
+      ).toBeUndefined();
+    });
+
+    it('should return undefined before the 30-day cutoff', () => {
+      const serviceStartsAt = new Date('2026-05-01T12:00:00.000Z');
+      const now = new Date('2026-05-31T11:59:59.999Z');
+
+      expect(
+        service.getPublicEventStatus({ serviceStartsAt }, now),
+      ).toBeUndefined();
+    });
+
+    it('should return undefined exactly at the 30-day cutoff', () => {
+      const serviceStartsAt = new Date('2026-05-01T12:00:00.000Z');
+      const now = new Date('2026-05-31T12:00:00.000Z');
+
+      expect(
+        service.getPublicEventStatus({ serviceStartsAt }, now),
+      ).toBeUndefined();
+    });
+
+    it('should return finished after the 30-day cutoff', () => {
+      const serviceStartsAt = new Date('2026-05-01T12:00:00.000Z');
+      const now = new Date('2026-05-31T12:00:00.001Z');
+
+      expect(
+        service.getPublicEventStatus({ serviceStartsAt }, now),
+      ).toBe('finished');
+    });
+  });
 });

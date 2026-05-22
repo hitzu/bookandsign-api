@@ -82,6 +82,9 @@ export class SessionEventDto {
   @ApiProperty()
   albumPhase!: string
 
+  @ApiPropertyOptional({ enum: ['finished', 'active'] })
+  status?: 'finished' | 'active';
+
   @ApiPropertyOptional({ type: EventThemeDto, nullable: true })
   eventTheme?: EventThemeDto | null;
 }

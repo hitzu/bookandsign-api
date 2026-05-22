@@ -305,9 +305,6 @@ export class SessionsService {
   }
 
   async getSession(sessionToken: string): Promise<SessionResponseDto> {
-    const cached = this.cache.getSession(sessionToken);
-    if (cached) return cached;
-
     const session = await this.sessionRepository.findOne({
       where: { sessionToken },
       relations: ['event', 'event.eventTheme'],
@@ -315,6 +312,17 @@ export class SessionsService {
     if (!session) {
       throw new NotFoundException(EXCEPTION_RESPONSE.SESSION_NOT_FOUND);
     }
+    const eventStatus = this.eventsService.getPublicEventStatus(session.event ?? {});
+
+    const cached = this.cache.getSession(sessionToken);
+    if (
+      cached &&
+      !cached.photos.some((photo) => this.isGifPath(photo.url)) &&
+      cached.event.status === eventStatus
+    ) {
+      return cached;
+    }
+
     if (session.status === 'complete' && session.photoCount === 0) {
       throw new NotFoundException(EXCEPTION_RESPONSE.SESSION_NOT_FOUND);
     }
@@ -340,6 +348,7 @@ export class SessionsService {
             ? formatDateTimeInTimeZone(session.event.serviceStartsAt, this.eventDisplayTimeZone())
             : '',
         albumPhase: session.event?.albumPhrase ?? '',
+        status: eventStatus,
         eventTheme: session.event?.eventTheme
       },
     };
@@ -352,12 +361,17 @@ export class SessionsService {
   }
 
   async getGallery(eventToken: string): Promise<GalleryResponseDto> {
+    const event = await this.eventsService.getByToken(eventToken);
+    const eventStatus = this.eventsService.getPublicEventStatus(event);
+
     const cached = this.cache.getGallery(eventToken);
-    if (cached && !cached.sessions.some((session) => this.isGifPath(session.coverPhoto))) {
+    if (
+      cached &&
+      !cached.sessions.some((session) => this.isGifPath(session.coverPhoto)) &&
+      cached.event.status === eventStatus
+    ) {
       return cached;
     }
-
-    const event = await this.eventsService.getByToken(eventToken);
 
     const sessions = await this.sessionRepository.find({
       where: { eventId: event.id, status: 'complete', photoCount: MoreThan(0) },
@@ -395,6 +409,7 @@ export class SessionsService {
             ? formatDateTimeInTimeZone(event.serviceStartsAt, this.eventDisplayTimeZone())
             : '',
         albumPhase: event.albumPhrase ?? '',
+        status: eventStatus,
         eventTheme: event.eventTheme
       },
       sessions: sessions.map((s) => ({

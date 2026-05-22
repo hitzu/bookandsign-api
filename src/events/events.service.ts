@@ -16,6 +16,9 @@ import { EventResponseDto } from './dto/event-response.dto';
 import { Event } from './entities/event.entity';
 import { PinoLogger } from 'nestjs-pino';
 
+const PUBLIC_EVENT_FINISHED_AFTER_DAYS = 30;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 @Injectable()
 export class EventsService {
   constructor(
@@ -172,5 +175,20 @@ export class EventsService {
       .where('event.serviceStartsAt <= :now', { now })
       .andWhere('event.serviceEndsAt >= :cutoff', { cutoff })
       .getOne();
+  }
+
+  getPublicEventStatus(
+    event: { serviceStartsAt?: Date | null },
+    now: Date = new Date(),
+  ): 'finished' | 'active' {
+    if (event.serviceStartsAt == null) {
+      return 'finished';
+    }
+
+    const finishedAt = new Date(
+      event.serviceStartsAt.getTime() + PUBLIC_EVENT_FINISHED_AFTER_DAYS * MS_PER_DAY,
+    );
+
+    return now.getTime() > finishedAt.getTime() ? 'finished' : 'active';
   }
 }
