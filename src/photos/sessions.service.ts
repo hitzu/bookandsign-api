@@ -324,19 +324,9 @@ export class SessionsService {
       order: { createdAt: 'ASC' },
     });
 
-    const photoItems = photos.map((p) => ({ url: p.publicUrl ?? '', position: p.id }));
-    const hasReadyGifPhoto = photos.some((photo) => photo.storagePath.endsWith('.gif'));
-
-    if (session.status === 'complete' && !hasReadyGifPhoto) {
-      const gifPosition = photoItems.length
-        ? Math.max(...photoItems.map((photo) => photo.position)) + 1
-        : 1;
-
-      photoItems.push({
-        url: this.buildGifPublicUrl(session.event?.id ?? session.eventId, session.sessionToken),
-        position: gifPosition,
-      });
-    }
+    const photoItems = photos
+      .filter((photo) => !this.isGifPath(photo.storagePath))
+      .map((p) => ({ url: p.publicUrl ?? '', position: p.id }));
 
     const result: SessionResponseDto = {
       sessionToken: session.sessionToken,
@@ -363,7 +353,9 @@ export class SessionsService {
 
   async getGallery(eventToken: string): Promise<GalleryResponseDto> {
     const cached = this.cache.getGallery(eventToken);
-    if (cached) return cached;
+    if (cached && !cached.sessions.some((session) => this.isGifPath(session.coverPhoto))) {
+      return cached;
+    }
 
     const event = await this.eventsService.getByToken(eventToken);
 
@@ -385,7 +377,11 @@ export class SessionsService {
 
     const firstPhotoBySession = new Map<number, Photo>();
     for (const photo of coverPhotos) {
-      if (photo.sessionId && !firstPhotoBySession.has(photo.sessionId)) {
+      if (
+        photo.sessionId &&
+        !firstPhotoBySession.has(photo.sessionId) &&
+        !this.isGifPath(photo.storagePath)
+      ) {
         firstPhotoBySession.set(photo.sessionId, photo);
       }
     }
@@ -510,16 +506,8 @@ export class SessionsService {
     return { ok: true };
   }
 
-  private buildGifStoragePath(eventId: number, sessionToken: string): string {
-    return `photobooth/${eventId}/gifs/${sessionToken}.gif`;
-  }
-
-  private buildGifPublicUrl(eventId: number, sessionToken: string): string {
-    const bucket = this.resolveBucket();
-    return this.photosService.getPublicUrl(
-      bucket,
-      this.buildGifStoragePath(eventId, sessionToken),
-    );
+  private isGifPath(path: string | null | undefined): boolean {
+    return path?.toLowerCase().endsWith('.gif') ?? false;
   }
 
   private resolveBucket(): string {

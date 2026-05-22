@@ -60,7 +60,6 @@ describe('PackagesService', () => {
           brandId: brand.id,
           name: 'Test Package',
           basePrice: 999.99,
-          discount: 10,
           status: PACKAGE_STATUS.ACTIVE,
         };
 
@@ -85,7 +84,6 @@ describe('PackagesService', () => {
           brandId: brand.id,
           name: 'Minimal Package',
           basePrice: null,
-          discount: null,
           status: PACKAGE_STATUS.DRAFT,
         };
 
@@ -107,7 +105,6 @@ describe('PackagesService', () => {
           brandId: brand.id,
           name: 'Package with Nulls',
           basePrice: null,
-          discount: null,
           status: PACKAGE_STATUS.DRAFT,
         };
 
@@ -132,7 +129,6 @@ describe('PackagesService', () => {
           brandId: brand.id,
           name: `Package ${description}`,
           basePrice: null,
-          discount: null,
           status,
         };
 
@@ -152,7 +148,6 @@ describe('PackagesService', () => {
           brandId: brand.id,
           name: 'Min Price Package',
           basePrice: 0.01,
-          discount: null,
           status: PACKAGE_STATUS.ACTIVE,
         };
 
@@ -170,7 +165,6 @@ describe('PackagesService', () => {
           brandId: brand.id,
           name: 'Large Price Package',
           basePrice: 999999.99,
-          discount: null,
           status: PACKAGE_STATUS.ACTIVE,
         };
 
@@ -190,7 +184,6 @@ describe('PackagesService', () => {
           brandId: brand.id,
           name: 'Error Package',
           basePrice: null,
-          discount: null,
           status: PACKAGE_STATUS.ACTIVE,
         };
 

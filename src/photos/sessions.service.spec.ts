@@ -1,13 +1,14 @@
 import { BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
-
+import { AppDataSource as TestDataSource } from '../config/database/data-source';
 import { PhotoStatus } from './enums';
 import { Photo } from './entities/photo.entity';
 import { Session } from './entities/session.entity';
 import { PhotosService } from './photos.service';
 import { SessionsCache } from './sessions.cache';
 import { SessionsService } from './sessions.service';
+import { EventFactory } from '../../test/factories/events/event.factory';
 
 jest.mock('node:crypto', () => ({
   randomUUID: jest.fn(() => 'uuid-123'),
@@ -16,15 +17,19 @@ jest.mock('node:crypto', () => ({
 describe('SessionsService', () => {
   let service: SessionsService;
   let env: { STAGE?: string; NODE_ENV?: string };
+  let eventFactory: EventFactory;
+
   let sessionRepository: {
     findOne: jest.Mock;
     increment: jest.Mock;
+    find: jest.Mock;
   };
   let photoRepository: {
     create: jest.Mock;
     save: jest.Mock;
     find: jest.Mock;
     findOne: jest.Mock;
+    createQueryBuilder: jest.Mock;
   };
   let photosService: {
     createStorageUploadUrl: jest.Mock;
@@ -46,12 +51,14 @@ describe('SessionsService', () => {
     sessionRepository = {
       findOne: jest.fn(),
       increment: jest.fn(),
+      find: jest.fn(),
     };
     photoRepository = {
       create: jest.fn((value) => value),
       save: jest.fn(),
       find: jest.fn(),
       findOne: jest.fn(),
+      createQueryBuilder: jest.fn(),
     };
     photosService = {
       createStorageUploadUrl: jest.fn(),
@@ -72,6 +79,11 @@ describe('SessionsService', () => {
       invalidateGallery: jest.fn(),
       clearAll: jest.fn(),
     };
+
+    beforeEach(() => {
+      eventFactory = new EventFactory(TestDataSource);
+
+    })
 
     service = new SessionsService(
       sessionRepository as unknown as Repository<Session>,
@@ -103,10 +115,12 @@ describe('SessionsService', () => {
     sessionRepository.findOne.mockResolvedValue(session);
     photosService.createStorageUploadUrl.mockResolvedValue('https://signed.example/upload');
     photoRepository.save.mockResolvedValue(savedPhoto);
-    env.STAGE = 'production';
+    const event = await eventFactory.create()
+    env.STAGE = 'local';
 
     const result = await service.getPresignedUploadUrl({
       sessionToken: session.sessionToken,
+      eventToken: event.token,
       mime: 'image/gif',
     });
 
@@ -152,9 +166,11 @@ describe('SessionsService', () => {
     sessionRepository.findOne.mockResolvedValue(session);
     photosService.createStorageUploadUrl.mockResolvedValue('https://signed.example/upload');
     photoRepository.save.mockResolvedValue(savedPhoto);
+    const event = await eventFactory.create();
 
     const result = await service.getPresignedUploadUrl({
       sessionToken: session.sessionToken,
+      eventToken: event.token,
       mime: 'image/jpeg',
     });
 
@@ -174,10 +190,12 @@ describe('SessionsService', () => {
     } as Session;
 
     sessionRepository.findOne.mockResolvedValue(session);
+    const event = await eventFactory.create();
 
     await expect(
       service.getPresignedUploadUrl({
         sessionToken: session.sessionToken,
+        eventToken: event.token,
         mime: 'image/png',
       }),
     ).rejects.toEqual(new BadRequestException('Only image/jpeg and image/gif are allowed'));
@@ -278,7 +296,7 @@ describe('SessionsService', () => {
     expect(cache.clearAll).toHaveBeenCalledTimes(1);
   });
 
-  it('should not append the synthetic session GIF when a real GIF photo already exists', async () => {
+  it('should exclude GIF assets from the public session response', async () => {
     const session = {
       id: 7,
       sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
@@ -316,11 +334,6 @@ describe('SessionsService', () => {
         url: 'https://public.example/local/photobooth/12/uuid-123.jpg',
         position: 1,
       },
-      {
-        url: 'https://public.example/local/photobooth/12/uuid-123.gif',
-        position: 2,
-      },
     ]);
-    expect(photosService.getPublicUrl).not.toHaveBeenCalled();
   });
 });
