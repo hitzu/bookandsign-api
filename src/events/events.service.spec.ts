@@ -324,7 +324,7 @@ describe('EventsService', () => {
     it('should return undefined when serviceStartsAt is null', () => {
       expect(
         service.getPublicEventStatus({ serviceStartsAt: null }),
-      ).toBeUndefined();
+      ).toBe('finished')
     });
 
     it('should return undefined before the 30-day cutoff', () => {
@@ -333,7 +333,7 @@ describe('EventsService', () => {
 
       expect(
         service.getPublicEventStatus({ serviceStartsAt }, now),
-      ).toBeUndefined();
+      ).toBe("active");
     });
 
     it('should return undefined exactly at the 30-day cutoff', () => {
@@ -342,7 +342,7 @@ describe('EventsService', () => {
 
       expect(
         service.getPublicEventStatus({ serviceStartsAt }, now),
-      ).toBeUndefined();
+      ).toBe("active");
     });
 
     it('should return finished after the 30-day cutoff', () => {

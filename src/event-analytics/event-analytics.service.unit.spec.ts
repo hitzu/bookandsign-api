@@ -8,6 +8,7 @@ import { AnalyticsSource } from './enums/analytics-source.enum';
 describe('EventAnalyticsService (unit)', () => {
   let service: EventAnalyticsService;
   let repo: {
+    create: jest.Mock;
     save: jest.Mock;
     findAndCount: jest.Mock;
     createQueryBuilder: jest.Mock;
@@ -15,6 +16,7 @@ describe('EventAnalyticsService (unit)', () => {
 
   beforeEach(() => {
     repo = {
+      create: jest.fn((payload) => payload),
       save: jest.fn(),
       findAndCount: jest.fn(),
       createQueryBuilder: jest.fn(),
@@ -40,10 +42,17 @@ describe('EventAnalyticsService (unit)', () => {
     expect(repo.save).toHaveBeenCalledWith({
       action: AnalyticsAction.GALLERY_OPENED,
       eventToken: 'a1b2c3d4-0000-0000-0000-000000000000',
+      itemCount: null,
+      itemIndex: null,
+      itemType: null,
       metadata: null,
+      personCount: null,
+      photoCount: null,
       sessionId: null,
       source: AnalyticsSource.QR,
+      surface: null,
       userAgent: 'Mozilla/5.0 Test',
+      variant: null,
     });
   });
 
@@ -69,7 +78,7 @@ describe('EventAnalyticsService (unit)', () => {
         },
         'Mozilla/5.0 Test',
       ),
-    ).rejects.toThrow('sessionId is required for session_opened');
+    ).rejects.toThrow('sessionId is required for this event');
   });
 
   it('groups source summary rows by action and source', async () => {
@@ -110,13 +119,17 @@ describe('EventAnalyticsService (unit)', () => {
         gallery_opened: {
           qr: 2,
           gallery: 0,
+          photobooth: 0,
           direct: 1,
+          sign: 0,
           total: 3,
         },
         session_opened: {
           qr: 0,
           gallery: 3,
+          photobooth: 0,
           direct: 0,
+          sign: 0,
           total: 3,
         },
       },

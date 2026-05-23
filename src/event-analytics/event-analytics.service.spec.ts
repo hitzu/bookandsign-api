@@ -64,7 +64,7 @@ describe('EventAnalyticsService', () => {
           },
           'Mozilla/5.0 Test',
         ),
-      ).rejects.toThrow('sessionId is required for session_opened');
+      ).rejects.toThrow('sessionId is required for this event');
     });
 
     it('should persist metadata when provided', async () => {
@@ -358,13 +358,17 @@ describe('EventAnalyticsService', () => {
           gallery_opened: {
             qr: 2,
             gallery: 0,
+            photobooth: 0,
             direct: 1,
+            sign: 0,
             total: 3,
           },
           session_opened: {
             qr: 0,
             gallery: 1,
+            photobooth: 0,
             direct: 0,
+            sign: 0,
             total: 1,
           },
         },
