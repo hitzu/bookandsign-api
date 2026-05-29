@@ -70,6 +70,9 @@ export class EventsService {
       serviceEndsAt: dto.serviceEndsAt ?? null,
       delegateName: dto.delegateName ?? null,
       eventThemeId: dto.eventThemeId ?? null,
+      printTemplate: dto.printTemplate ?? 'polaroid_2',
+      serviceType: dto.serviceType ?? null,
+      printTemplates: dto.printTemplates ?? null,
     });
     let saved: Event;
     try {

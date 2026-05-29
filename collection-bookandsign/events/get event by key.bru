@@ -6,7 +6,7 @@ meta {
 
 get {
   url: {{base_url}}/events/by-key/{{event_key}}
-  body: none
+  body: json
   auth: inherit
 }
 
@@ -15,7 +15,7 @@ headers {
 }
 
 vars:pre-request {
-  event_key: 16-05
+  event_key: 17
 }
 
 settings {

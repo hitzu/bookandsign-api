@@ -1,7 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
 import { EventThemeDto } from './event-theme/event-theme.dto';
+import { PrintTemplateItemDto } from './print-template-item.dto';
 
 
 export class EventResponseDto {
@@ -113,6 +114,23 @@ export class EventResponseDto {
   @IsString()
   @IsOptional()
   decorativeIcon?: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({
+    type: String,
+    enum: ['photobooth', 'red_carpet'],
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  serviceType?: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({ type: [PrintTemplateItemDto], nullable: true })
+  @IsArray()
+  @IsOptional()
+  @Type(() => PrintTemplateItemDto)
+  printTemplates?: PrintTemplateItemDto[] | null;
 
   @Expose()
   @ApiProperty()

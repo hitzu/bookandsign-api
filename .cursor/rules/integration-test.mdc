@@ -1,64 +1,191 @@
 ---
-description: Defines a test plan before implementing tests.
+description: Defines test plan and implementation rules for bookandsign-api service specs.
 globs:
 alwaysApply: false
 ---
 
-# Expert Test Builder Rules
+# Expert Test Builder — bookandsign-api
 
-I want you to become my Expert Test Builder. Your goal is to help me craft the most rigorous and effective unit test plans and test implementations specifically for domain services. All test plans and implementations must be production-grade, follow industry-standard testing patterns, and apply proven unit testing techniques, such as:
-
-- Equivalence Partitioning
-- Boundary Value Analysis
-- Negative Testing
-- Happy Path and Edge Case Testing
-- Parameterized Testing
-- State-Based and Interaction-Based Testing
-- Exception and Error Handling
-
-We follow the **AAA (Arrange-Act-Assert)** testing technique. All test plans and implementations must reflect this structure clearly.
-
-## Pre-Test Analysis Process
-
-Before writing any test logic:
-
-1. **Identify the primary domain entities involved.**
-
-2. **For each entity:**
-   - Search for an existing factory.
-   - **If it exists:**
-     - Use it in the Arrange phase.
-     - Review its implementation critically:
-       - Are relations correctly modeled?
-       - Are EagerInstanceAttribute and SingleSubfactory + EagerInstanceAttribute patterns applied as needed?
-       - Are helper methods like `createActiveX()` present and meaningful?
-       - Are there any smells (e.g., circular dependencies, direct service calls, hardcoded data)?
-     - Provide suggested improvements to make the factory production-grade and test-friendly.
-   - **If it does not exist:**
-     - Generate a new factory that:
-       - Complies with our modeling practices.
-       - Works seamlessly for use in the Arrange phase of unit tests.
-       - Uses `@jorgebodega/typeorm-factory`.
-
-3. **Tests must never call domain services directly to create setup data. All test state must come from factories.**
-
-## Test Plan Template
-
-### Test Plan:
-
-{Provide the AAA-structured test plan with detailed techniques and cases}
-{Justify which techniques are used and why}
-
-### Critique:
-
-{Critically assess the depth, edge case coverage, and assumptions of the test plan}
-
-### Factory Analysis (if applicable):
-
-{If a factory exists, provide feedback on its design, issues found, and improvements needed}
-
-### Questions:
-
-{Ask up to 3 clarification questions if needed}
+Production-grade integration tests for NestJS services using a real PostgreSQL test database.
 
 ---
+
+## Stack de testing
+
+| Pieza | Detalle |
+|:---|:---|
+| Framework | Jest + `@nestjs/testing` |
+| DB | Real PostgreSQL vía `AppDataSource as TestDataSource` |
+| Factories | `@jorgebodega/typeorm-factory` — base `Factory<Entity>` |
+| Spec location | `src/**/*.service.spec.ts` (co-located con el service) |
+| Cleanup | `test/jest.setup.ts` — `afterEach` trunca todas las tablas con `SET session_replication_role = replica` |
+| Init | `beforeAll` en `jest.setup.ts` inicializa `TestDataSource` — no repetir en specs |
+
+---
+
+## Hard Rules
+
+1. **Nunca** llamar servicios de dominio para crear datos de setup. Todo el estado inicial viene de factories.
+2. **Nunca** mockear el repositorio de TypeORM — se usa `TestDataSource.getRepository(Entity)` real.
+3. **Siempre** AAA: secciones Arrange / Act / Assert claramente separadas.
+4. **No** repetir `beforeAll`/`afterAll` de DB — ya están en `jest.setup.ts`.
+5. Nombres de casos describen escenario, no mecánica de input: ✅ `'should throw when key already exists'` ❌ `'key duplicate test'`.
+6. Un `it()` prueba una sola cosa. No mezclar happy path y error en el mismo caso.
+
+---
+
+## Técnicas aplicadas
+
+- **Equivalence Partitioning**: agrupar inputs válidos e inválidos en clases representativas.
+- **Boundary Value Analysis**: probar exactamente en el límite y un paso más allá (ej. `serviceEndsAt === serviceStartsAt` vs `serviceEndsAt < serviceStartsAt`).
+- **Negative Testing**: cubrir cada `throw` del servicio con un caso dedicado.
+- **Happy Path**: al menos un caso end-to-end de creación exitosa con todos los campos.
+- **State-Based**: verificar que el estado persistido en DB coincide con lo retornado.
+- **Interaction-Based**: cuando el servicio tiene side effects (logs, events), verificar que se llamaron.
+
+---
+
+## Proceso previo a escribir tests
+
+### 1. Identificar entidades involucradas
+
+Por cada entidad del método bajo test:
+
+- ¿Existe una factory en `test/factories/`?
+- **Si existe** → usarla. Revisar críticamente:
+  - ¿Los defaults de `attrs()` tienen sentido para el dominio?
+  - ¿Las FK se resuelven en `create()` (patrón `if (entity.fkId == null) { ... }`) ?
+  - ¿Falta algún `createActive*()` helper que ahorre setup repetitivo?
+- **Si no existe** → crearla antes de escribir el primer test.
+
+### 2. Pattern de factory
+
+```typescript
+import type { FactorizedAttrs } from '@jorgebodega/typeorm-factory';
+import { Factory } from '@jorgebodega/typeorm-factory';
+import { faker } from '@faker-js/faker';
+import type { DataSource } from 'typeorm';
+import { MyEntity } from '../../../src/my-module/entities/my.entity';
+import { ParentFactory } from '../parent/parent.factory';
+
+export class MyEntityFactory extends Factory<MyEntity> {
+  protected entity = MyEntity;
+  protected dataSource: DataSource;
+
+  constructor(dataSource: DataSource) {
+    super();
+    this.dataSource = dataSource;
+  }
+
+  protected attrs(): FactorizedAttrs<MyEntity> {
+    return {
+      name: faker.lorem.words(2),
+      token: faker.string.uuid(),
+      parentId: 0, // resuelto en create()
+    };
+  }
+
+  async create(attrs?: Partial<MyEntity>): Promise<MyEntity> {
+    const entity = await this.make({ ...attrs });
+    if (entity.parentId === 0) {
+      const parent = await new ParentFactory(this.dataSource).create();
+      entity.parentId = parent.id;
+    }
+    return this.dataSource.getRepository(MyEntity).save(entity);
+  }
+}
+```
+
+### 3. Pattern de spec
+
+```typescript
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { AppDataSource as TestDataSource } from '../config/database/data-source';
+import { MyEntity } from './entities/my.entity';
+import { MyService } from './my.service';
+import { MyEntityFactory } from '../../test/factories/my-module/my.factory';
+import { PinoLogger } from 'nestjs-pino';
+
+describe('MyService', () => {
+  let service: MyService;
+  let factory: MyEntityFactory;
+
+  beforeEach(async () => {
+    const loggerMock = {
+      setContext: jest.fn(),
+      error: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      debug: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        MyService,
+        {
+          provide: getRepositoryToken(MyEntity),
+          useValue: TestDataSource.getRepository(MyEntity),
+        },
+        { provide: PinoLogger, useValue: loggerMock },
+      ],
+    }).compile();
+
+    service = module.get<MyService>(MyService);
+    factory = new MyEntityFactory(TestDataSource);
+  });
+
+  describe('create', () => {
+    it('should create entity and return DTO with generated token', async () => {
+      // Arrange
+      const parent = await new ParentFactory(TestDataSource).create();
+
+      // Act
+      const result = await service.create({ parentId: parent.id, name: 'Test' });
+
+      // Assert
+      expect(result.id).toBeDefined();
+      expect(result.token).toMatch(/^[0-9a-f-]{36}$/i);
+      expect(result.name).toBe('Test');
+    });
+  });
+});
+```
+
+---
+
+## Template de test plan (entregar antes de implementar)
+
+```
+### Test Plan: <NombreService>.<método>
+
+**Técnicas aplicadas:** [lista]
+
+| # | Caso | Técnica | Arrange | Act | Assert |
+|---|------|---------|---------|-----|--------|
+| 1 | Happy path — crear con campos requeridos | Happy Path | factory.create() con mínimo | service.create(dto) | id, token defined; campos correctos |
+| 2 | Lanzar ConflictException si clave duplicada | Negative | factory.create({ key: 'dup' }) | service.create con misma key | rejects.toEqual(ConflictException) |
+| 3 | Lanzar BadRequestException si endAt <= startAt | BVA | — | dto con endAt = startAt | rejects.toBeInstanceOf(BadRequestException) |
+
+### Critique
+[¿Qué edge cases faltan? ¿Qué asunciones hacemos?]
+
+### Factory Analysis
+[¿La factory existente cubre los attrs necesarios? ¿Qué mejorar?]
+
+### Questions (máx. 3)
+[Solo si hay ambigüedad genuina]
+```
+
+---
+
+## Decision Gate
+
+| Situación | Acción |
+|:---|:---|
+| Método persiste en DB | Test de integración con `TestDataSource` real |
+| Método es pura lógica sin IO | Unit test con mock de dependencias |
+| FK requerida para setup | Usar factory del entity padre en Arrange |
+| Factory no existe | Crearla antes de escribir el test |
+| Múltiples casos del mismo método | Agrupar en un `describe` por método |
+| Campo con límite numérico | Cubrir: válido, en límite, fuera de límite |

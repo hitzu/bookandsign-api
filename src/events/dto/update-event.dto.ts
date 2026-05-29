@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDate, IsInt, IsOptional, IsString, IsUrl, IsNumber, Max, Min } from 'class-validator';
+import { IsArray, IsDate, IsInt, IsOptional, IsString, IsUrl, IsNumber, Max, Min, ValidateNested } from 'class-validator';
+import { PrintTemplateItemDto } from './print-template-item.dto';
 
 
 export class UpdateEventDto {
@@ -108,4 +109,25 @@ export class UpdateEventDto {
   @IsString()
   @IsOptional()
   decorativeIcon?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    enum: ['photobooth', 'red_carpet'],
+    description: 'Service type — routes printer and print flow in the Swift client',
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  serviceType?: string | null;
+
+  @ApiPropertyOptional({
+    type: [PrintTemplateItemDto],
+    description: 'Ordered array of subproducts to print. Order = print order.',
+    nullable: true,
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PrintTemplateItemDto)
+  @IsOptional()
+  printTemplates?: PrintTemplateItemDto[] | null;
 }

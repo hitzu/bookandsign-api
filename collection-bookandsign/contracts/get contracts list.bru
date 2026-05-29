@@ -5,13 +5,13 @@ meta {
 }
 
 get {
-  url: {{base_url}}/contracts?includeFinalized=true
+  url: {{base_url}}/contracts?includeFinalized=false
   body: json
   auth: inherit
 }
 
 params:query {
-  includeFinalized: true
+  includeFinalized: false
 }
 
 headers {

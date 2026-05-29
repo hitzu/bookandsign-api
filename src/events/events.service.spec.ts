@@ -139,6 +139,32 @@ describe('EventsService', () => {
       expect(result.serviceEndsAt?.getTime()).toBe(serviceEndsAt.getTime());
     });
 
+    it('should persist serviceType and printTemplates', async () => {
+      // Arrange
+      const contractFactory = new ContractFactory(TestDataSource);
+      const contract = await contractFactory.create();
+      const eventTypeFactory = new EventTypeFactory(TestDataSource);
+      const eventType = await eventTypeFactory.create();
+      const printTemplates = [
+        { type: 'polaroid', template: 'polaroid_2', icon: 'cake' },
+        { type: 'keychain', template: 'keychain_2', icon: 'cake' },
+      ];
+
+      // Act
+      const result = await service.create({
+        contractId: contract.id,
+        name: 'Multi-product Event',
+        key: 'multi-product-001',
+        eventTypeId: eventType.id,
+        serviceType: 'photobooth',
+        printTemplates,
+      });
+
+      // Assert
+      expect(result.serviceType).toBe('photobooth');
+      expect(result.printTemplates).toEqual(printTemplates);
+    });
+
     it('should throw BadRequestException when serviceEndsAt is not after serviceStartsAt', async () => {
       const contractFactory = new ContractFactory(TestDataSource);
       const contract = await contractFactory.create();
@@ -282,6 +308,35 @@ describe('EventsService', () => {
           serviceEndsAt: new Date('2026-08-01T12:00:00.000Z'),
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('should update serviceType and printTemplates', async () => {
+      // Arrange
+      const event = await eventFactory.create({ key: 'update-multi-product-001' });
+      const printTemplates = [
+        { type: 'polaroid', template: 'polaroid_2', icon: 'rings' },
+      ];
+
+      // Act
+      const result = await service.update(event.id, {
+        serviceType: 'red_carpet',
+        printTemplates,
+      });
+
+      // Assert
+      expect(result.serviceType).toBe('red_carpet');
+      expect(result.printTemplates).toEqual(printTemplates);
+    });
+
+    it('should allow setting printTemplates to null', async () => {
+      // Arrange
+      const event = await eventFactory.create({ key: 'update-null-templates-001' });
+
+      // Act
+      const result = await service.update(event.id, { printTemplates: null });
+
+      // Assert
+      expect(result.printTemplates).toBeNull();
     });
 
     it('should not modify fields that are not in the dto', async () => {

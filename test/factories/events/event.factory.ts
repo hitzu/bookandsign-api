@@ -38,6 +38,8 @@ export class EventFactory extends Factory<Event> {
       serviceStartsAt,
       serviceEndsAt,
       delegateName: faker.person.fullName(),
+      serviceType: null,
+      printTemplates: null,
     };
   }
 
