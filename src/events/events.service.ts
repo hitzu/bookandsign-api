@@ -6,15 +6,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
+import { PinoLogger } from 'nestjs-pino';
 import { randomUUID } from 'node:crypto';
 import { QueryFailedError, Repository } from 'typeorm';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { isUniqueViolation } from '../config/errors/exceptions-handler';
 import { CreateEventDto } from './dto/create-event.dto';
-import { UpdateEventDto } from './dto/update-event.dto';
 import { EventResponseDto } from './dto/event-response.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 import { Event } from './entities/event.entity';
-import { PinoLogger } from 'nestjs-pino';
 
 const PUBLIC_EVENT_FINISHED_AFTER_DAYS = 30;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -57,11 +57,10 @@ export class EventsService {
     const token = randomUUID();
     const entity = this.eventRepository.create({
       contractId: dto.contractId,
-      name: dto.name,
       key: dto.key,
-      description: dto.description ?? null,
       token,
       eventTypeId: dto.eventTypeId ?? null,
+      serviceTypeId: dto.serviceTypeId ?? null,
       honoreesNames: dto.honoreesNames ?? null,
       albumPhrase: dto.albumPhrase ?? null,
       venueName: dto.venueName ?? null,
@@ -71,7 +70,6 @@ export class EventsService {
       delegateName: dto.delegateName ?? null,
       eventThemeId: dto.eventThemeId ?? null,
       printTemplate: dto.printTemplate ?? 'polaroid_2',
-      serviceType: dto.serviceType ?? null,
       printTemplates: dto.printTemplates ?? null,
     });
     let saved: Event;
@@ -119,10 +117,12 @@ export class EventsService {
   }
 
   async getByKey(key: string): Promise<EventResponseDto> {
-    const event = await this.eventRepository.findOne({ where: { key }, relations: { eventTheme: true } });
+    const event = await this.eventRepository.findOne({ where: { key }, relations: { eventTheme: true, serviceType: true } });
     if (!event) {
       throw new NotFoundException(EXCEPTION_RESPONSE.EVENT_NOT_FOUND);
     }
+
+    console.log('eventeeeeee', event)
     return plainToInstance(EventResponseDto, event, {
       excludeExtraneousValues: true,
     });

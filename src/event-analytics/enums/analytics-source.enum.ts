@@ -4,4 +4,5 @@ export enum AnalyticsSource {
   DIRECT = 'direct',
   PHOTOBOOTH = 'photobooth',
   SIGN = 'sign',
+  SESSION = 'session',
 }

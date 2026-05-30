@@ -2,8 +2,8 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsArray, IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
 import { EventThemeDto } from './event-theme/event-theme.dto';
+import { ServiceTypeDto } from './service-types/service-types.dto';
 import { PrintTemplateItemDto } from './print-template-item.dto';
-
 
 export class EventResponseDto {
   @Expose()
@@ -14,18 +14,7 @@ export class EventResponseDto {
   @Expose()
   @ApiProperty()
   @IsString()
-  name!: string;
-
-  @Expose()
-  @ApiProperty()
-  @IsString()
   key!: string;
-
-  @Expose()
-  @ApiPropertyOptional({ nullable: true })
-  @IsString()
-  @IsOptional()
-  description?: string | null;
 
   @Expose()
   @ApiProperty()
@@ -46,6 +35,16 @@ export class EventResponseDto {
   @IsNumber()
   @IsOptional()
   eventTypeId?: number | null;
+
+  @Expose()
+  @ApiPropertyOptional({
+    type: Number,
+    description: 'Service type id',
+    nullable: true,
+  })
+  @IsNumber()
+  @IsOptional()
+  serviceTypeId?: number | null;
 
   @Expose()
   @ApiPropertyOptional({ nullable: true })
@@ -116,16 +115,6 @@ export class EventResponseDto {
   decorativeIcon?: string | null;
 
   @Expose()
-  @ApiPropertyOptional({
-    type: String,
-    enum: ['photobooth', 'red_carpet'],
-    nullable: true,
-  })
-  @IsString()
-  @IsOptional()
-  serviceType?: string | null;
-
-  @Expose()
   @ApiPropertyOptional({ type: [PrintTemplateItemDto], nullable: true })
   @IsArray()
   @IsOptional()
@@ -144,4 +133,9 @@ export class EventResponseDto {
   @ApiProperty()
   @Type(() => EventThemeDto)
   eventTheme: EventThemeDto
+
+  @Expose()
+  @ApiProperty()
+  @Type(() => ServiceTypeDto)
+  serviceType: ServiceTypeDto
 }

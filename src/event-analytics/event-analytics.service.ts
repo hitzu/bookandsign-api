@@ -191,10 +191,10 @@ export class EventAnalyticsService {
     );
 
     return {
-      galleryOpens:   byAction['gallery_opened']            ?? 0,
-      galleryViews:   byAction['gallery_view']              ?? 0,
-      sessionViews:   byAction['session_view']              ?? 0,
-      conversions:    (byAction['download'] ?? 0) + (byAction['share_confirm_executed'] ?? 0),
+      galleryOpens: byAction['gallery_opened'] ?? 0,
+      galleryViews: byAction['gallery_view'] ?? 0,
+      sessionViews: byAction['session_view'] ?? 0,
+      conversions: (byAction['download'] ?? 0) + (byAction['share_confirm_executed'] ?? 0),
     };
   }
 
@@ -220,8 +220,8 @@ export class EventAnalyticsService {
     const r = row[0];
     return {
       completedSessions: parseInt(r?.completed_sessions ?? '0', 10),
-      avgSeconds:        parseFloat(r?.avg_seconds       ?? '0'),
-      medianSeconds:     parseFloat(r?.median_seconds    ?? '0'),
+      avgSeconds: parseFloat(r?.avg_seconds ?? '0'),
+      medianSeconds: parseFloat(r?.median_seconds ?? '0'),
     };
   }
 
@@ -237,7 +237,7 @@ export class EventAnalyticsService {
 
     return rows.map((r) => ({
       personCount: r.person_count !== null ? parseInt(r.person_count, 10) : null,
-      sessions:    parseInt(r.sessions, 10),
+      sessions: parseInt(r.sessions, 10),
     }));
   }
 
@@ -256,10 +256,10 @@ export class EventAnalyticsService {
     `, [eventToken]);
 
     return rows.map((r) => ({
-      source:         r.source,
-      opens:          parseInt(r.opens, 10),
-      downloads:      parseInt(r.downloads, 10),
-      conversionPct:  parseInt(r.opens, 10)
+      source: r.source,
+      opens: parseInt(r.opens, 10),
+      downloads: parseInt(r.downloads, 10),
+      conversionPct: parseInt(r.opens, 10)
         ? Math.round((parseInt(r.downloads, 10) / parseInt(r.opens, 10)) * 100)
         : 0,
     }));
@@ -294,8 +294,8 @@ export class EventAnalyticsService {
     `, [eventToken]);
 
     return rows.map((r) => ({
-      surface:     r.surface,
-      events:      parseInt(r.events, 10),
+      surface: r.surface,
+      events: parseInt(r.events, 10),
       conversions: parseInt(r.conversions, 10),
     }));
   }
@@ -316,10 +316,10 @@ export class EventAnalyticsService {
     `, [eventToken]);
 
     return rows.map((r) => ({
-      sessionId:  r.session_id,
+      sessionId: r.session_id,
       photoViews: parseInt(r.photo_views, 10),
-      downloads:  parseInt(r.downloads, 10),
-      shares:     parseInt(r.shares, 10),
+      downloads: parseInt(r.downloads, 10),
+      shares: parseInt(r.shares, 10),
     }));
   }
 
@@ -367,6 +367,7 @@ export class EventAnalyticsService {
       [AnalyticsSource.DIRECT]: 0,
       [AnalyticsSource.PHOTOBOOTH]: 0,
       [AnalyticsSource.SIGN]: 0,
+      [AnalyticsSource.SESSION]: 0,
       total: 0,
     };
   }

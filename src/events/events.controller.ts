@@ -22,17 +22,19 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 import { CreateEventDto } from './dto/create-event.dto';
-import { UpdateEventDto } from './dto/update-event.dto';
+import { BulkPhrasesDto } from './dto/event-phases/bulk-phrases.dto';
+import { PhraseByEventTokenDto } from './dto/event-phases/phrase-by-event-token.dto';
 import { EventResponseDto } from './dto/event-response.dto';
-import { BulkPhrasesDto } from './dto/event-phases/bulk-phrases.dto'
-import { EventsService } from './events.service';
-import { EventTypeService } from './event-type.service';
+import { EventTypeDto } from './dto/event-types/event-types.dto';
+import { ServiceTypeDto } from './dto/service-types/service-types.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 import { EventPhrasesService } from './event-phrases.service';
 import { EventThemeService } from './event-theme.service';
-import { Public } from '../auth/decorators/public.decorator';
-import { EventTypeDto } from './dto/event-types/event-types.dto';
-import { PhraseByEventTokenDto } from './dto/event-phases/phrase-by-event-token.dto';
+import { EventTypeService } from './event-type.service';
+import { EventsService } from './events.service';
+import { ServiceTypeService } from './service-type.service';
 
 @Controller('events')
 @ApiTags('events')
@@ -41,6 +43,7 @@ export class EventsController {
   constructor(
     private readonly eventsService: EventsService,
     private readonly eventTypeService: EventTypeService,
+    private readonly serviceTypeService: ServiceTypeService,
     private readonly eventPhraseService: EventPhrasesService,
     private readonly eventTheme: EventThemeService,
   ) { }
@@ -131,6 +134,17 @@ export class EventsController {
   })
   listEventTypes() {
     return this.eventTypeService.listEventTypes();
+  }
+
+  @Get('service-types')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'List all service types' })
+  @ApiOkResponse({
+    description: 'Service types list',
+    type: [ServiceTypeDto],
+  })
+  listServiceTypes() {
+    return this.serviceTypeService.listServiceTypes();
   }
 
   @Get('phrases/:token')

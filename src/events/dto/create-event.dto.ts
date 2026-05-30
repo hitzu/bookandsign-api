@@ -3,7 +3,6 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsDate,
-  IsEnum,
   IsInt,
   IsNumber,
   IsOptional,
@@ -20,22 +19,18 @@ export class CreateEventDto {
   @IsNumber()
   contractId!: number;
 
-  @ApiProperty({ type: String, description: 'Event name' })
-  @IsString()
-  name!: string;
-
   @ApiProperty({ type: String, description: 'Internal key (unique)' })
   @IsString()
   key!: string;
 
-  @ApiPropertyOptional({ type: String, description: 'Event description' })
-  @IsString()
-  @IsOptional()
-  description?: string;
-
   @ApiProperty({ type: Number, description: 'Event type id' })
   @IsNumber()
   eventTypeId!: number;
+
+  @ApiPropertyOptional({ type: Number, description: 'Service type id', nullable: true })
+  @IsNumber()
+  @IsOptional()
+  serviceTypeId?: number | null;
 
   @ApiPropertyOptional({
     type: String,
@@ -108,20 +103,10 @@ export class CreateEventDto {
   @IsOptional()
   photoCount?: number = 2;
 
-  @ApiProperty({ type: Number, description: 'Event type id' })
+  @ApiProperty({ type: Number, description: 'Event theme id' })
   @IsOptional()
   @IsNumber()
   eventThemeId?: number;
-
-  @ApiPropertyOptional({
-    type: String,
-    enum: ['photobooth', 'red_carpet'],
-    description: 'Service type — routes printer and print flow in the Swift client',
-    nullable: true,
-  })
-  @IsString()
-  @IsOptional()
-  serviceType?: string | null;
 
   @ApiPropertyOptional({
     type: [PrintTemplateItemDto],

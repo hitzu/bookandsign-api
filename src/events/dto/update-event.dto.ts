@@ -1,20 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsDate, IsInt, IsOptional, IsString, IsUrl, IsNumber, Max, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsDate, IsInt, IsNumber, IsOptional, IsString, IsUrl, Max, Min, ValidateNested } from 'class-validator';
 import { PrintTemplateItemDto } from './print-template-item.dto';
 
-
 export class UpdateEventDto {
-  @ApiPropertyOptional({ type: String, description: 'Event name' })
-  @IsString()
-  @IsOptional()
-  name?: string;
-
-  @ApiPropertyOptional({ type: String, description: 'Event description' })
-  @IsString()
-  @IsOptional()
-  description?: string;
-
   @ApiPropertyOptional({
     type: Number,
     description: 'Event type id',
@@ -22,6 +11,15 @@ export class UpdateEventDto {
   @IsNumber()
   @IsOptional()
   eventTypeId?: number;
+
+  @ApiPropertyOptional({
+    type: Number,
+    description: 'Service type id',
+    nullable: true,
+  })
+  @IsNumber()
+  @IsOptional()
+  serviceTypeId?: number | null;
 
   @ApiPropertyOptional({
     type: String,
@@ -109,16 +107,6 @@ export class UpdateEventDto {
   @IsString()
   @IsOptional()
   decorativeIcon?: string | null;
-
-  @ApiPropertyOptional({
-    type: String,
-    enum: ['photobooth', 'red_carpet'],
-    description: 'Service type — routes printer and print flow in the Swift client',
-    nullable: true,
-  })
-  @IsString()
-  @IsOptional()
-  serviceType?: string | null;
 
   @ApiPropertyOptional({
     type: [PrintTemplateItemDto],

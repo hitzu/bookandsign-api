@@ -12,6 +12,7 @@ import { EventFactory } from '../../test/factories/events/event.factory';
 import { Event } from './entities/event.entity';
 import { EventsService } from './events.service';
 import { EventTypeFactory } from '../../test/factories/events/event-type.factory'
+import { ServiceTypeFactory } from '../../test/factories/events/service-type.factory';
 import { PinoLogger } from 'nestjs-pino';
 
 describe('EventsService', () => {
@@ -56,9 +57,7 @@ describe('EventsService', () => {
       const result = await service.create({
         eventTypeId: eventType.id,
         contractId: contract.id,
-        name: 'Test Event',
         key: 'unique-key-001',
-        description: 'Test description',
       });
 
       expect(result.id).toBeDefined();
@@ -66,7 +65,6 @@ describe('EventsService', () => {
       expect(result.token).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
       );
-      expect(result.name).toBe('Test Event');
       expect(result.key).toBe('unique-key-001');
       expect(result.contractId).toBe(contract.id);
     });
@@ -80,7 +78,6 @@ describe('EventsService', () => {
         service.create({
           eventTypeId: eventType.id,
           contractId: event.contractId,
-          name: 'Another Event',
           key: 'duplicate-key',
         }),
       ).rejects.toEqual(
@@ -97,7 +94,6 @@ describe('EventsService', () => {
         service.create({
           eventTypeId: eventType.id,
           contractId: existing.contractId,
-          name: 'Second Event',
           key: 'another-unique-key',
         }),
       ).rejects.toEqual(
@@ -114,12 +110,14 @@ describe('EventsService', () => {
       const serviceEndsAt = new Date('2026-06-01T23:00:00.000Z');
       const eventTypeFactory = new EventTypeFactory(TestDataSource)
       const eventType = await eventTypeFactory.create()
+      const serviceTypeFactory = new ServiceTypeFactory(TestDataSource);
+      const serviceType = await serviceTypeFactory.create();
 
       const result = await service.create({
         contractId: contract.id,
-        name: 'Wedding',
         key: 'unique-key-metadata-001',
         eventTypeId: eventType.id,
+        serviceTypeId: serviceType.id,
         honoreesNames: 'Ana y Luis',
         albumPhrase: 'Para siempre',
         venueName: 'Salón Jardín',
@@ -130,6 +128,7 @@ describe('EventsService', () => {
       });
 
       expect(result.eventTypeId).toBe(eventType.id);
+      expect(result.serviceTypeId).toBe(serviceType.id);
       expect(result.honoreesNames).toBe('Ana y Luis');
       expect(result.albumPhrase).toBe('Para siempre');
       expect(result.venueName).toBe('Salón Jardín');
@@ -139,29 +138,27 @@ describe('EventsService', () => {
       expect(result.serviceEndsAt?.getTime()).toBe(serviceEndsAt.getTime());
     });
 
-    it('should persist serviceType and printTemplates', async () => {
-      // Arrange
+    it('should persist serviceTypeId and printTemplates', async () => {
       const contractFactory = new ContractFactory(TestDataSource);
       const contract = await contractFactory.create();
       const eventTypeFactory = new EventTypeFactory(TestDataSource);
       const eventType = await eventTypeFactory.create();
+      const serviceTypeFactory = new ServiceTypeFactory(TestDataSource);
+      const serviceType = await serviceTypeFactory.create();
       const printTemplates = [
         { type: 'polaroid', template: 'polaroid_2', icon: 'cake' },
         { type: 'keychain', template: 'keychain_2', icon: 'cake' },
       ];
 
-      // Act
       const result = await service.create({
         contractId: contract.id,
-        name: 'Multi-product Event',
         key: 'multi-product-001',
         eventTypeId: eventType.id,
-        serviceType: 'photobooth',
+        serviceTypeId: serviceType.id,
         printTemplates,
       });
 
-      // Assert
-      expect(result.serviceType).toBe('photobooth');
+      expect(result.serviceTypeId).toBe(serviceType.id);
       expect(result.printTemplates).toEqual(printTemplates);
     });
 
@@ -175,7 +172,6 @@ describe('EventsService', () => {
         service.create({
           eventTypeId: eventType.id,
           contractId: contract.id,
-          name: 'Bad window',
           key: 'unique-key-bad-window',
           serviceStartsAt: new Date('2026-06-01T18:00:00.000Z'),
           serviceEndsAt: new Date('2026-06-01T12:00:00.000Z'),
@@ -192,7 +188,7 @@ describe('EventsService', () => {
 
       expect(result.id).toBe(event.id);
       expect(result.token).toBe(event.token);
-      expect(result.name).toBe(event.name);
+      expect(result.key).toBe(event.key);
     });
 
     it('should throw NotFoundException when token does not exist', async () => {
@@ -228,7 +224,6 @@ describe('EventsService', () => {
       const result = await service.list();
 
       expect(result[0]).toHaveProperty('id');
-      expect(result[0]).toHaveProperty('name');
       expect(result[0]).toHaveProperty('key');
       expect(result[0]).toHaveProperty('token');
       expect(result[0]).toHaveProperty('createdAt');
@@ -236,22 +231,25 @@ describe('EventsService', () => {
   });
 
   describe('update', () => {
-    it('should update event name and return updated response', async () => {
+    it('should update venue and return updated response', async () => {
       const event = await eventFactory.create({ key: 'update-name-001' });
 
-      const result = await service.update(event.id, { name: 'Updated Name' });
+      const result = await service.update(event.id, { venueName: 'Updated Venue' });
 
       expect(result.id).toBe(event.id);
-      expect(result.name).toBe('Updated Name');
+      expect(result.venueName).toBe('Updated Venue');
     });
 
     it('should update multiple optional fields', async () => {
       const event = await eventFactory.create({ key: 'update-multi-001' });
       const eventTypeFactory = new EventTypeFactory(TestDataSource)
       const eventType = await eventTypeFactory.create()
+      const serviceTypeFactory = new ServiceTypeFactory(TestDataSource);
+      const serviceType = await serviceTypeFactory.create();
 
       const result = await service.update(event.id, {
         eventTypeId: eventType.id,
+        serviceTypeId: serviceType.id,
         honoreesNames: 'Sofía',
         albumPhrase: 'Mis XV',
         venueName: 'Salón Real',
@@ -259,6 +257,7 @@ describe('EventsService', () => {
       });
 
       expect(result.eventTypeId).toBe(eventType.id);
+      expect(result.serviceTypeId).toBe(serviceType.id);
       expect(result.honoreesNames).toBe('Sofía');
       expect(result.albumPhrase).toBe('Mis XV');
       expect(result.venueName).toBe('Salón Real');
@@ -281,7 +280,7 @@ describe('EventsService', () => {
 
     it('should throw NotFoundException when event does not exist', async () => {
       await expect(
-        service.update(999999, { name: 'Does not matter' }),
+        service.update(999999, { venueName: 'Does not matter' }),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
@@ -310,46 +309,41 @@ describe('EventsService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('should update serviceType and printTemplates', async () => {
-      // Arrange
+    it('should update serviceTypeId and printTemplates', async () => {
       const event = await eventFactory.create({ key: 'update-multi-product-001' });
+      const serviceTypeFactory = new ServiceTypeFactory(TestDataSource);
+      const serviceType = await serviceTypeFactory.create();
       const printTemplates = [
         { type: 'polaroid', template: 'polaroid_2', icon: 'rings' },
       ];
 
-      // Act
       const result = await service.update(event.id, {
-        serviceType: 'red_carpet',
+        serviceTypeId: serviceType.id,
         printTemplates,
       });
 
-      // Assert
-      expect(result.serviceType).toBe('red_carpet');
+      expect(result.serviceTypeId).toBe(serviceType.id);
       expect(result.printTemplates).toEqual(printTemplates);
     });
 
     it('should allow setting printTemplates to null', async () => {
-      // Arrange
       const event = await eventFactory.create({ key: 'update-null-templates-001' });
 
-      // Act
       const result = await service.update(event.id, { printTemplates: null });
 
-      // Assert
       expect(result.printTemplates).toBeNull();
     });
 
     it('should not modify fields that are not in the dto', async () => {
       const event = await eventFactory.create({
         key: 'update-preserve-001',
-        name: 'Original Name',
-        description: 'Original Description',
+        venueName: 'Original Venue',
       });
 
-      const result = await service.update(event.id, { name: 'New Name' });
+      const result = await service.update(event.id, { honoreesNames: 'New Honoree' });
 
-      expect(result.name).toBe('New Name');
-      expect(result.description).toBe('Original Description');
+      expect(result.honoreesNames).toBe('New Honoree');
+      expect(result.venueName).toBe('Original Venue');
       expect(result.key).toBe('update-preserve-001');
     });
   });
@@ -362,7 +356,6 @@ describe('EventsService', () => {
 
       expect(result.id).toBe(event.id);
       expect(result.key).toBe('wedding-2025-001');
-      expect(result.name).toBe(event.name);
       expect(result.token).toBe(event.token);
     });
 

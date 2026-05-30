@@ -4,9 +4,9 @@ import { faker } from '@faker-js/faker';
 import type { DataSource } from 'typeorm';
 
 import { Event } from '../../../src/events/entities/event.entity';
+import { EventType } from '../../../src/events/entities/event-type.entity';
+import { ServiceType } from '../../../src/events/entities/service-type.entity';
 import { ContractFactory } from '../contracts/contract.factory';
-import { EventTypeFactory } from '../events/event-type.factory';
-import { EventType } from 'src/events/entities/event-type.entity';
 
 export class EventFactory extends Factory<Event> {
   protected entity = Event;
@@ -25,12 +25,11 @@ export class EventFactory extends Factory<Event> {
     );
 
     return {
-      name: faker.lorem.words(3),
       key: `event-${faker.string.alphanumeric(12)}`,
-      description: faker.lorem.sentence(),
       token: faker.string.uuid(),
       contractId: 0,
       eventTypeId: null,
+      serviceTypeId: null,
       honoreesNames: `${faker.person.firstName()} y ${faker.person.firstName()}`,
       albumPhrase: faker.lorem.sentence(),
       venueName: `${faker.company.name()} — salón`,
@@ -38,7 +37,6 @@ export class EventFactory extends Factory<Event> {
       serviceStartsAt,
       serviceEndsAt,
       delegateName: faker.person.fullName(),
-      serviceType: null,
       printTemplates: null,
     };
   }
@@ -55,6 +53,11 @@ export class EventFactory extends Factory<Event> {
 
   async createForEventType(eventType: EventType): Promise<Event> {
     const event = await this.make({ eventTypeId: eventType.id });
+    return this.dataSource.getRepository(Event).save(event);
+  }
+
+  async createForServiceType(serviceType: ServiceType): Promise<Event> {
+    const event = await this.make({ serviceTypeId: serviceType.id });
     return this.dataSource.getRepository(Event).save(event);
   }
 }
