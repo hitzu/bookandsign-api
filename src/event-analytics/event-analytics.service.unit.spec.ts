@@ -122,6 +122,7 @@ describe('EventAnalyticsService (unit)', () => {
           photobooth: 0,
           direct: 1,
           sign: 0,
+          session: 0,
           total: 3,
         },
         session_opened: {
@@ -130,6 +131,7 @@ describe('EventAnalyticsService (unit)', () => {
           photobooth: 0,
           direct: 0,
           sign: 0,
+          session: 0,
           total: 3,
         },
       },
