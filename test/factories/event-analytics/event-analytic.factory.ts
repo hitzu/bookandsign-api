@@ -3,10 +3,10 @@ import { Factory } from '@jorgebodega/typeorm-factory';
 import { faker } from '@faker-js/faker';
 import type { DataSource } from 'typeorm';
 
-import { EventAnalytic } from '../../../src/event-analytics/entities/event-analytic.entity';
+import { EventAnalytic } from '../../../src/events/entities/event-analytic.entity';
 import { EventFactory } from '../events/event.factory';
-import { AnalyticsAction } from '../../../src/event-analytics/enums/analytics-action.enum';
-import { AnalyticsSource } from '../../../src/event-analytics/enums/analytics-source.enum';
+import { AnalyticsAction } from '../../../src/events/analytics/enums/analytics-action.enum';
+import { AnalyticsSource } from '../../../src/events/analytics/enums/analytics-source.enum';
 
 export class EventAnalyticFactory extends Factory<EventAnalytic> {
   protected entity = EventAnalytic;

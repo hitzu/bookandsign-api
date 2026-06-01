@@ -1,7 +1,7 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { Event } from '../../events/entities/event.entity';
+import { Event } from './event.entity';
 import { BaseTimeEntity } from '../../common/entities/base-time.entity';
-import { AnalyticsSource } from '../enums/analytics-source.enum';
+import { AnalyticsSource } from '../analytics/enums/analytics-source.enum';
 
 @Entity('event_analytics')
 @Index('idx_ea_event_action_source', ['eventToken', 'action', 'source'])

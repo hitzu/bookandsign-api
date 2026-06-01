@@ -45,7 +45,7 @@ describe('EventAnalyticsController', () => {
       const dto: TrackActionDto = {
         action: AnalyticsAction.GALLERY_OPENED,
         eventToken: 'a1b2c3d4-0000-0000-0000-000000000000',
-        source: AnalyticsSource.QR,
+        source: AnalyticsSource.QR_FIESTA,
       };
 
       await controller.track(dto, 'Mozilla/5.0 Test');
@@ -95,8 +95,28 @@ describe('EventAnalyticsController', () => {
       const expected = {
         eventToken: 'token-123',
         actions: {
-          gallery_opened: { qr: 1, gallery: 0, direct: 0, total: 1 },
-          session_opened: { qr: 0, gallery: 1, direct: 0, total: 1 },
+          gallery_opened: {
+            qr_fiesta: 1,
+            qr_inspiracion: 0,
+            qr_session: 0,
+            qr_printed: 0,
+            fiesta_to_session: 0,
+            session_to_fiesta: 0,
+            photobooth: 0,
+            'admin-page': 0,
+            total: 1,
+          },
+          session_opened: {
+            qr_fiesta: 0,
+            qr_inspiracion: 0,
+            qr_session: 0,
+            qr_printed: 0,
+            fiesta_to_session: 1,
+            session_to_fiesta: 0,
+            photobooth: 0,
+            'admin-page': 0,
+            total: 1,
+          },
         },
       };
       getSourceSummaryMock.mockResolvedValue(expected);
