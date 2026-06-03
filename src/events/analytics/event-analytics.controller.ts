@@ -9,7 +9,7 @@ import {
   HttpCode,
   ValidationPipe,
 } from '@nestjs/common';
-import { Public } from '../auth/decorators/public.decorator';
+import { Public } from '../../auth/decorators/public.decorator';
 import { EventAnalyticsService } from './event-analytics.service';
 import { TrackActionDto } from './dto/track-action.dto';
 
@@ -46,8 +46,8 @@ export class EventAnalyticsController {
     return this.analyticsService.getSourceSummary(eventToken);
   }
 
-  @Get(':eventToken/dashboard')
-  async dashboard(@Param('eventToken') eventToken: string) {
-    return this.analyticsService.getDashboard(eventToken);
+  @Get(':eventToken/expired')
+  async expired(@Param('eventToken') eventToken: string) {
+    return this.analyticsService.getExpired(eventToken);
   }
 }

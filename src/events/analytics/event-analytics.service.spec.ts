@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { AppDataSource as TestDataSource } from '../config/database/data-source';
-import { EventFactory } from '../../test/factories/events/event.factory';
-import { EventAnalyticFactory } from '../../test/factories/event-analytics/event-analytic.factory';
-import { EventAnalytic } from './entities/event-analytic.entity';
+import { faker } from '@faker-js/faker';
+import { AppDataSource as TestDataSource } from '../../config/database/data-source';
+import { EventFactory } from '../../../test/factories/events/event.factory';
+import { EventAnalyticFactory } from '../../../test/factories/event-analytics/event-analytic.factory';
+import { EventAnalytic } from '../entities/event-analytic.entity';
 import { EventAnalyticsService } from './event-analytics.service';
 import { AnalyticsAction } from './enums/analytics-action.enum';
 import { AnalyticsSource } from './enums/analytics-source.enum';
@@ -37,7 +38,7 @@ describe('EventAnalyticsService', () => {
         {
           action: AnalyticsAction.GALLERY_OPENED,
           eventToken: event.token,
-          source: AnalyticsSource.QR,
+          source: AnalyticsSource.QR_FIESTA,
         },
         'Mozilla/5.0 Test',
       );
@@ -47,7 +48,7 @@ describe('EventAnalyticsService', () => {
 
       expect(rows).toHaveLength(1);
       expect(rows[0].action).toBe(AnalyticsAction.GALLERY_OPENED);
-      expect(rows[0].source).toBe(AnalyticsSource.QR);
+      expect(rows[0].source).toBe(AnalyticsSource.QR_FIESTA);
       expect(rows[0].sessionId).toBeNull();
       expect(rows[0].userAgent).toBe('Mozilla/5.0 Test');
     });
@@ -60,7 +61,7 @@ describe('EventAnalyticsService', () => {
           {
             action: AnalyticsAction.SESSION_OPENED,
             eventToken: event.token,
-            source: AnalyticsSource.GALLERY,
+            source: AnalyticsSource.FIESTA_TO_SESSION,
           },
           'Mozilla/5.0 Test',
         ),
@@ -338,16 +339,16 @@ describe('EventAnalyticsService', () => {
       const event = await eventFactory.create();
 
       await analyticFactory.createForEvent(event.token, AnalyticsAction.GALLERY_OPENED, {
-        source: AnalyticsSource.QR,
+        source: AnalyticsSource.QR_FIESTA,
       });
       await analyticFactory.createForEvent(event.token, AnalyticsAction.GALLERY_OPENED, {
-        source: AnalyticsSource.QR,
+        source: AnalyticsSource.QR_FIESTA,
       });
       await analyticFactory.createForEvent(event.token, AnalyticsAction.GALLERY_OPENED, {
-        source: AnalyticsSource.DIRECT,
+        source: AnalyticsSource.SESSION_TO_FIESTA,
       });
       await analyticFactory.createForEvent(event.token, AnalyticsAction.SESSION_OPENED, {
-        source: AnalyticsSource.GALLERY,
+        source: AnalyticsSource.FIESTA_TO_SESSION,
       });
 
       const result = await service.getSourceSummary(event.token);
@@ -356,25 +357,119 @@ describe('EventAnalyticsService', () => {
         eventToken: event.token,
         actions: {
           gallery_opened: {
-            qr: 2,
-            gallery: 0,
+            qr_fiesta: 2,
+            qr_inspiracion: 0,
+            qr_session: 0,
+            qr_printed: 0,
+            fiesta_to_session: 0,
+            session_to_fiesta: 1,
             photobooth: 0,
-            direct: 1,
-            sign: 0,
-            session: 0,
+            admin_page: 0,
             total: 3,
           },
           session_opened: {
-            qr: 0,
-            gallery: 1,
+            qr_fiesta: 0,
+            qr_inspiracion: 0,
+            qr_session: 0,
+            qr_printed: 0,
+            fiesta_to_session: 1,
+            session_to_fiesta: 0,
             photobooth: 0,
-            direct: 0,
-            sign: 0,
-            session: 0,
+            admin_page: 0,
             total: 1,
           },
         },
       });
+    });
+  });
+
+  describe('getExpired', () => {
+    it('should return empty surfaces array when no expired events exist', async () => {
+      // Arrange
+      const event = await eventFactory.create();
+
+      // Act
+      const result = await service.getExpired(event.token);
+
+      // Assert
+      expect(result.eventToken).toBe(event.token);
+      expect(result.surfaces).toEqual([]);
+    });
+
+    it('should count expired events grouped by surface', async () => {
+      // Arrange
+      const event = await eventFactory.create();
+      const sessionId = faker.string.uuid();
+
+      await analyticFactory.createForEvent(event.token, AnalyticsAction.SESSION_EXPIRED_VIEWED, {
+        surface: 'session_expired',
+        sessionId,
+      });
+      await analyticFactory.createForEvent(event.token, AnalyticsAction.SESSION_EXPIRED_MESSAGE_CLICKED, {
+        surface: 'session_expired',
+        sessionId,
+      });
+      await analyticFactory.createForEvent(event.token, AnalyticsAction.SESSION_EXPIRED_RECOVERY_REQUESTED, {
+        surface: 'session_expired',
+        sessionId,
+      });
+
+      // Act
+      const result = await service.getExpired(event.token);
+
+      // Assert
+      expect(result.surfaces).toHaveLength(1);
+      expect(result.surfaces[0]).toEqual({
+        surface: 'session_expired',
+        lateArrivals: 1,
+        messaged: 1,
+        recoveryRequested: 1,
+      });
+    });
+
+    it('should separate session_expired and fiesta_expired surfaces', async () => {
+      // Arrange
+      const event = await eventFactory.create();
+      const sessionId = faker.string.uuid();
+
+      await analyticFactory.createForEvent(event.token, AnalyticsAction.SESSION_EXPIRED_VIEWED, {
+        surface: 'session_expired',
+        sessionId,
+      });
+      await analyticFactory.createForEvent(event.token, AnalyticsAction.FIESTA_EXPIRED_VIEWED, {
+        surface: 'fiesta_expired',
+        sessionId: null,
+      });
+
+      // Act
+      const result = await service.getExpired(event.token);
+
+      // Assert
+      expect(result.surfaces).toHaveLength(2);
+      const sessionSurface = result.surfaces.find((s) => s.surface === 'session_expired');
+      const fiestaSurface = result.surfaces.find((s) => s.surface === 'fiesta_expired');
+      expect(sessionSurface?.lateArrivals).toBe(1);
+      expect(fiestaSurface?.lateArrivals).toBe(1);
+    });
+
+    it('should not include events from other events in the count', async () => {
+      // Arrange
+      const event1 = await eventFactory.create();
+      const event2 = await eventFactory.create();
+
+      await analyticFactory.createForEvent(event1.token, AnalyticsAction.SESSION_EXPIRED_VIEWED, {
+        surface: 'session_expired',
+      });
+      await analyticFactory.createForEvent(event2.token, AnalyticsAction.SESSION_EXPIRED_VIEWED, {
+        surface: 'session_expired',
+      });
+
+      // Act
+      const result = await service.getExpired(event1.token);
+
+      // Assert
+      expect(result.surfaces).toHaveLength(1);
+      expect(result.surfaces[0].lateArrivals).toBe(1);
     });
   });
 });

@@ -1,6 +1,6 @@
 import type { Repository } from 'typeorm';
 
-import type { EventAnalytic } from './entities/event-analytic.entity';
+import type { EventAnalytic } from '../entities/event-analytic.entity';
 import { EventAnalyticsService } from './event-analytics.service';
 import { AnalyticsAction } from './enums/analytics-action.enum';
 import { AnalyticsSource } from './enums/analytics-source.enum';
@@ -34,7 +34,7 @@ describe('EventAnalyticsService (unit)', () => {
       {
         action: AnalyticsAction.GALLERY_OPENED,
         eventToken: 'a1b2c3d4-0000-0000-0000-000000000000',
-        source: AnalyticsSource.QR,
+        source: AnalyticsSource.QR_FIESTA,
       },
       'Mozilla/5.0 Test',
     );
@@ -49,7 +49,7 @@ describe('EventAnalyticsService (unit)', () => {
       personCount: null,
       photoCount: null,
       sessionId: null,
-      source: AnalyticsSource.QR,
+      source: AnalyticsSource.QR_FIESTA,
       surface: null,
       userAgent: 'Mozilla/5.0 Test',
       variant: null,
@@ -74,7 +74,7 @@ describe('EventAnalyticsService (unit)', () => {
         {
           action: AnalyticsAction.SESSION_OPENED,
           eventToken: 'a1b2c3d4-0000-0000-0000-000000000000',
-          source: AnalyticsSource.GALLERY,
+          source: AnalyticsSource.FIESTA_TO_SESSION,
         },
         'Mozilla/5.0 Test',
       ),
@@ -92,17 +92,17 @@ describe('EventAnalyticsService (unit)', () => {
       getRawMany: jest.fn().mockResolvedValue([
         {
           action: AnalyticsAction.GALLERY_OPENED,
-          source: AnalyticsSource.QR,
+          source: AnalyticsSource.QR_FIESTA,
           count: '2',
         },
         {
           action: AnalyticsAction.GALLERY_OPENED,
-          source: AnalyticsSource.DIRECT,
+          source: AnalyticsSource.SESSION_TO_FIESTA,
           count: '1',
         },
         {
           action: AnalyticsAction.SESSION_OPENED,
-          source: AnalyticsSource.GALLERY,
+          source: AnalyticsSource.FIESTA_TO_SESSION,
           count: '3',
         },
       ]),
@@ -117,24 +117,78 @@ describe('EventAnalyticsService (unit)', () => {
       eventToken: 'a1b2c3d4-0000-0000-0000-000000000000',
       actions: {
         gallery_opened: {
-          qr: 2,
-          gallery: 0,
+          qr_fiesta: 2,
+          qr_inspiracion: 0,
+          qr_session: 0,
+          qr_printed: 0,
+          fiesta_to_session: 0,
+          session_to_fiesta: 1,
           photobooth: 0,
-          direct: 1,
-          sign: 0,
-          session: 0,
+          admin_page: 0,
           total: 3,
         },
         session_opened: {
-          qr: 0,
-          gallery: 3,
+          qr_fiesta: 0,
+          qr_inspiracion: 0,
+          qr_session: 0,
+          qr_printed: 0,
+          fiesta_to_session: 3,
+          session_to_fiesta: 0,
           photobooth: 0,
-          direct: 0,
-          sign: 0,
-          session: 0,
+          admin_page: 0,
           total: 3,
         },
       },
     });
+  });
+
+  it('requires sessionId for session_expired_viewed', async () => {
+    await expect(
+      service.track(
+        {
+          action: AnalyticsAction.SESSION_EXPIRED_VIEWED,
+          eventToken: 'a1b2c3d4-0000-0000-0000-000000000000',
+        },
+        'Mozilla/5.0 Test',
+      ),
+    ).rejects.toThrow('sessionId is required for this event');
+  });
+
+  it('requires sessionId for session_expired_message_clicked', async () => {
+    await expect(
+      service.track(
+        {
+          action: AnalyticsAction.SESSION_EXPIRED_MESSAGE_CLICKED,
+          eventToken: 'a1b2c3d4-0000-0000-0000-000000000000',
+        },
+        'Mozilla/5.0 Test',
+      ),
+    ).rejects.toThrow('sessionId is required for this event');
+  });
+
+  it('requires sessionId for session_expired_recovery_requested', async () => {
+    await expect(
+      service.track(
+        {
+          action: AnalyticsAction.SESSION_EXPIRED_RECOVERY_REQUESTED,
+          eventToken: 'a1b2c3d4-0000-0000-0000-000000000000',
+        },
+        'Mozilla/5.0 Test',
+      ),
+    ).rejects.toThrow('sessionId is required for this event');
+  });
+
+  it('accepts fiesta_expired_viewed with null sessionId', async () => {
+    repo.save.mockResolvedValue(undefined);
+
+    await expect(
+      service.track(
+        {
+          action: AnalyticsAction.FIESTA_EXPIRED_VIEWED,
+          eventToken: 'a1b2c3d4-0000-0000-0000-000000000000',
+        },
+        'Mozilla/5.0 Test',
+      ),
+    ).resolves.not.toThrow();
   });
 });
