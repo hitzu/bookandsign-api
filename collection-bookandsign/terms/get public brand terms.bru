@@ -1,0 +1,20 @@
+meta {
+  name: get public brand terms
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{base_url}}/terms/public/brand?brandId=1
+  body: json
+  auth: none
+}
+
+params:query {
+  brandId: 1
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

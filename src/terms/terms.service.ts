@@ -8,11 +8,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Term } from './entities/term.entity';
 import { PackageTerm } from './entities/package-term.entity';
+import { BrandTerm } from './entities/brand-term.entity';
 import { CreateTermDto } from './dto/create-term.dto';
 import { UpdateTermDto } from './dto/update-term.dto';
 import { AddPackageTermDto } from './dto/add-package-term.dto';
 import { RemovePackageTermDto } from './dto/remove-package-term.dto';
 import { BulkUpsertPackageTermsInput } from './dto/bulk-upsert-package-terms.dto';
+import { AddBrandTermDto } from './dto/add-brand-term.dto';
+import { RemoveBrandTermDto } from './dto/remove-brand-term.dto';
+import { BulkUpsertBrandTermsInput } from './dto/bulk-upsert-brand-terms.dto';
 import { FindAllTermsQueryDto } from './dto/find-all-terms-query.dto';
 import { TERM_SCOPE } from './types/term-scope.types';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
@@ -28,10 +32,18 @@ export class TermsService {
     private termsRepository: Repository<Term>,
     @InjectRepository(PackageTerm)
     private packageTermsRepository: Repository<PackageTerm>,
+    @InjectRepository(BrandTerm)
+    private brandTermsRepository: Repository<BrandTerm>,
   ) {}
 
   private generateCode(scope: TERM_SCOPE, title: string): string {
-    const prefix = scope === TERM_SCOPE.PACKAGE ? 'P-' : 'G-';
+    const prefixByScope: Record<TERM_SCOPE, string> = {
+      [TERM_SCOPE.GLOBAL]: 'G-',
+      [TERM_SCOPE.PACKAGE]: 'P-',
+      [TERM_SCOPE.PRODUCT]: 'P-',
+      [TERM_SCOPE.BRAND]: 'B-',
+    };
+    const prefix = prefixByScope[scope];
 
     const normalizedTitle = title
       .normalize('NFD')
@@ -112,6 +124,11 @@ export class TermsService {
         queryBuilder.leftJoinAndSelect('packageTerm.package', 'package');
       }
 
+      if (query.scope === TERM_SCOPE.BRAND) {
+        queryBuilder.leftJoinAndSelect('term.brandTerms', 'brandTerm');
+        queryBuilder.leftJoinAndSelect('brandTerm.brand', 'brand');
+      }
+
       const terms = await queryBuilder.getMany();
       return plainToInstance(TermDto, terms, { excludeExtraneousValues: true });
     } catch (error) {
@@ -125,7 +142,12 @@ export class TermsService {
       this.logger.log({ id }, 'Finding term');
       const term = await this.termsRepository.findOne({
         where: { id },
-        relations: ['packageTerms', 'packageTerms.package'],
+        relations: [
+          'packageTerms',
+          'packageTerms.package',
+          'brandTerms',
+          'brandTerms.brand',
+        ],
       });
       if (!term) {
         throw new NotFoundException(EXCEPTION_RESPONSE.TERM_NOT_FOUND);
@@ -198,7 +220,9 @@ export class TermsService {
     }
   }
 
-  async bulkUpsertPackageTerms(dto: BulkUpsertPackageTermsInput): Promise<void> {
+  async bulkUpsertPackageTerms(
+    dto: BulkUpsertPackageTermsInput,
+  ): Promise<void> {
     try {
       this.logger.log({ dto }, 'Bulk upserting package terms');
 
@@ -220,6 +244,63 @@ export class TermsService {
     }
   }
 
+  async addBrandTerm(dto: AddBrandTermDto): Promise<BrandTerm> {
+    try {
+      this.logger.log({ dto }, 'Adding brand term');
+      const existing = await this.brandTermsRepository.findOne({
+        where: { brandId: dto.brandId, termId: dto.termId },
+      });
+
+      if (existing) {
+        return existing;
+      }
+
+      const brandTerm = this.brandTermsRepository.create(dto);
+      return await this.brandTermsRepository.save(brandTerm);
+    } catch (error) {
+      this.logger.error(error, 'Error adding brand term');
+      throw error;
+    }
+  }
+
+  async removeBrandTerm(dto: RemoveBrandTermDto): Promise<void> {
+    try {
+      this.logger.log({ dto }, 'Removing brand term');
+      const result = await this.brandTermsRepository.delete({
+        brandId: dto.brandId,
+        termId: dto.termId,
+      });
+      if (result.affected === 0) {
+        throw new NotFoundException(EXCEPTION_RESPONSE.BRAND_TERM_NOT_FOUND);
+      }
+    } catch (error) {
+      this.logger.error(error, 'Error removing brand term');
+      throw error;
+    }
+  }
+
+  async bulkUpsertBrandTerms(dto: BulkUpsertBrandTermsInput): Promise<void> {
+    try {
+      this.logger.log({ dto }, 'Bulk upserting brand terms');
+
+      await this.brandTermsRepository.delete({
+        termId: dto.termId,
+      });
+
+      const newBrandTerms = dto.brandIds.map((brandId) =>
+        this.brandTermsRepository.create({
+          brandId,
+          termId: dto.termId,
+        }),
+      );
+
+      await this.brandTermsRepository.save(newBrandTerms);
+    } catch (error) {
+      this.logger.error(error, 'Error bulk upserting brand terms');
+      throw error;
+    }
+  }
+
   async findByPackage(packageId: number): Promise<TermDto[]> {
     try {
       this.logger.log({ packageId }, 'Finding terms by package');
@@ -235,15 +316,32 @@ export class TermsService {
     }
   }
 
+  async findByBrand(brandId: number): Promise<TermDto[]> {
+    try {
+      this.logger.log({ brandId }, 'Finding terms by brand');
+      const terms = await this.termsRepository
+        .createQueryBuilder('term')
+        .innerJoin('term.brandTerms', 'brandTerm')
+        .where('brandTerm.brandId = :brandId', { brandId })
+        .getMany();
+      return plainToInstance(TermDto, terms, { excludeExtraneousValues: true });
+    } catch (error) {
+      this.logger.error(error, 'Error finding terms by brand');
+      throw error;
+    }
+  }
+
   async findAllPublic({
     scope,
     packageId,
+    brandId,
   }: {
     scope: TERM_SCOPE;
     packageId?: number;
+    brandId?: number;
   }): Promise<TermDto[]> {
     try {
-      this.logger.log({ scope, packageId }, 'Finding all terms');
+      this.logger.log({ scope, packageId, brandId }, 'Finding all terms');
 
       if (scope === TERM_SCOPE.PACKAGE) {
         if (!packageId) {
@@ -257,6 +355,27 @@ export class TermsService {
             'packageTerm',
             'packageTerm.packageId = :packageId',
             { packageId },
+          )
+          .where('term.scope = :scope', { scope })
+          .getMany();
+
+        return plainToInstance(TermDto, terms, {
+          excludeExtraneousValues: true,
+        });
+      }
+
+      if (scope === TERM_SCOPE.BRAND) {
+        if (!brandId) {
+          throw new BadRequestException(EXCEPTION_RESPONSE.BRAND_ID_REQUIRED);
+        }
+
+        const terms = await this.termsRepository
+          .createQueryBuilder('term')
+          .innerJoin(
+            'term.brandTerms',
+            'brandTerm',
+            'brandTerm.brandId = :brandId',
+            { brandId },
           )
           .where('term.scope = :scope', { scope })
           .getMany();

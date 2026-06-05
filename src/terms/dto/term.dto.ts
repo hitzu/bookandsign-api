@@ -8,6 +8,7 @@ import {
 } from 'class-validator';
 import { TERM_SCOPE } from '../types/term-scope.types';
 import { PackageTermDto } from './packageTerm.dto';
+import { BrandTermDto } from './brand-term.dto';
 
 export class TermDto {
   @Expose()
@@ -35,4 +36,10 @@ export class TermDto {
   @ValidateNested({ each: true })
   @Type(() => PackageTermDto)
   packageTerms!: PackageTermDto[];
+
+  @Expose()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BrandTermDto)
+  brandTerms!: BrandTermDto[];
 }

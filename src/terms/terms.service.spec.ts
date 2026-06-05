@@ -4,9 +4,11 @@ import { Repository } from 'typeorm';
 import { TermsService } from './terms.service';
 import { Term } from './entities/term.entity';
 import { PackageTerm } from './entities/package-term.entity';
+import { BrandTerm } from './entities/brand-term.entity';
 import { AppDataSource as TestDataSource } from '../config/database/data-source';
 import { TermFactory } from '../../test/factories/terms/term.factory';
 import { PackageTermFactory } from '../../test/factories/terms/package-term.factory';
+import { BrandTermFactory } from '../../test/factories/terms/brand-term.factory';
 import { PackageFactory } from '../../test/factories/packages/package.factory';
 import { BrandFactory } from '../../test/factories/brands/brands.factories';
 import { CreateTermDto } from './dto/create-term.dto';
@@ -14,6 +16,9 @@ import { UpdateTermDto } from './dto/update-term.dto';
 import { AddPackageTermDto } from './dto/add-package-term.dto';
 import { RemovePackageTermDto } from './dto/remove-package-term.dto';
 import { BulkUpsertPackageTermsInput } from './dto/bulk-upsert-package-terms.dto';
+import { AddBrandTermDto } from './dto/add-brand-term.dto';
+import { RemoveBrandTermDto } from './dto/remove-brand-term.dto';
+import { BulkUpsertBrandTermsInput } from './dto/bulk-upsert-brand-terms.dto';
 import { FindAllTermsQueryDto } from './dto/find-all-terms-query.dto';
 import { TERM_SCOPE } from './types/term-scope.types';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -23,8 +28,10 @@ describe('TermsService', () => {
   let service: TermsService;
   let termsRepository: Repository<Term>;
   let packageTermsRepository: Repository<PackageTerm>;
+  let brandTermsRepository: Repository<BrandTerm>;
   let termFactory: TermFactory;
   let packageTermFactory: PackageTermFactory;
+  let brandTermFactory: BrandTermFactory;
   let packageFactory: PackageFactory;
   let brandFactory: BrandFactory;
 
@@ -40,6 +47,10 @@ describe('TermsService', () => {
           provide: getRepositoryToken(PackageTerm),
           useValue: TestDataSource.getRepository(PackageTerm),
         },
+        {
+          provide: getRepositoryToken(BrandTerm),
+          useValue: TestDataSource.getRepository(BrandTerm),
+        },
       ],
     }).compile();
 
@@ -48,8 +59,12 @@ describe('TermsService', () => {
     packageTermsRepository = module.get<Repository<PackageTerm>>(
       getRepositoryToken(PackageTerm),
     );
+    brandTermsRepository = module.get<Repository<BrandTerm>>(
+      getRepositoryToken(BrandTerm),
+    );
     termFactory = new TermFactory(TestDataSource);
     packageTermFactory = new PackageTermFactory(TestDataSource);
+    brandTermFactory = new BrandTermFactory(TestDataSource);
     packageFactory = new PackageFactory(TestDataSource);
     brandFactory = new BrandFactory(TestDataSource);
   });
@@ -90,12 +105,26 @@ describe('TermsService', () => {
         expect(result.code).toBeDefined();
         expect(result.code).toMatch(/^P-/);
       });
+
+      it('should create a brand term with B- prefix', async () => {
+        const createTermDto: CreateTermDto = {
+          title: 'Brand Term',
+          content: 'Brand Content',
+          scope: TERM_SCOPE.BRAND,
+        };
+
+        const result = await service.create(createTermDto);
+
+        expect(result.scope).toBe(TERM_SCOPE.BRAND);
+        expect(result.code).toMatch(/^B-/);
+      });
     });
 
     describe('Equivalence Partitioning - Scope Values', () => {
       it.each([
         [TERM_SCOPE.GLOBAL, 'GLOBAL scope'],
         [TERM_SCOPE.PACKAGE, 'PACKAGE scope'],
+        [TERM_SCOPE.BRAND, 'BRAND scope'],
       ])('should create term with %s', async (scope, description) => {
         const createTermDto: CreateTermDto = {
           title: `Term ${description}`,
@@ -542,6 +571,147 @@ describe('TermsService', () => {
     });
   });
 
+  describe('addBrandTerm', () => {
+    describe('Happy Path', () => {
+      it('should create a brand-term association', async () => {
+        const brand = await brandFactory.create();
+        const term = await termFactory.create();
+
+        const dto: AddBrandTermDto = {
+          brandId: brand.id,
+          termId: term.id,
+        };
+
+        const result = await service.addBrandTerm(dto);
+
+        expect(result).toBeDefined();
+        expect(result.brandId).toBe(brand.id);
+        expect(result.termId).toBe(term.id);
+      });
+
+      it('should return existing association if it already exists', async () => {
+        const brand = await brandFactory.create();
+        const term = await termFactory.create();
+        const existing = await brandTermFactory.createForBrandAndTerm(
+          brand,
+          term,
+        );
+
+        const dto: AddBrandTermDto = {
+          brandId: brand.id,
+          termId: term.id,
+        };
+
+        const result = await service.addBrandTerm(dto);
+
+        expect(result.id).toBe(existing.id);
+      });
+    });
+  });
+
+  describe('removeBrandTerm', () => {
+    describe('Happy Path', () => {
+      it('should remove a brand-term association', async () => {
+        const brand = await brandFactory.create();
+        const term = await termFactory.create();
+        await brandTermFactory.createForBrandAndTerm(brand, term);
+
+        const dto: RemoveBrandTermDto = {
+          brandId: brand.id,
+          termId: term.id,
+        };
+
+        await service.removeBrandTerm(dto);
+
+        const association = await brandTermsRepository.findOne({
+          where: { brandId: brand.id, termId: term.id },
+        });
+        expect(association).toBeNull();
+      });
+    });
+
+    describe('Negative Testing', () => {
+      it('should throw NotFoundException when association does not exist', async () => {
+        const dto: RemoveBrandTermDto = {
+          brandId: 99999,
+          termId: 99999,
+        };
+
+        await expect(service.removeBrandTerm(dto)).rejects.toThrow(
+          NotFoundException,
+        );
+      });
+    });
+  });
+
+  describe('bulkUpsertBrandTerms', () => {
+    describe('Happy Path', () => {
+      it('should associate a term with multiple brands', async () => {
+        const brand1 = await brandFactory.create();
+        const brand2 = await brandFactory.create();
+        const term = await termFactory.create();
+
+        const dto: BulkUpsertBrandTermsInput = {
+          termId: term.id,
+          brandIds: [brand1.id, brand2.id],
+        };
+
+        await service.bulkUpsertBrandTerms(dto);
+
+        const associations = await brandTermsRepository.find({
+          where: { termId: term.id },
+        });
+        expect(associations.length).toBe(2);
+        const brandIds = associations.map((bt) => bt.brandId);
+        expect(brandIds).toContain(brand1.id);
+        expect(brandIds).toContain(brand2.id);
+      });
+
+      it('should replace existing associations for a term', async () => {
+        const brand1 = await brandFactory.create();
+        const brand2 = await brandFactory.create();
+        const brand3 = await brandFactory.create();
+        const term = await termFactory.create();
+        await brandTermFactory.createForBrandAndTerm(brand1, term);
+        await brandTermFactory.createForBrandAndTerm(brand2, term);
+
+        const dto: BulkUpsertBrandTermsInput = {
+          termId: term.id,
+          brandIds: [brand2.id, brand3.id],
+        };
+
+        await service.bulkUpsertBrandTerms(dto);
+
+        const associations = await brandTermsRepository.find({
+          where: { termId: term.id },
+        });
+        expect(associations.length).toBe(2);
+        const brandIds = associations.map((bt) => bt.brandId);
+        expect(brandIds).toContain(brand2.id);
+        expect(brandIds).toContain(brand3.id);
+        expect(brandIds).not.toContain(brand1.id);
+      });
+
+      it('should remove all associations when brandIds is empty', async () => {
+        const brand = await brandFactory.create();
+        const term = await termFactory.create();
+        await brandTermFactory.createForBrandAndTerm(brand, term);
+
+        const dto: BulkUpsertBrandTermsInput = {
+          termId: term.id,
+          brandIds: [],
+        };
+
+        await service.bulkUpsertBrandTerms(dto);
+
+        const associations = await brandTermsRepository.find({
+          where: { termId: term.id },
+        });
+        expect(associations.length).toBe(0);
+      });
+    });
+  });
+
   describe('findAllPublic', () => {
     describe('GLOBAL scope', () => {
       it('should return global terms', async () => {
@@ -605,6 +775,47 @@ describe('TermsService', () => {
         expect(resultIds).not.toContain(termOtherPackage.id);
       });
     });
+
+    describe('BRAND scope', () => {
+      it('should require brandId when scope is brand', async () => {
+        await expect(
+          service.findAllPublic({ scope: TERM_SCOPE.BRAND }),
+        ).rejects.toThrow(BadRequestException);
+
+        await expect(
+          service.findAllPublic({ scope: TERM_SCOPE.BRAND }),
+        ).rejects.toThrow(EXCEPTION_RESPONSE.BRAND_ID_REQUIRED.message);
+      });
+
+      it('should return terms associated with a brand', async () => {
+        const brand1 = await brandFactory.create();
+        const brand2 = await brandFactory.create();
+
+        const term1 = await termFactory.create({
+          scope: TERM_SCOPE.BRAND,
+        });
+        const term2 = await termFactory.create({
+          scope: TERM_SCOPE.BRAND,
+        });
+        const termOtherBrand = await termFactory.create({
+          scope: TERM_SCOPE.BRAND,
+        });
+
+        await brandTermFactory.createForBrandAndTerm(brand1, term1);
+        await brandTermFactory.createForBrandAndTerm(brand1, term2);
+        await brandTermFactory.createForBrandAndTerm(brand2, termOtherBrand);
+
+        const result = await service.findAllPublic({
+          scope: TERM_SCOPE.BRAND,
+          brandId: brand1.id,
+        });
+
+        const resultIds = result.map((t) => t.id);
+        expect(resultIds).toContain(term1.id);
+        expect(resultIds).toContain(term2.id);
+        expect(resultIds).not.toContain(termOtherBrand.id);
+      });
+    });
   });
 
   describe('findByPackage', () => {
@@ -630,6 +841,33 @@ describe('TermsService', () => {
         const packageEntity = await packageFactory.createForBrand(brand);
 
         const result = await service.findByPackage(packageEntity.id);
+
+        expect(result).toEqual([]);
+      });
+    });
+  });
+
+  describe('findByBrand', () => {
+    describe('Happy Path', () => {
+      it('should return terms associated with a brand', async () => {
+        const brand = await brandFactory.create();
+        const term1 = await termFactory.create();
+        const term2 = await termFactory.create();
+        await brandTermFactory.createForBrandAndTerm(brand, term1);
+        await brandTermFactory.createForBrandAndTerm(brand, term2);
+
+        const result = await service.findByBrand(brand.id);
+
+        expect(result.length).toBe(2);
+        const resultIds = result.map((t) => t.id);
+        expect(resultIds).toContain(term1.id);
+        expect(resultIds).toContain(term2.id);
+      });
+
+      it('should return empty array when brand has no terms', async () => {
+        const brand = await brandFactory.create();
+
+        const result = await service.findByBrand(brand.id);
 
         expect(result).toEqual([]);
       });

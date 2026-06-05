@@ -4,6 +4,7 @@ import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { Product } from '../../products/entities/product.entity';
 import { BrandDto } from '../dto/brand.dto';
 import { UseDto } from '../../common/dto/use-dto.decorator';
+import { BrandTerm } from '../../terms/entities/brand-term.entity';
 
 @Entity('brands')
 @UseDto(BrandDto)
@@ -35,4 +36,7 @@ export class Brand extends BaseTimeEntity {
 
   @OneToMany(() => Product, (product) => product.brand)
   products!: Product[];
+
+  @OneToMany(() => BrandTerm, (brandTerm) => brandTerm.brand)
+  brandTerms?: BrandTerm[];
 }

@@ -27,6 +27,9 @@ import { UpdateTermDto } from './dto/update-term.dto';
 import { AddPackageTermDto } from './dto/add-package-term.dto';
 import { RemovePackageTermDto } from './dto/remove-package-term.dto';
 import { BulkUpsertPackageTermsDto } from './dto/bulk-upsert-package-terms.dto';
+import { AddBrandTermDto } from './dto/add-brand-term.dto';
+import { RemoveBrandTermDto } from './dto/remove-brand-term.dto';
+import { BulkUpsertBrandTermsDto } from './dto/bulk-upsert-brand-terms.dto';
 import { FindAllTermsQueryDto } from './dto/find-all-terms-query.dto';
 import { Term } from './entities/term.entity';
 import { TermDto } from './dto/term.dto';
@@ -56,8 +59,8 @@ export class TermsController {
   @ApiQuery({
     name: 'scope',
     required: false,
-    description: 'Filter by scope (global or package)',
-    enum: ['global', 'package'],
+    description: 'Filter by scope',
+    enum: TERM_SCOPE,
   })
   @ApiQuery({
     name: 'q',
@@ -90,14 +93,6 @@ export class TermsController {
   @ApiBadRequestResponse({ description: 'Invalid request body' })
   update(@Param('id') id: number, @Body() updateTermDto: UpdateTermDto) {
     return this.termsService.update(id, updateTermDto);
-  }
-
-  @Delete(':id')
-  @ApiOperation({ summary: 'Remove (soft delete) a term' })
-  @ApiParam({ name: 'id', type: Number, description: 'Term id' })
-  @ApiOkResponse({ description: 'Term removed successfully' })
-  remove(@Param('id') id: string) {
-    return this.termsService.remove(+id);
   }
 
   @Post('packages')
@@ -141,6 +136,55 @@ export class TermsController {
     });
   }
 
+  @Post('brands')
+  @ApiOperation({ summary: 'Create a brand-term association' })
+  @ApiBody({ type: AddBrandTermDto })
+  @ApiCreatedResponse({
+    description: 'Brand-term association created successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid request body' })
+  addBrandTerm(@Body() addBrandTermDto: AddBrandTermDto) {
+    return this.termsService.addBrandTerm(addBrandTermDto);
+  }
+
+  @Delete('brands')
+  @ApiOperation({ summary: 'Remove a brand-term association' })
+  @ApiBody({ type: RemoveBrandTermDto })
+  @ApiOkResponse({
+    description: 'Brand-term association removed successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid request body' })
+  removeBrandTerm(@Body() removeBrandTermDto: RemoveBrandTermDto) {
+    return this.termsService.removeBrandTerm(removeBrandTermDto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Remove (soft delete) a term' })
+  @ApiParam({ name: 'id', type: Number, description: 'Term id' })
+  @ApiOkResponse({ description: 'Term removed successfully' })
+  remove(@Param('id') id: string) {
+    return this.termsService.remove(+id);
+  }
+
+  @Post(':termId/brands/bulk')
+  @ApiOperation({ summary: 'Bulk upsert brand-term associations' })
+  @ApiParam({ name: 'termId', type: Number, description: 'Term id' })
+  @ApiBody({ type: BulkUpsertBrandTermsDto })
+  @ApiCreatedResponse({
+    description: 'Brand-term associations updated successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid request body' })
+  bulkUpsertBrandTerms(
+    @Param('termId') termId: string,
+    @Body() bulkUpsertBrandTermsDto: BulkUpsertBrandTermsDto,
+  ) {
+    const { brandIds } = bulkUpsertBrandTermsDto;
+    return this.termsService.bulkUpsertBrandTerms({
+      brandIds,
+      termId: +termId,
+    });
+  }
+
   @Get('packages/:packageId')
   @ApiOperation({ summary: 'Get terms associated with a package' })
   @ApiParam({ name: 'packageId', type: Number, description: 'Package id' })
@@ -153,6 +197,18 @@ export class TermsController {
     return this.termsService.findByPackage(+packageId);
   }
 
+  @Get('brands/:brandId')
+  @ApiOperation({ summary: 'Get terms associated with a brand' })
+  @ApiParam({ name: 'brandId', type: Number, description: 'Brand id' })
+  @ApiOkResponse({
+    description: 'Terms found successfully',
+    type: Term,
+    isArray: true,
+  })
+  findByBrand(@Param('brandId') brandId: string) {
+    return this.termsService.findByBrand(+brandId);
+  }
+
   @Public()
   @Get('public/:scope')
   @ApiOperation({ summary: 'Get terms associated with a scope' })
@@ -163,6 +219,12 @@ export class TermsController {
     description: 'Package id',
     required: false,
   })
+  @ApiQuery({
+    name: 'brandId',
+    type: Number,
+    description: 'Brand id',
+    required: false,
+  })
   @ApiOkResponse({
     description: 'Terms found successfully',
     type: Term,
@@ -171,10 +233,12 @@ export class TermsController {
   findAllPublic(
     @Param('scope', new ParseEnumPipe(TERM_SCOPE)) scope: TERM_SCOPE,
     @Query('packageId') packageId?: string,
+    @Query('brandId') brandId?: string,
   ) {
     return this.termsService.findAllPublic({
       scope,
       packageId: packageId ? Number(packageId) : undefined,
+      brandId: brandId ? Number(brandId) : undefined,
     });
   }
 }

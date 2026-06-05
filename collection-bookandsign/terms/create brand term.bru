@@ -1,0 +1,28 @@
+meta {
+  name: create brand term
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{base_url}}/terms
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "title": "Condiciones de marca",
+    "content": "Condiciones generales aplicables a la marca.",
+    "scope": "brand"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,5 +1,1 @@
-export enum TERM_SCOPE {
-  GLOBAL = 'global',
-  PACKAGE = 'package',
-  PRODUCT = 'product',
-}
+export { TERM_SCOPE } from '../types/term-scope.types';

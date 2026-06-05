@@ -1,9 +1,10 @@
 import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { PackageTerm } from './package-term.entity';
-import { TERM_SCOPE } from '../constants/term_scope.enum';
+import { TERM_SCOPE } from '../types/term-scope.types';
 import { TermDto } from '../dto/term.dto';
 import { UseDto } from '../../common/dto/use-dto.decorator';
+import { BrandTerm } from './brand-term.entity';
 
 @Entity('terms')
 @UseDto(TermDto)
@@ -23,4 +24,7 @@ export class Term extends BaseTimeEntity {
 
   @OneToMany(() => PackageTerm, (packageTerm) => packageTerm.term)
   packageTerms?: PackageTerm[];
+
+  @OneToMany(() => BrandTerm, (brandTerm) => brandTerm.term)
+  brandTerms?: BrandTerm[];
 }

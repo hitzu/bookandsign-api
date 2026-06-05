@@ -1,0 +1,27 @@
+meta {
+  name: remove brand term association
+  type: http
+  seq: 11
+}
+
+delete {
+  url: {{base_url}}/terms/brands
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "brandId": 1,
+    "termId": 3
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

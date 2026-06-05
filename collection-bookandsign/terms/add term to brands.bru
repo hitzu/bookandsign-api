@@ -1,0 +1,26 @@
+meta {
+  name: add term to brands
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{base_url}}/terms/3/brands/bulk
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "brandIds": [1, 2]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

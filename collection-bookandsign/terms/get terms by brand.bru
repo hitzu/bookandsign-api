@@ -1,0 +1,20 @@
+meta {
+  name: get terms by brand
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{base_url}}/terms/brands/1
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

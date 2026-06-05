@@ -59,6 +59,18 @@ export class TermFactory extends Factory<Term> {
     return this.dataSource.getRepository(Term).save(term);
   }
 
+  async makeBrand(): Promise<Term> {
+    const attrs: Partial<Term> = {
+      scope: TERM_SCOPE.BRAND,
+    };
+    return this.make(attrs);
+  }
+
+  async createBrand(): Promise<Term> {
+    const term = await this.makeBrand();
+    return this.dataSource.getRepository(Term).save(term);
+  }
+
   /**
    * Creates a global term without brand (brandId = null)
    */

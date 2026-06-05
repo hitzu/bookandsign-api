@@ -16,8 +16,10 @@ enum ErrorMessages {
   PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND',
   PACKAGE_NOT_FOUND = 'PACKAGE_NOT_FOUND',
   PACKAGE_ID_REQUIRED = 'PACKAGE_ID_REQUIRED',
+  BRAND_ID_REQUIRED = 'BRAND_ID_REQUIRED',
   TERM_NOT_FOUND = 'TERM_NOT_FOUND',
   PACKAGE_TERM_NOT_FOUND = 'PACKAGE_TERM_NOT_FOUND',
+  BRAND_TERM_NOT_FOUND = 'BRAND_TERM_NOT_FOUND',
   TERM_CODE_ALREADY_EXISTS = 'TERM_CODE_ALREADY_EXISTS',
   BRAND_NOT_FOUND = 'BRAND_NOT_FOUND',
   SLOT_NOT_FOUND = 'SLOT_NOT_FOUND',
@@ -36,8 +38,7 @@ enum ErrorMessages {
   SESSION_ALREADY_EXISTS = 'SESSION_ALREADY_EXISTS',
   EVENT_EXPIRED = 'EVENT_EXPIRED',
   REQUIRED_SOURCE = 'REQUIRED_SOURCE',
-  SESSION_ID_REQUIRED = 'SESSION_ID_REQUIRED'
-
+  SESSION_ID_REQUIRED = 'SESSION_ID_REQUIRED',
 }
 
 export const EXCEPTION_RESPONSE: Record<
@@ -113,6 +114,10 @@ export const EXCEPTION_RESPONSE: Record<
     code: 28,
     message: 'packageId is required when scope is package',
   },
+  [ErrorMessages.BRAND_ID_REQUIRED]: {
+    code: 39,
+    message: 'brandId is required when scope is brand',
+  },
   [ErrorMessages.TERM_NOT_FOUND]: {
     code: 18,
     message: 'term not found',
@@ -120,6 +125,10 @@ export const EXCEPTION_RESPONSE: Record<
   [ErrorMessages.PACKAGE_TERM_NOT_FOUND]: {
     code: 19,
     message: 'package term association not found',
+  },
+  [ErrorMessages.BRAND_TERM_NOT_FOUND]: {
+    code: 40,
+    message: 'brand term association not found',
   },
   [ErrorMessages.TERM_CODE_ALREADY_EXISTS]: {
     code: 20,
@@ -191,10 +200,10 @@ export const EXCEPTION_RESPONSE: Record<
   },
   [ErrorMessages.REQUIRED_SOURCE]: {
     code: 38,
-    message: 'source is required for gallery_opened and session_opened'
+    message: 'source is required for gallery_opened and session_opened',
   },
   [ErrorMessages.SESSION_ID_REQUIRED]: {
     code: 38,
-    message: 'sessionId is required for this event'
+    message: 'sessionId is required for this event',
   },
 };
