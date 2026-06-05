@@ -12,6 +12,9 @@ import { Repository } from 'typeorm';
 import { plainToInstance } from 'class-transformer';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { ContractSlot } from '../contracts/entities/contract-slot.entity';
+import { Contract } from '../contracts/entities/contract.entity';
+import { Brand } from '../brands/entities/brand.entity';
+import { CONTRACT_SLOT_PURPOSE } from '../contracts/constants/slot_purpose.enum';
 import { BookSlotDto } from './dto/book-slot.dto';
 import { HoldSlotDto } from './dto/hold-slot.dto';
 import { SlotAvailabilityDto } from './dto/slot-availability.dto';
@@ -36,13 +39,22 @@ export class SlotsService {
     private slotsRepository: Repository<Slot>,
     @InjectRepository(ContractSlot)
     private contractSlotsRepository: Repository<ContractSlot>,
+    @InjectRepository(Brand)
+    private brandsRepository: Repository<Brand>,
+    @InjectRepository(Contract)
+    private contractsRepository: Repository<Contract>,
   ) {}
 
   /**
    * Returns a lightweight month calendar for slots, optimized for frontend usage.
    * Only days that have at least one RESERVED slot are returned.
+   * When brandId is provided, also computes monthly risk based on brand config.
    */
-  async getCalendarByMonth(year: number, month: number): Promise<any> {
+  async getCalendarByMonth(
+    year: number,
+    month: number,
+    brandId?: number,
+  ): Promise<{ risk: boolean; days: SlotsCalendarDto[] }> {
     if (!Number.isInteger(year) || year < 1900 || year > 2200) {
       throw new BadRequestException('Invalid query params');
     }
@@ -91,9 +103,62 @@ export class SlotsService {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, slots]) => ({ date, slots }));
 
-    return plainToInstance(SlotsCalendarDto, days, {
-      excludeExtraneousValues: true,
-    });
+    const risk = await this.computeMonthlyRisk(brandId, startDate, endDate);
+
+    return {
+      risk,
+      days: plainToInstance(SlotsCalendarDto, days, {
+        excludeExtraneousValues: true,
+      }),
+    };
+  }
+
+  private async computeMonthlyRisk(
+    brandId: number | undefined,
+    startDate: string,
+    endDate: string,
+  ): Promise<boolean> {
+    if (!brandId) return false;
+
+    const brand = await this.brandsRepository.findOne({ where: { id: brandId } });
+    if (!brand || !brand.expoMonthlyRiskEnabled) return false;
+
+    const count = await this.contractsRepository
+      .createQueryBuilder('contract')
+      .leftJoin(
+        'contract.contractSlots',
+        'contractSlot',
+        'contractSlot.deleted_at IS NULL AND contractSlot.purpose = :purpose',
+        { purpose: CONTRACT_SLOT_PURPOSE.EVENT },
+      )
+      .leftJoin(
+        'contractSlot.slot',
+        'contractSlotDate',
+        'contractSlotDate.deleted_at IS NULL',
+      )
+      .leftJoin(
+        'contract.slot',
+        'legacySlotDate',
+        'legacySlotDate.deleted_at IS NULL',
+      )
+      .where('contract.brand_id = :brandId', { brandId })
+      .andWhere('contract.deleted_at IS NULL')
+      .andWhere(
+        `(
+          (
+            contractSlotDate.event_date >= :startDate
+            AND contractSlotDate.event_date < :endDate
+          )
+          OR (
+            legacySlotDate.event_date >= :startDate
+            AND legacySlotDate.event_date < :endDate
+          )
+        )`,
+        { startDate, endDate },
+      )
+      .getCount();
+
+    return count > 0;
   }
 
   async getById(id: number) {

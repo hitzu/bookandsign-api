@@ -22,6 +22,12 @@ export class BrandDto {
   @IsString()
   email: string | null;
 
+  @Expose()
+  expoMonthlyRiskEnabled!: boolean;
+
+  @Expose()
+  minAmountHoldSlot: number | null = null;
+
   @IsDate()
   @Expose()
   createdAt!: Date;

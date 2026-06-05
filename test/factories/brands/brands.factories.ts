@@ -19,6 +19,7 @@ export class BrandFactory extends Factory<Brand> {
       logoUrl: faker.internet.url(),
       phoneNumber: faker.phone.number(),
       email: faker.internet.email(),
+      expoMonthlyRiskEnabled: false,
     };
   }
 }

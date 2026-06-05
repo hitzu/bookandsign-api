@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brand } from './entities/brand.entity';
@@ -38,8 +38,12 @@ export class BrandsService {
     });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} brand`;
+  async findOne(id: number): Promise<BrandDto> {
+    const brand = await this.brandsRepository.findOne({ where: { id } });
+    if (!brand) {
+      throw new NotFoundException(EXCEPTION_RESPONSE.BRAND_NOT_FOUND);
+    }
+    return plainToInstance(BrandDto, brand, { excludeExtraneousValues: true });
   }
 
   update(id: number, updateBrandDto: UpdateBrandDto) {

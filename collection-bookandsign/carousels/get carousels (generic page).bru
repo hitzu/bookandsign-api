@@ -1,0 +1,21 @@
+meta {
+  name: get carousels (generic page)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/carousels?page=main-page&section=general-services
+  body: none
+  auth: none
+}
+
+params:query {
+  page: main-page
+  section: general-services
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

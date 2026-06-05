@@ -5,8 +5,11 @@ import { Repository } from 'typeorm';
 import { AppDataSource as TestDataSource } from '../config/database/data-source';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { ContractSlot } from '../contracts/entities/contract-slot.entity';
+import { Contract } from '../contracts/entities/contract.entity';
+import { Brand } from '../brands/entities/brand.entity';
 import { Note } from '../notes/entities/note.entity';
 import { NOTE_SCOPE } from '../notes/types/note-scope.types';
+import { BrandFactory } from '../../test/factories/brands/brands.factories';
 import { SlotFactory } from '../../test/factories/slots/slot.factory';
 import { UserFactory } from '../../test/factories/user/user.factory';
 import { ContractFactory } from '../../test/factories/contracts/contract.factory';
@@ -25,6 +28,7 @@ describe('SlotsService', () => {
   let slotFactory: SlotFactory;
   let userFactory: UserFactory;
   let contractFactory: ContractFactory;
+  let brandFactory: BrandFactory;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -37,6 +41,14 @@ describe('SlotsService', () => {
         {
           provide: getRepositoryToken(ContractSlot),
           useValue: TestDataSource.getRepository(ContractSlot),
+        },
+        {
+          provide: getRepositoryToken(Brand),
+          useValue: TestDataSource.getRepository(Brand),
+        },
+        {
+          provide: getRepositoryToken(Contract),
+          useValue: TestDataSource.getRepository(Contract),
         },
         {
           provide: getRepositoryToken(Note),
@@ -54,6 +66,7 @@ describe('SlotsService', () => {
     slotFactory = new SlotFactory(TestDataSource);
     userFactory = new UserFactory(TestDataSource);
     contractFactory = new ContractFactory(TestDataSource);
+    brandFactory = new BrandFactory(TestDataSource);
   });
 
   describe('getAvailabilityByDate', () => {
@@ -179,6 +192,122 @@ describe('SlotsService', () => {
       await service.cancel(slot.id);
       const slot2 = await service.hold(dto);
       expect(slot2.id).toBeDefined();
+    });
+  });
+
+  describe('getCalendarByMonth', () => {
+    const YEAR = 2030;
+    const MONTH = 3;
+    const DATE_IN_MONTH = '2030-03-15';
+
+    it('should return risk=false when no brandId provided', async () => {
+      // Arrange — nothing required
+
+      // Act
+      const result = await service.getCalendarByMonth(YEAR, MONTH, undefined);
+
+      // Assert
+      expect(result.risk).toBe(false);
+    });
+
+    it('should return risk=false when brand has expoMonthlyRiskEnabled=false', async () => {
+      // Arrange
+      const brand = await brandFactory.create({ expoMonthlyRiskEnabled: false });
+
+      // Act
+      const result = await service.getCalendarByMonth(YEAR, MONTH, brand.id);
+
+      // Assert
+      expect(result.risk).toBe(false);
+    });
+
+    it('should return risk=false when brand has expoMonthlyRiskEnabled=true but no contract in month', async () => {
+      // Arrange
+      const brand = await brandFactory.create({ expoMonthlyRiskEnabled: true });
+
+      // Act
+      const result = await service.getCalendarByMonth(YEAR, MONTH, brand.id);
+
+      // Assert
+      expect(result.risk).toBe(false);
+    });
+
+    it('should return risk=true when brand has expoMonthlyRiskEnabled=true and a contract exists in month', async () => {
+      // Arrange
+      const brand = await brandFactory.create({ expoMonthlyRiskEnabled: true });
+      const slot = await slotFactory.create({
+        eventDate: DATE_IN_MONTH,
+        status: SLOT_STATUS.RESERVED,
+      });
+      const contract = await contractFactory.create({ brandId: brand.id });
+      await contractSlotsRepository.save(
+        contractSlotsRepository.create({ contractId: contract.id, slotId: slot.id }),
+      );
+
+      // Act
+      const result = await service.getCalendarByMonth(YEAR, MONTH, brand.id);
+
+      // Assert
+      expect(result.risk).toBe(true);
+    });
+
+    it('should return risk=true when the contract only has the legacy slot relation', async () => {
+      // Arrange
+      const brand = await brandFactory.create({ expoMonthlyRiskEnabled: true });
+      const slot = await slotFactory.create({
+        eventDate: DATE_IN_MONTH,
+        status: SLOT_STATUS.RESERVED,
+      });
+      await contractFactory.create({ brandId: brand.id, slot });
+
+      // Act
+      const result = await service.getCalendarByMonth(YEAR, MONTH, brand.id);
+
+      // Assert
+      expect(result.risk).toBe(true);
+    });
+
+    it('should include reserved days in days array even when risk=true', async () => {
+      // Arrange
+      const brand = await brandFactory.create({ expoMonthlyRiskEnabled: true });
+      const slot = await slotFactory.create({
+        eventDate: DATE_IN_MONTH,
+        period: SLOT_PERIOD.AM_BLOCK,
+        status: SLOT_STATUS.RESERVED,
+      });
+      const contract = await contractFactory.create({ brandId: brand.id });
+      await contractSlotsRepository.save(
+        contractSlotsRepository.create({ contractId: contract.id, slotId: slot.id }),
+      );
+
+      // Act
+      const result = await service.getCalendarByMonth(YEAR, MONTH, brand.id);
+
+      // Assert
+      expect(result.risk).toBe(true);
+      const day = result.days.find((d) => d.date === DATE_IN_MONTH);
+      expect(day).toBeDefined();
+      expect(day?.slots.morning).toBe(SLOT_STATUS.RESERVED);
+    });
+
+    it('should return risk=false for a different brand even when a contract exists', async () => {
+      // Arrange
+      const brandA = await brandFactory.create({ expoMonthlyRiskEnabled: true });
+      const brandB = await brandFactory.create({ expoMonthlyRiskEnabled: true });
+      const slot = await slotFactory.create({
+        eventDate: DATE_IN_MONTH,
+        status: SLOT_STATUS.RESERVED,
+      });
+      const contract = await contractFactory.create({ brandId: brandA.id });
+      await contractSlotsRepository.save(
+        contractSlotsRepository.create({ contractId: contract.id, slotId: slot.id }),
+      );
+
+      // Act — query with brandB which has no contracts
+      const result = await service.getCalendarByMonth(YEAR, MONTH, brandB.id);
+
+      // Assert
+      expect(result.risk).toBe(false);
     });
   });
 

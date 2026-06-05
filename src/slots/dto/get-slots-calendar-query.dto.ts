@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Matches } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, Matches } from 'class-validator';
 
 export class GetSlotsCalendarQueryDto {
   @ApiProperty({
@@ -23,5 +23,14 @@ export class GetSlotsCalendarQueryDto {
     message: 'month must be between 1 and 12',
   })
   month!: string;
+
+  @ApiPropertyOptional({
+    type: Number,
+    example: 1,
+    description: 'Brand ID to calculate monthly risk.',
+  })
+  @IsOptional()
+  @Matches(/^\d+$/, { message: 'brandId must be a positive integer' })
+  brandId?: string;
 }
 

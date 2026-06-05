@@ -20,6 +20,19 @@ export class Brand extends BaseTimeEntity {
   @Column('text', { name: 'email', nullable: true })
   email: string | null = null;
 
+  @Column('boolean', { name: 'expo_monthly_risk_enabled', default: false })
+  expoMonthlyRiskEnabled: boolean = false;
+
+  @Column('decimal', {
+    name: 'min_amount_hold_slot',
+    nullable: true,
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => (value == null ? null : Number(value)),
+    },
+  })
+  minAmountHoldSlot: number | null = null;
+
   @OneToMany(() => Product, (product) => product.brand)
   products!: Product[];
 }

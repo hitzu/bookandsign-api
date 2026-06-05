@@ -15,6 +15,10 @@ export class CreateContractFromSlotsDto {
   @IsNumber()
   slotId!: number;
 
+  @IsNumber()
+  @IsOptional()
+  brandId?: number | null;
+
   @IsString()
   sku!: string;
 

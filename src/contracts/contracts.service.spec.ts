@@ -343,6 +343,36 @@ describe('ContractsService', () => {
         }),
       ).rejects.toBeInstanceOf(ConflictException);
     });
+
+    it('should persist brandId when provided', async () => {
+      // Arrange
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        brandId: brand.id,
+        sku: 'SKU-BRAND-001',
+        clientName: 'Cliente Expo',
+        clientPhone: null,
+        clientEmail: null,
+        subtotal: 4500,
+        discountTotal: 0,
+        total: 4500,
+        packages: [],
+      };
+
+      // Act
+      const result = await service.createContract(dto);
+
+      // Assert
+      const saved = await contractsRepo.findOne({ where: { id: result.id } });
+      expect(saved?.brandId).toBe(brand.id);
+    });
   });
 
   describe('getDetail', () => {

@@ -1,0 +1,21 @@
+meta {
+  name: get carousels (400 - expo-bebe without brandId)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/carousels?page=expo-bebe&section=services
+  body: none
+  auth: none
+}
+
+params:query {
+  page: expo-bebe
+  section: services
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

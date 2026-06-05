@@ -54,14 +54,24 @@ export class SlotsController {
     type: Number,
     example: 1,
   })
+  @ApiQuery({
+    name: 'brandId',
+    required: false,
+    description: 'Brand ID to compute monthly risk',
+    type: Number,
+    example: 1,
+  })
   @ApiOkResponse({
     description: 'Monthly calendar with reserved days and slot statuses',
     type: SlotsCalendarDto,
   })
   @ApiBadRequestResponse({ description: 'Invalid query params' })
   getCalendar(@Query(new ValidationPipe()) query: GetSlotsCalendarQueryDto) {
-    console.log(query);
-    return this.slotsService.getCalendarByMonth(+query.year, +query.month);
+    return this.slotsService.getCalendarByMonth(
+      +query.year,
+      +query.month,
+      query.brandId ? +query.brandId : undefined,
+    );
   }
 
   @Get()

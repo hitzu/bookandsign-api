@@ -87,6 +87,7 @@ export class ContractsService {
 
     const contract = this.contractsRepository.create({
       userId: dto.userId,
+      brandId: dto.brandId ?? null,
       clientName: dto.clientName,
       clientPhone: dto.clientPhone,
       clientEmail: dto.clientEmail,

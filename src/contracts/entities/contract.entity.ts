@@ -18,12 +18,20 @@ import { CONTRACT_STATUS } from '../types/contract-status.types';
 import { ContractSlot } from './contract-slot.entity';
 import { User } from '../../users/entities/user.entity';
 import { Event } from '../../events/entities/event.entity';
+import { Brand } from '../../brands/entities/brand.entity';
 
 @Entity('contracts')
 @UseDto(ContractDto)
 export class Contract extends BaseTimeEntity {
   @Column('integer', { name: 'user_id' })
   userId!: number;
+
+  @Column('integer', { name: 'brand_id', nullable: true })
+  brandId: number | null = null;
+
+  @ManyToOne(() => Brand, { nullable: true })
+  @JoinColumn({ name: 'brand_id' })
+  brand?: Brand | null;
 
   @Column('text', { name: 'client_name', nullable: true })
   clientName: string | null = null;

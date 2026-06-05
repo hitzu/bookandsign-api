@@ -23,6 +23,7 @@ import { PromotionsModule } from './promotions/promotions.module';
 import { EventsModule } from './events/events.module';
 import { PhotosModule } from './photos/photos.module';
 import { ReconciliationModule } from './reconciliation/reconciliation.module';
+import { CarouselsModule } from './carousels/carousels.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ReconciliationModule } from './reconciliation/reconciliation.module';
     EventsModule,
     PhotosModule,
     ReconciliationModule,
+    CarouselsModule,
   ],
   controllers: [AppController],
   providers: [
