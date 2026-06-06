@@ -1,12 +1,12 @@
 meta {
-  name: get payments (multiple)
+  name: get extra statuses
   type: http
-  seq: 7
+  seq: 4
 }
 
 get {
-  url: {{base_url}}/contracts/:contract_id/payments
-  body: none
+  url: {{base_url}}/extras/statuses
+  body: json
   auth: inherit
 }
 

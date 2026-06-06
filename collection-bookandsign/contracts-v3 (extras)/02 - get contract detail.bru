@@ -1,24 +1,17 @@
 meta {
-  name: hold slot
+  name: 02 - get contract detail
   type: http
   seq: 2
 }
 
-post {
-  url: {{base_url}}/slots/hold
+get {
+  url: {{base_url}}/contracts/{{contract_id}}
   body: json
   auth: inherit
 }
 
 headers {
   authorization: Bearer {{token}}
-}
-
-body:json {
-  {
-    "eventDate": "2030-10-11",
-    "period": "am_block"
-  }
 }
 
 settings {

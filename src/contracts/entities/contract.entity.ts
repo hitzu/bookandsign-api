@@ -11,6 +11,7 @@ import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { UseDto } from '../../common/dto/use-dto.decorator';
 import { Payment } from '../../payments/entities/payment.entity';
 import { ContractDto } from '../dto/contract.dto';
+import { ContractExtra } from './contract-extra.entity';
 import { ContractPackage } from './contract-package.entity';
 import { Slot } from '../../slots/entities/slot.entity';
 import { ContractPromotion } from './contract-promotion.entity';
@@ -103,6 +104,12 @@ export class Contract extends BaseTimeEntity {
    */
   @OneToMany(() => ContractPromotion, (item) => item.contract)
   promotions?: ContractPromotion[];
+
+  /**
+   * Snapshot: contract_extras stores the extra state at the time of contracting.
+   */
+  @OneToMany(() => ContractExtra, (extra) => extra.contract)
+  extras?: ContractExtra[];
 
   @OneToMany(() => Payment, (payment) => payment.contract)
   payments?: Payment[];

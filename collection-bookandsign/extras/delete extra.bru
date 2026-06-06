@@ -1,11 +1,11 @@
 meta {
-  name: get payments (multiple)
+  name: delete extra
   type: http
   seq: 7
 }
 
-get {
-  url: {{base_url}}/contracts/:contract_id/payments
+delete {
+  url: {{base_url}}/extras/{{extra_id}}
   body: none
   auth: inherit
 }

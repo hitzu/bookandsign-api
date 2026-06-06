@@ -15,6 +15,7 @@ enum ErrorMessages {
   JWT_SECRET_NOT_FOUND = 'JWT_SECRET_NOT_FOUND',
   PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND',
   PACKAGE_NOT_FOUND = 'PACKAGE_NOT_FOUND',
+  EXTRA_NOT_FOUND = 'EXTRA_NOT_FOUND',
   PACKAGE_ID_REQUIRED = 'PACKAGE_ID_REQUIRED',
   BRAND_ID_REQUIRED = 'BRAND_ID_REQUIRED',
   TERM_NOT_FOUND = 'TERM_NOT_FOUND',
@@ -109,6 +110,10 @@ export const EXCEPTION_RESPONSE: Record<
   [ErrorMessages.PACKAGE_NOT_FOUND]: {
     code: 17,
     message: 'package not found',
+  },
+  [ErrorMessages.EXTRA_NOT_FOUND]: {
+    code: 41,
+    message: 'extra not found',
   },
   [ErrorMessages.PACKAGE_ID_REQUIRED]: {
     code: 28,

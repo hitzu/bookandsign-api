@@ -7,6 +7,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { AddItemDto } from './add-item.dto';
+import { AddExtraDto } from './add-extra.dto';
 
 export class CreateContractFromSlotsDto {
   @IsNumber()
@@ -46,4 +47,10 @@ export class CreateContractFromSlotsDto {
   @ValidateNested({ each: true })
   @Type(() => AddItemDto)
   packages!: AddItemDto[];
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => AddExtraDto)
+  extras?: AddExtraDto[];
 }

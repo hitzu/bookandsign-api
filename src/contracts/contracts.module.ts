@@ -4,7 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ContractsController } from './contracts.controller';
 import { ContractsService } from './contracts.service';
 import { Contract } from './entities/contract.entity';
+import { ContractExtra } from './entities/contract-extra.entity';
 import { ContractPackage } from './entities/contract-package.entity';
+import { Extra } from '../extras/entities/extra.entity';
 import { Package } from '../packages/entities/package.entity';
 import { Slot } from '../slots/entities/slot.entity';
 import { PaymentsModule } from '../payments/payments.module';
@@ -19,7 +21,9 @@ import { Event } from '../events/entities/event.entity';
     PaymentsModule,
     TypeOrmModule.forFeature([
       Contract,
+      ContractExtra,
       ContractPackage,
+      Extra,
       Slot,
       Package,
       ContractSlot,

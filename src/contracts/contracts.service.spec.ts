@@ -1,4 +1,8 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
@@ -9,12 +13,16 @@ import { BrandFactory } from '../../test/factories/brands/brands.factories';
 import { PackageFactory } from '../../test/factories/packages/package.factory';
 import { SlotFactory } from '../../test/factories/slots/slot.factory';
 import { UserFactory } from '../../test/factories/user/user.factory';
+import { ExtraFactory } from '../../test/factories/extras/extra.factory';
 import { PaymentsService } from '../payments/payments.service';
 import { ContractsService } from './contracts.service';
+import { AddExtraDto } from './dto/add-extra.dto';
 import { AddItemDto } from './dto/add-item.dto';
 import { CreateContractFromSlotsDto } from './dto/create-contract-from-slots.dto';
 import { Contract } from './entities/contract.entity';
+import { ContractExtra } from './entities/contract-extra.entity';
 import { ContractPackage } from './entities/contract-package.entity';
+import { Extra } from '../extras/entities/extra.entity';
 import { Payment } from '../payments/entities/payment.entity';
 import { CONTRACT_STATUS } from './types/contract-status.types';
 import { PAYMENT_METHOD } from './types/payment-method.types';
@@ -26,15 +34,18 @@ import { User } from '../users/entities/user.entity';
 import { ContractSlot } from './entities/contract-slot.entity';
 import { Event } from '../events/entities/event.entity';
 import { EventFactory } from '../../test/factories/events/event.factory';
+import { EXTRA_STATUS } from '../extras/types/extras-status.types';
 
 describe('ContractsService', () => {
   let service: ContractsService;
   let contractsRepo: Repository<Contract>;
+  let contractExtrasRepo: Repository<ContractExtra>;
   let contractPackagesRepo: Repository<ContractPackage>;
   let paymentsRepo: Repository<Payment>;
   let contractSlotsRepo: Repository<ContractSlot>;
   let slotsRepo: Repository<Slot>;
   let packageFactory: PackageFactory;
+  let extraFactory: ExtraFactory;
   let brandFactory: BrandFactory;
   let slotFactory: SlotFactory;
   let userFactory: UserFactory;
@@ -59,6 +70,10 @@ describe('ContractsService', () => {
           useValue: TestDataSource.getRepository(ContractPackage),
         },
         {
+          provide: getRepositoryToken(ContractExtra),
+          useValue: TestDataSource.getRepository(ContractExtra),
+        },
+        {
           provide: getRepositoryToken(ContractSlot),
           useValue: TestDataSource.getRepository(ContractSlot),
         },
@@ -69,6 +84,10 @@ describe('ContractsService', () => {
         {
           provide: getRepositoryToken(Package),
           useValue: TestDataSource.getRepository(Package),
+        },
+        {
+          provide: getRepositoryToken(Extra),
+          useValue: TestDataSource.getRepository(Extra),
         },
         {
           provide: getRepositoryToken(User),
@@ -89,12 +108,16 @@ describe('ContractsService', () => {
     contractPackagesRepo = module.get<Repository<ContractPackage>>(
       getRepositoryToken(ContractPackage),
     );
+    contractExtrasRepo = module.get<Repository<ContractExtra>>(
+      getRepositoryToken(ContractExtra),
+    );
     contractSlotsRepo = module.get<Repository<ContractSlot>>(
       getRepositoryToken(ContractSlot),
     );
     paymentsRepo = module.get<Repository<Payment>>(getRepositoryToken(Payment));
 
     packageFactory = new PackageFactory(TestDataSource);
+    extraFactory = new ExtraFactory(TestDataSource);
     brandFactory = new BrandFactory(TestDataSource);
     slotFactory = new SlotFactory(TestDataSource);
     userFactory = new UserFactory(TestDataSource);
@@ -373,6 +396,144 @@ describe('ContractsService', () => {
       const saved = await contractsRepo.findOne({ where: { id: result.id } });
       expect(saved?.brandId).toBe(brand.id);
     });
+
+    it('should persist extra snapshots when contract includes extras', async () => {
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const pkg = await packageFactory.createForBrand(brand, {
+        basePrice: 2500,
+      });
+      const extra = await extraFactory.createForBrand(brand, {
+        name: 'Upgrade back',
+        price: 500,
+        status: EXTRA_STATUS.ACTIVE,
+      });
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const packages: AddItemDto[] = [{ packageId: pkg.id, quantity: 1 }];
+      const extras: AddExtraDto[] = [{ extraId: extra.id, quantity: 2 }];
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        brandId: brand.id,
+        sku: 'SKU-EXTRAS-001',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        subtotal: 0,
+        discountTotal: 0,
+        total: 3500,
+        packages,
+        extras,
+      };
+
+      const result = await service.createContract(dto);
+
+      const savedExtras = await contractExtrasRepo.find({
+        where: { contractId: result.id },
+      });
+      expect(savedExtras).toHaveLength(1);
+      expect(savedExtras[0]?.extraId).toBe(extra.id);
+      expect(savedExtras[0]?.quantity).toBe(2);
+      expect(savedExtras[0]?.nameSnapshot).toBe('Upgrade back');
+      expect(savedExtras[0]?.basePriceSnapshot).toBe(500);
+    });
+
+    it('should require brandId when contract includes extras', async () => {
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const extra = await extraFactory.createForBrand(brand, {
+        status: EXTRA_STATUS.ACTIVE,
+      });
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        sku: 'SKU-EXTRAS-NO-BRAND',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        subtotal: 0,
+        discountTotal: 0,
+        total: 500,
+        packages: [],
+        extras: [{ extraId: extra.id, quantity: 1 }],
+      };
+
+      await expect(service.createContract(dto)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('should reject inactive extras', async () => {
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const extra = await extraFactory.createForBrand(brand, {
+        status: EXTRA_STATUS.INACTIVE,
+      });
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        brandId: brand.id,
+        sku: 'SKU-EXTRAS-INACTIVE',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        subtotal: 0,
+        discountTotal: 0,
+        total: 500,
+        packages: [],
+        extras: [{ extraId: extra.id, quantity: 1 }],
+      };
+
+      await expect(service.createContract(dto)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('should reject extras from another brand', async () => {
+      const user = await userFactory.create();
+      const contractBrand = await brandFactory.create();
+      const extraBrand = await brandFactory.create();
+      const extra = await extraFactory.createForBrand(extraBrand, {
+        status: EXTRA_STATUS.ACTIVE,
+      });
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        brandId: contractBrand.id,
+        sku: 'SKU-EXTRAS-WRONG-BRAND',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        subtotal: 0,
+        discountTotal: 0,
+        total: 500,
+        packages: [],
+        extras: [{ extraId: extra.id, quantity: 1 }],
+      };
+
+      await expect(service.createContract(dto)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
   });
 
   describe('getDetail', () => {
@@ -432,6 +593,20 @@ describe('ContractsService', () => {
           method: PAYMENT_METHOD.CARD,
         }),
       );
+      const extra = await extraFactory.createForBrand(brand, {
+        name: 'Upgrade back',
+        price: 500,
+        status: EXTRA_STATUS.ACTIVE,
+      });
+      await contractExtrasRepo.save(
+        contractExtrasRepo.create({
+          contractId: contract.id,
+          extraId: extra.id,
+          quantity: 1,
+          nameSnapshot: extra.name,
+          basePriceSnapshot: 500,
+        }),
+      );
 
       const detail = await service.getDetail(contract.id);
 
@@ -440,12 +615,152 @@ describe('ContractsService', () => {
       expect(detail.contract.token).toBe('test-token');
 
       expect(detail.slot.id).toBe(slot.id);
+      expect(detail.extras).toHaveLength(1);
+      expect(detail.extras[0]?.extraId).toBe(extra.id);
+      expect(detail.extras[0]?.nameSnapshot).toBe('Upgrade back');
 
       const paymentIds = detail.payments.map((p) => p.id).sort((a, b) => a - b);
       expect(paymentIds).toEqual(
         [payment1.id, payment2.id].sort((a, b) => a - b),
       );
       expect(detail.paidAmount).toBeCloseTo(100);
+    });
+  });
+
+  describe('getDetailByToken', () => {
+    it('should return masked client data and include extra snapshots', async () => {
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const slot = await slotFactory.create({
+        eventDate: '2030-01-01',
+        period: SLOT_PERIOD.AM_BLOCK,
+        status: SLOT_STATUS.RESERVED,
+      });
+
+      const contract = await contractsRepo.save(
+        contractsRepo.create({
+          userId: user.id,
+          brandId: brand.id,
+          sku: 'SKU-PUBLIC-001',
+          token: 'public-token-001',
+          status: CONTRACT_STATUS.CONFIRMED,
+          clientName: 'Ana',
+          clientPhone: '5551234567',
+          clientEmail: 'ana@example.com',
+          slot,
+        }),
+      );
+
+      const pkg = await packageFactory.createForBrand(brand, { basePrice: 250 });
+      await contractPackagesRepo.save(
+        contractPackagesRepo.create({
+          contractId: contract.id,
+          packageId: pkg.id,
+          quantity: 1,
+          nameSnapshot: pkg.name,
+          basePriceSnapshot: 250,
+        }),
+      );
+
+      const extra = await extraFactory.createForBrand(brand, {
+        name: 'Upgrade back',
+        price: 500,
+        status: EXTRA_STATUS.ACTIVE,
+      });
+      await contractExtrasRepo.save(
+        contractExtrasRepo.create({
+          contractId: contract.id,
+          extraId: extra.id,
+          quantity: 2,
+          nameSnapshot: extra.name,
+          basePriceSnapshot: 500,
+        }),
+      );
+
+      const detail = await service.getDetailByToken(contract.token);
+
+      expect(detail.contract.id).toBe(contract.id);
+      expect(detail.contract.clientPhone).toBe('***4567');
+      expect(detail.contract.clientEmail).toBe('a****@example.com');
+      expect(detail.packages).toHaveLength(1);
+      expect(detail.extras).toHaveLength(1);
+      expect(detail.extras[0]?.extraId).toBe(extra.id);
+      expect(detail.extras[0]?.quantity).toBe(2);
+      expect(detail.extras[0]?.nameSnapshot).toBe('Upgrade back');
+    });
+
+    it('should throw if token does not exist', async () => {
+      await expect(
+        service.getDetailByToken('missing-public-token'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('updateItemQuantity', () => {
+    it('should recalculate contract totals including extras', async () => {
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const contract = await contractsRepo.save(
+        contractsRepo.create({
+          userId: user.id,
+          brandId: brand.id,
+          sku: 'SKU-RECALC-001',
+          token: 'recalc-token-001',
+          status: CONTRACT_STATUS.CONFIRMED,
+          subtotal: 700,
+          discountTotal: 0,
+          total: 700,
+          slot,
+        }),
+      );
+
+      const pkg = await packageFactory.createForBrand(brand, { basePrice: 100 });
+      const item = await contractPackagesRepo.save(
+        contractPackagesRepo.create({
+          contractId: contract.id,
+          packageId: pkg.id,
+          quantity: 2,
+          nameSnapshot: pkg.name,
+          basePriceSnapshot: 100,
+        }),
+      );
+
+      const extra = await extraFactory.createForBrand(brand, {
+        price: 500,
+        status: EXTRA_STATUS.ACTIVE,
+      });
+      await contractExtrasRepo.save(
+        contractExtrasRepo.create({
+          contractId: contract.id,
+          extraId: extra.id,
+          quantity: 1,
+          nameSnapshot: extra.name,
+          basePriceSnapshot: 500,
+        }),
+      );
+
+      const detail = await service.updateItemQuantity(
+        contract.id,
+        item.id,
+        { quantity: 1 },
+        user.id,
+      );
+
+      expect(detail.contract.subtotal).toBe(600);
+      expect(detail.contract.total).toBe(600);
+      expect(detail.extras).toHaveLength(1);
+      expect(detail.items[0]?.quantity).toBe(1);
+
+      const updated = await contractsRepo.findOne({
+        where: { id: contract.id },
+      });
+      expect(updated?.subtotal).toBe(600);
+      expect(updated?.total).toBe(600);
     });
   });
 
@@ -531,10 +846,15 @@ describe('ContractsService', () => {
   });
 
   describe('removeContract', () => {
-    it('should soft-delete contract, contract slots, item snapshots, payments, and associated slots', async () => {
+    it('should soft-delete contract, contract slots, item snapshots, extra snapshots, payments, and associated slots', async () => {
       const user = await userFactory.create();
       const brand = await brandFactory.create();
       const pkg = await packageFactory.createForBrand(brand, { basePrice: 120 });
+      const extra = await extraFactory.createForBrand(brand, {
+        name: 'Upgrade back',
+        price: 500,
+        status: EXTRA_STATUS.ACTIVE,
+      });
       const slot = await slotFactory.create({
         status: SLOT_STATUS.RESERVED,
         period: SLOT_PERIOD.AM_BLOCK,
@@ -543,14 +863,16 @@ describe('ContractsService', () => {
       const created = await service.createContract({
         userId: user.id,
         slotId: slot.id,
+        brandId: brand.id,
         sku: 'SKU-REMOVE-001',
         clientName: 'Ana',
         clientPhone: null,
         clientEmail: null,
         subtotal: 0,
         discountTotal: 0,
-        total: 240,
+        total: 740,
         packages: [{ packageId: pkg.id, quantity: 2 }],
+        extras: [{ extraId: extra.id, quantity: 1 }],
       });
 
       const payment = await paymentsRepo.save(
@@ -591,6 +913,13 @@ describe('ContractsService', () => {
       });
       expect(deletedItem).not.toBeNull();
       expect(deletedItem?.deletedAt).not.toBeNull();
+
+      const deletedExtra = await contractExtrasRepo.findOne({
+        where: { contractId: created.id },
+        withDeleted: true,
+      });
+      expect(deletedExtra).not.toBeNull();
+      expect(deletedExtra?.deletedAt).not.toBeNull();
 
       const visiblePayments = await paymentsRepo.find({
         where: { contractId: created.id },

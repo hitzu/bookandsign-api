@@ -1,0 +1,24 @@
+meta {
+  name: get extras with filters (brandId)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/extras?brandId={{brand_id}}
+  body: json
+  auth: inherit
+}
+
+params:query {
+  brandId: {{brand_id}}
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

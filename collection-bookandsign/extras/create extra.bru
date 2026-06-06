@@ -1,0 +1,30 @@
+meta {
+  name: create extra
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/extras
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "brandId": {{brand_id}},
+    "name": "Upgrate back",
+    "description": "Diseño mas pro de back",
+    "price": 500,
+    "status": "active"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

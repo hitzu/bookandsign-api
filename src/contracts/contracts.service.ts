@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -14,11 +15,13 @@ import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
 import { PaymentsService } from '../payments/payments.service';
 import { Payment } from '../payments/entities/payment.entity';
 import { Contract } from './entities/contract.entity';
+import { AddExtraDto } from './dto/add-extra.dto';
 import { AddItemDto } from './dto/add-item.dto';
 import { ContractDetailDto } from './dto/contract-detail.dto';
 import { CreateContractFromSlotsDto } from './dto/create-contract-from-slots.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { CONTRACT_STATUS } from './types/contract-status.types';
+import { ContractExtra } from './entities/contract-extra.entity';
 import { ContractPackage } from './entities/contract-package.entity';
 import { Slot } from '../slots/entities/slot.entity';
 import { SLOT_STATUS } from '../slots/types/slot-status.types';
@@ -32,6 +35,8 @@ import { AddContractSlotDto } from './dto/add-contract-slot.dto';
 import { ListContractsQueryDto } from './dto/list-contracts-query.dto';
 import { ContractPromotion } from './entities/contract-promotion.entity';
 import { Event } from '../events/entities/event.entity';
+import { Extra } from '../extras/entities/extra.entity';
+import { EXTRA_STATUS } from '../extras/types/extras-status.types';
 
 @Injectable()
 export class ContractsService {
@@ -46,6 +51,10 @@ export class ContractsService {
     private readonly contractPackagesRepository: Repository<ContractPackage>,
     @InjectRepository(Package)
     private readonly packagesRepository: Repository<Package>,
+    @InjectRepository(ContractExtra)
+    private readonly contractExtrasRepository: Repository<ContractExtra>,
+    @InjectRepository(Extra)
+    private readonly extrasRepository: Repository<Extra>,
     @InjectRepository(ContractSlot)
     private readonly contractSlotsRepository: Repository<ContractSlot>,
     @InjectRepository(Event)
@@ -53,13 +62,23 @@ export class ContractsService {
   ) { }
 
   private async recalculateTotals(contractId: number): Promise<void> {
-    const items = await this.contractPackagesRepository.find({
-      where: { contractId },
-    });
-    const subtotal = items.reduce(
+    const [items, extras] = await Promise.all([
+      this.contractPackagesRepository.find({
+        where: { contractId },
+      }),
+      this.contractExtrasRepository.find({
+        where: { contractId },
+      }),
+    ]);
+    const itemsSubtotal = items.reduce(
       (sum, item) => sum + item.quantity * item.basePriceSnapshot,
       0,
     );
+    const extrasSubtotal = extras.reduce(
+      (sum, extra) => sum + extra.quantity * extra.basePriceSnapshot,
+      0,
+    );
+    const subtotal = itemsSubtotal + extrasSubtotal;
     await this.contractsRepository.update(contractId, {
       subtotal,
       discountTotal: 0,
@@ -85,6 +104,11 @@ export class ContractsService {
       throw new ConflictException(EXCEPTION_RESPONSE.SLOT_NOT_AVAILABLE);
     }
 
+    const resolvedExtras = await this.resolveExtrasForContract(
+      dto.extras,
+      dto.brandId ?? null,
+    );
+
     const contract = this.contractsRepository.create({
       userId: dto.userId,
       brandId: dto.brandId ?? null,
@@ -102,6 +126,7 @@ export class ContractsService {
     const savedContract = await this.contractsRepository.save(contract);
 
     await this.setItems(savedContract.id, dto.packages);
+    await this.setExtras(savedContract.id, dto.extras, resolvedExtras);
 
     const contractSlot = this.contractSlotsRepository.create({
       contractId: savedContract.id,
@@ -143,6 +168,35 @@ export class ContractsService {
   addItem(contractId: number, dto: AddItemDto): void {
     console.log('addItem', contractId, dto);
     //pending
+  }
+
+  async setExtras(
+    contractId: number,
+    dto: AddExtraDto[] | undefined,
+    resolvedExtras: Map<number, Extra>,
+  ): Promise<void> {
+    if (!dto?.length) {
+      return;
+    }
+
+    await Promise.all(
+      dto.map(async (extraInfo) => {
+        const extra = resolvedExtras.get(extraInfo.extraId);
+        if (!extra) {
+          throw new NotFoundException(EXCEPTION_RESPONSE.EXTRA_NOT_FOUND);
+        }
+
+        const extraToSave = this.contractExtrasRepository.create({
+          contractId,
+          extraId: extraInfo.extraId,
+          quantity: extraInfo.quantity,
+          promotionId: extraInfo.promotionId,
+          nameSnapshot: extra.name,
+          basePriceSnapshot: extra.price || 0,
+        });
+        await this.contractExtrasRepository.save(extraToSave);
+      }),
+    );
   }
 
   async updateItemQuantity(
@@ -232,9 +286,13 @@ export class ContractsService {
     if (!contract) {
       throw new NotFoundException('Contract not found');
     }
-    const [items, payments, paidAmount] = await Promise.all([
+    const [items, extras, payments, paidAmount] = await Promise.all([
       this.contractPackagesRepository.find({
         where: { contractId },
+      }),
+      this.contractExtrasRepository.find({
+        where: { contractId },
+        relations: ['extra', 'extra.brand', 'promotion'],
       }),
       this.paymentsService.listPaymentsByContract(contractId),
       this.sumPayments(contractId),
@@ -246,6 +304,7 @@ export class ContractsService {
         slot: contract.slot,
         contractSlots: contract.contractSlots,
         items,
+        extras,
         payments,
         paidAmount,
       },
@@ -357,7 +416,7 @@ export class ContractsService {
 
     const contractId = contract.id;
 
-    const [packages, payments, paidAmount] = await Promise.all([
+    const [packages, extras, payments, paidAmount] = await Promise.all([
       this.contractPackagesRepository.find({
         where: { contractId },
         relations: [
@@ -366,6 +425,10 @@ export class ContractsService {
           'package.packageProducts.product',
           'promotion',
         ],
+      }),
+      this.contractExtrasRepository.find({
+        where: { contractId },
+        relations: ['extra', 'extra.brand', 'promotion'],
       }),
       this.paymentsService.listPaymentsByContract(contractId),
       this.sumPayments(contractId),
@@ -377,6 +440,7 @@ export class ContractsService {
         contract: maskedContract,
         contractSlots: contract.contractSlots,
         packages,
+        extras,
         payments,
         paidAmount,
       },
@@ -469,6 +533,7 @@ export class ContractsService {
       }
 
       await manager.getRepository(ContractSlot).softDelete({ contractId });
+      await manager.getRepository(ContractExtra).softDelete({ contractId });
       await manager.getRepository(ContractPackage).softDelete({ contractId });
       await manager.getRepository(ContractPromotion).softDelete({ contractId });
       await manager.getRepository(Payment).softDelete({ contractId });
@@ -480,5 +545,42 @@ export class ContractsService {
 
       await manager.getRepository(Contract).softDelete(contractId);
     });
+  }
+
+  private async resolveExtrasForContract(
+    dto: AddExtraDto[] | undefined,
+    brandId: number | null,
+  ): Promise<Map<number, Extra>> {
+    if (!dto?.length) {
+      return new Map<number, Extra>();
+    }
+
+    if (brandId == null) {
+      throw new BadRequestException(
+        'brandId is required when contract includes extras',
+      );
+    }
+
+    const extras = await this.extrasRepository.findBy({
+      id: In(dto.map((extra) => extra.extraId)),
+    });
+    const extraById = new Map(extras.map((extra) => [extra.id, extra]));
+
+    dto.forEach((extraInfo) => {
+      const extra = extraById.get(extraInfo.extraId);
+      if (!extra) {
+        throw new NotFoundException(EXCEPTION_RESPONSE.EXTRA_NOT_FOUND);
+      }
+      if (extra.status !== EXTRA_STATUS.ACTIVE) {
+        throw new BadRequestException('Extra is inactive');
+      }
+      if (extra.brandId !== brandId) {
+        throw new BadRequestException(
+          'Extra is not available for this brand',
+        );
+      }
+    });
+
+    return extraById;
   }
 }
