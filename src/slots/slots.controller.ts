@@ -24,9 +24,11 @@ import {
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { FindSlotsQueryDto } from './dto/find-slots-query.dto';
 import { GetSlotsCalendarQueryDto } from './dto/get-slots-calendar-query.dto';
+import { GetSlotsCalendarV2QueryDto } from './dto/get-slots-calendar-v2-query.dto';
 import { HoldSlotDto } from './dto/hold-slot.dto';
 import { SlotAvailabilityDto } from './dto/slot-availability.dto';
 import { SlotsCalendarDto } from './dto/slots-calendar.dto';
+import { SlotsCalendarV2DayDto } from './dto/slots-calendar-v2.dto';
 import { Slot } from './entities/slot.entity';
 import { SlotsService } from './slots.service';
 import { Public } from '../auth/decorators/public.decorator';
@@ -71,6 +73,49 @@ export class SlotsController {
       +query.year,
       +query.month,
       query.brandId ? +query.brandId : undefined,
+    );
+  }
+
+  @Get('v2/calendar')
+  @Public()
+  @ApiOperation({
+    summary:
+      'Get monthly slots calendar v2 (company-wide, no brand segmentation)',
+  })
+  @ApiQuery({
+    name: 'year',
+    required: true,
+    description: 'Year in YYYY format',
+    type: Number,
+    example: 2026,
+  })
+  @ApiQuery({
+    name: 'month',
+    required: true,
+    description: 'Month number (1-12)',
+    type: Number,
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'contractInfo',
+    required: false,
+    description:
+      'When true, includes the linked contract info (client data) for reserved slots',
+    type: Boolean,
+    example: false,
+  })
+  @ApiOkResponse({
+    description: 'Monthly calendar with reserved days and slot statuses',
+    type: SlotsCalendarV2DayDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid query params' })
+  getCalendarV2(
+    @Query(new ValidationPipe()) query: GetSlotsCalendarV2QueryDto,
+  ) {
+    return this.slotsService.getCalendarByMonthV2(
+      +query.year,
+      +query.month,
+      query.contractInfo,
     );
   }
 

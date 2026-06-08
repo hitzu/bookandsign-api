@@ -1,4 +1,8 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -25,6 +29,7 @@ describe('SlotsService', () => {
   let slotsRepository: Repository<Slot>;
   let notesRepository: Repository<Note>;
   let contractSlotsRepository: Repository<ContractSlot>;
+  let contractsRepository: Repository<Contract>;
   let slotFactory: SlotFactory;
   let userFactory: UserFactory;
   let contractFactory: ContractFactory;
@@ -62,6 +67,9 @@ describe('SlotsService', () => {
     notesRepository = module.get<Repository<Note>>(getRepositoryToken(Note));
     contractSlotsRepository = module.get<Repository<ContractSlot>>(
       getRepositoryToken(ContractSlot),
+    );
+    contractsRepository = module.get<Repository<Contract>>(
+      getRepositoryToken(Contract),
     );
     slotFactory = new SlotFactory(TestDataSource);
     userFactory = new UserFactory(TestDataSource);
@@ -308,6 +316,140 @@ describe('SlotsService', () => {
 
       // Assert
       expect(result.risk).toBe(false);
+    });
+  });
+
+  describe('getCalendarByMonthV2', () => {
+    const YEAR = 2031;
+    const MONTH = 7;
+    const DATE_IN_MONTH = '2031-07-15';
+
+    it('should not segment by brand: reserved days from any brand are returned with no risk field', async () => {
+      // Arrange
+      const brandA = await brandFactory.create({ expoMonthlyRiskEnabled: true });
+      const slot = await slotFactory.create({
+        eventDate: DATE_IN_MONTH,
+        period: SLOT_PERIOD.AM_BLOCK,
+        status: SLOT_STATUS.RESERVED,
+      });
+      const contract = await contractFactory.create({ brandId: brandA.id });
+      await contractSlotsRepository.save(
+        contractSlotsRepository.create({
+          contractId: contract.id,
+          slotId: slot.id,
+        }),
+      );
+
+      // Act
+      const result = await service.getCalendarByMonthV2(YEAR, MONTH);
+
+      // Assert
+      expect(result).not.toHaveProperty('risk');
+      const day = result.days.find((d) => d.date === DATE_IN_MONTH);
+      expect(day).toBeDefined();
+      expect(day?.slots.morning).toBe(SLOT_STATUS.RESERVED);
+    });
+
+    it('should not include contracts when contractInfo is not requested', async () => {
+      // Arrange
+      const slot = await slotFactory.create({
+        eventDate: DATE_IN_MONTH,
+        period: SLOT_PERIOD.AM_BLOCK,
+        status: SLOT_STATUS.RESERVED,
+      });
+      const contract = await contractFactory.create({ clientName: 'Jane Doe' });
+      await contractSlotsRepository.save(
+        contractSlotsRepository.create({
+          contractId: contract.id,
+          slotId: slot.id,
+        }),
+      );
+
+      // Act
+      const result = await service.getCalendarByMonthV2(YEAR, MONTH, false);
+
+      // Assert
+      const day = result.days.find((d) => d.date === DATE_IN_MONTH);
+      expect(day?.contracts).toBeUndefined();
+    });
+
+    it('should include the linked contract info for a reserved period via contract_slots', async () => {
+      // Arrange
+      const slot = await slotFactory.create({
+        eventDate: DATE_IN_MONTH,
+        period: SLOT_PERIOD.AM_BLOCK,
+        status: SLOT_STATUS.RESERVED,
+      });
+      const contract = await contractFactory.create({
+        clientName: 'Jane Doe',
+        clientEmail: 'jane@example.com',
+        clientPhone: '+5491100000000',
+      });
+      await contractSlotsRepository.save(
+        contractSlotsRepository.create({
+          contractId: contract.id,
+          slotId: slot.id,
+        }),
+      );
+
+      // Act
+      const result = await service.getCalendarByMonthV2(YEAR, MONTH, true);
+
+      // Assert
+      const day = result.days.find((d) => d.date === DATE_IN_MONTH);
+      expect(day?.contracts?.morning).toMatchObject({
+        id: contract.id,
+        clientName: 'Jane Doe',
+        clientEmail: 'jane@example.com',
+        clientPhone: '+5491100000000',
+        sku: contract.sku,
+      });
+      expect(day?.contracts?.afternoon).toBeNull();
+    });
+
+    it('should include the linked contract info via the legacy contract.slot relation', async () => {
+      // Arrange
+      const slot = await slotFactory.create({
+        eventDate: DATE_IN_MONTH,
+        period: SLOT_PERIOD.PM_BLOCK,
+        status: SLOT_STATUS.RESERVED,
+      });
+      const contract = await contractFactory.create({ clientName: 'Legacy Client' });
+      await contractsRepository.update(contract.id, { slot });
+
+      // Act
+      const result = await service.getCalendarByMonthV2(YEAR, MONTH, true);
+
+      // Assert
+      const day = result.days.find((d) => d.date === DATE_IN_MONTH);
+      expect(day?.contracts?.afternoon).toMatchObject({
+        id: contract.id,
+        clientName: 'Legacy Client',
+      });
+      expect(day?.contracts?.morning).toBeNull();
+    });
+
+    it('should return null for reserved periods without a linked contract', async () => {
+      // Arrange
+      await slotFactory.create({
+        eventDate: DATE_IN_MONTH,
+        period: SLOT_PERIOD.AM_BLOCK,
+        status: SLOT_STATUS.RESERVED,
+      });
+
+      // Act
+      const result = await service.getCalendarByMonthV2(YEAR, MONTH, true);
+
+      // Assert
+      const day = result.days.find((d) => d.date === DATE_IN_MONTH);
+      expect(day?.contracts?.morning).toBeNull();
+      expect(day?.contracts?.afternoon).toBeNull();
+    });
+
+    it('should throw BadRequestException for invalid month', async () => {
+      await expect(
+        service.getCalendarByMonthV2(YEAR, 13),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 

@@ -1,0 +1,22 @@
+meta {
+  name: get slots calendar v2 (with contractInfo)
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{base_url}}/slots/v2/calendar?year=2026&month=06&contractInfo=true
+  body: none
+  auth: none
+}
+
+params:query {
+  year: 2026
+  month: 06
+  contractInfo: true
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -19,6 +19,10 @@ import { BookSlotDto } from './dto/book-slot.dto';
 import { HoldSlotDto } from './dto/hold-slot.dto';
 import { SlotAvailabilityDto } from './dto/slot-availability.dto';
 import { SlotsCalendarDto } from './dto/slots-calendar.dto';
+import {
+  SlotsCalendarV2ContractInfoDto,
+  SlotsCalendarV2DayDto,
+} from './dto/slots-calendar-v2.dto';
 import { Slot } from './entities/slot.entity';
 import { SLOT_PERIOD } from './constants/slot_period.enum';
 import { SLOT_STATUS } from './constants/slot_status.enum';
@@ -159,6 +163,164 @@ export class SlotsService {
       .getCount();
 
     return count > 0;
+  }
+
+  /**
+   * V2 of the monthly slots calendar. Slots are managed at company level
+   * (not per brand — the same staff covers multiple brands), so unlike v1
+   * this version has no brandId/risk segmentation at all.
+   * Optionally joins reserved slots to their linked contract via `contractInfo`.
+   */
+  async getCalendarByMonthV2(
+    year: number,
+    month: number,
+    contractInfo?: boolean,
+  ): Promise<{ days: SlotsCalendarV2DayDto[] }> {
+    if (!Number.isInteger(year) || year < 1900 || year > 2200) {
+      throw new BadRequestException('Invalid query params');
+    }
+    if (!Number.isInteger(month) || month < 1 || month > 12) {
+      throw new BadRequestException('Invalid query params');
+    }
+
+    const startDate = this.formatUtcDate(
+      new Date(Date.UTC(year, month - 1, 1)),
+    );
+    const endDate = this.formatUtcDate(new Date(Date.UTC(year, month, 1)));
+
+    const reservedSlots = await this.slotsRepository
+      .createQueryBuilder('slot')
+      .select(['slot.eventDate', 'slot.period'])
+      .where('slot.eventDate >= :startDate', { startDate })
+      .andWhere('slot.eventDate < :endDate', { endDate })
+      .andWhere('slot.status = :status', { status: SLOT_STATUS.RESERVED })
+      .orderBy('slot.eventDate', 'ASC')
+      .getMany();
+
+    const dayMap = new Map<
+      string,
+      { morning: SLOT_STATUS; afternoon: SLOT_STATUS }
+    >();
+
+    for (const slot of reservedSlots) {
+      const date = slot.eventDate;
+      const current =
+        dayMap.get(date) ??
+        ({
+          morning: SLOT_STATUS.AVAILABLE,
+          afternoon: SLOT_STATUS.AVAILABLE,
+        } as const);
+
+      if (slot.period === SLOT_PERIOD.AM_BLOCK) {
+        dayMap.set(date, { ...current, morning: SLOT_STATUS.RESERVED });
+        continue;
+      }
+      if (slot.period === SLOT_PERIOD.PM_BLOCK) {
+        dayMap.set(date, { ...current, afternoon: SLOT_STATUS.RESERVED });
+      }
+    }
+
+    const contractInfoByDateAndPeriod = contractInfo
+      ? await this.getContractInfoByDateAndPeriod(startDate, endDate)
+      : null;
+
+    const days = Array.from(dayMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, slots]) => {
+        if (!contractInfoByDateAndPeriod) {
+          return { date, slots };
+        }
+        return {
+          date,
+          slots,
+          contracts: {
+            morning:
+              contractInfoByDateAndPeriod.get(
+                this.contractInfoKey(date, SLOT_PERIOD.AM_BLOCK),
+              ) ?? null,
+            afternoon:
+              contractInfoByDateAndPeriod.get(
+                this.contractInfoKey(date, SLOT_PERIOD.PM_BLOCK),
+              ) ?? null,
+          },
+        };
+      });
+
+    return {
+      days: plainToInstance(SlotsCalendarV2DayDto, days, {
+        excludeExtraneousValues: true,
+      }),
+    };
+  }
+
+  /**
+   * Builds a map of reserved slots (by event date + period) to their linked
+   * contract info. Mirrors the dual-relation lookup used by computeMonthlyRisk:
+   * contracts can be linked via `contract_slots` (current) or `contract.slot`
+   * (legacy single-slot relation).
+   */
+  private async getContractInfoByDateAndPeriod(
+    startDate: string,
+    endDate: string,
+  ): Promise<Map<string, SlotsCalendarV2ContractInfoDto>> {
+    const map = new Map<string, SlotsCalendarV2ContractInfoDto>();
+
+    const links = await this.contractSlotsRepository
+      .createQueryBuilder('contractSlot')
+      .innerJoinAndSelect('contractSlot.slot', 'slot')
+      .innerJoinAndSelect('contractSlot.contract', 'contract')
+      .where('contractSlot.deleted_at IS NULL')
+      .andWhere('contractSlot.purpose = :purpose', {
+        purpose: CONTRACT_SLOT_PURPOSE.EVENT,
+      })
+      .andWhere('slot.deleted_at IS NULL')
+      .andWhere('slot.status = :status', { status: SLOT_STATUS.RESERVED })
+      .andWhere('slot.event_date >= :startDate', { startDate })
+      .andWhere('slot.event_date < :endDate', { endDate })
+      .andWhere('contract.deleted_at IS NULL')
+      .getMany();
+
+    for (const link of links) {
+      if (!link.slot || !link.contract) continue;
+      map.set(
+        this.contractInfoKey(link.slot.eventDate, link.slot.period),
+        plainToInstance(SlotsCalendarV2ContractInfoDto, link.contract, {
+          excludeExtraneousValues: true,
+        }),
+      );
+    }
+
+    const legacyContracts = await this.contractsRepository
+      .createQueryBuilder('contract')
+      .innerJoinAndSelect('contract.slot', 'slot')
+      .where('contract.deleted_at IS NULL')
+      .andWhere('slot.deleted_at IS NULL')
+      .andWhere('slot.status = :status', { status: SLOT_STATUS.RESERVED })
+      .andWhere('slot.event_date >= :startDate', { startDate })
+      .andWhere('slot.event_date < :endDate', { endDate })
+      .getMany();
+
+    for (const contract of legacyContracts) {
+      if (!contract.slot) continue;
+      const key = this.contractInfoKey(
+        contract.slot.eventDate,
+        contract.slot.period,
+      );
+      if (!map.has(key)) {
+        map.set(
+          key,
+          plainToInstance(SlotsCalendarV2ContractInfoDto, contract, {
+            excludeExtraneousValues: true,
+          }),
+        );
+      }
+    }
+
+    return map;
+  }
+
+  private contractInfoKey(eventDate: string, period: SLOT_PERIOD): string {
+    return `${eventDate}__${period}`;
   }
 
   async getById(id: number) {
