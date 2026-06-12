@@ -34,7 +34,7 @@ export class TermsService {
     private packageTermsRepository: Repository<PackageTerm>,
     @InjectRepository(BrandTerm)
     private brandTermsRepository: Repository<BrandTerm>,
-  ) {}
+  ) { }
 
   private generateCode(scope: TERM_SCOPE, title: string): string {
     const prefixByScope: Record<TERM_SCOPE, string> = {
@@ -128,6 +128,8 @@ export class TermsService {
         queryBuilder.leftJoinAndSelect('term.brandTerms', 'brandTerm');
         queryBuilder.leftJoinAndSelect('brandTerm.brand', 'brand');
       }
+
+      queryBuilder.orderBy('id', 'ASC')
 
       const terms = await queryBuilder.getMany();
       return plainToInstance(TermDto, terms, { excludeExtraneousValues: true });
