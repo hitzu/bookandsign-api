@@ -40,7 +40,7 @@ import { TERM_SCOPE } from './types/term-scope.types';
 @ApiTags('terms')
 @ApiBearerAuth('access-token')
 export class TermsController {
-  constructor(private readonly termsService: TermsService) {}
+  constructor(private readonly termsService: TermsService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a term' })
@@ -55,6 +55,7 @@ export class TermsController {
   }
 
   @Get()
+  @Public()
   @ApiOperation({ summary: 'List terms with optional filters' })
   @ApiQuery({
     name: 'scope',
@@ -186,6 +187,7 @@ export class TermsController {
   }
 
   @Get('packages/:packageId')
+  @Public()
   @ApiOperation({ summary: 'Get terms associated with a package' })
   @ApiParam({ name: 'packageId', type: Number, description: 'Package id' })
   @ApiOkResponse({
@@ -198,6 +200,7 @@ export class TermsController {
   }
 
   @Get('brands/:brandId')
+  @Public()
   @ApiOperation({ summary: 'Get terms associated with a brand' })
   @ApiParam({ name: 'brandId', type: Number, description: 'Brand id' })
   @ApiOkResponse({
