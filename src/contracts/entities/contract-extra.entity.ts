@@ -4,6 +4,7 @@ import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { Extra } from '../../extras/entities/extra.entity';
 import { Promotion } from '../../promotions/entities/promotion.entity';
 import { Contract } from './contract.entity';
+import { ContractPackage } from './contract-package.entity';
 
 @Entity('contract_extras')
 export class ContractExtra extends BaseTimeEntity {
@@ -12,6 +13,9 @@ export class ContractExtra extends BaseTimeEntity {
 
   @Column('integer', { name: 'extra_id' })
   extraId!: number;
+
+  @Column('integer', { name: 'contract_package_id', nullable: true })
+  contractPackageId: number | null = null;
 
   @Column('integer', { name: 'promotion_id', nullable: true })
   promotionId: number | null = null;
@@ -28,6 +32,30 @@ export class ContractExtra extends BaseTimeEntity {
   })
   basePriceSnapshot!: number;
 
+  @Column('decimal', {
+    name: 'discount_percentage_snapshot',
+    default: 0,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => Number(value),
+    },
+  })
+  discountPercentageSnapshot: number = 0;
+
+  /**
+   * Null means no discount was computed for this row (e.g. legacy rows, or
+   * extras created outside the tiered-promotion flow) — treat as full price.
+   */
+  @Column('decimal', {
+    name: 'final_price_snapshot',
+    nullable: true,
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => (value == null ? null : Number(value)),
+    },
+  })
+  finalPriceSnapshot: number | null = null;
+
   @Column('integer', { default: 1 })
   quantity: number = 1;
 
@@ -38,6 +66,10 @@ export class ContractExtra extends BaseTimeEntity {
   @ManyToOne(() => Extra, { nullable: true })
   @JoinColumn({ name: 'extra_id' })
   extra?: Extra | null;
+
+  @ManyToOne(() => ContractPackage, { nullable: true })
+  @JoinColumn({ name: 'contract_package_id' })
+  contractPackage?: ContractPackage | null;
 
   @ManyToOne(() => Promotion, { nullable: true })
   @JoinColumn({ name: 'promotion_id' })

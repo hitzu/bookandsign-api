@@ -1,17 +1,13 @@
 meta {
-  name: get packages with filters (brandId)
+  name: 03 - get active promotion for brand (front display)
   type: http
-  seq: 6
+  seq: 3
 }
 
 get {
-  url: {{base_url}}/packages?brandId=4
+  url: {{base_url}}/promotions?brandId={{brand_id}}&status=active
   body: json
   auth: inherit
-}
-
-params:query {
-  brandId: 4
 }
 
 headers {

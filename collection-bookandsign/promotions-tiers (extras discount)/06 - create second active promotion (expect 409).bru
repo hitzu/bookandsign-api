@@ -1,0 +1,30 @@
+meta {
+  name: 06 - create second active promotion (expect 409)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/promotions
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "brandId": {{brand_id}},
+    "name": "Otra promo del mismo brand",
+    "type": "percentage",
+    "value": 0,
+    "status": "active"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

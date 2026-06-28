@@ -5,13 +5,25 @@ import { Package } from '../../packages/entities/package.entity';
 import { Promotion } from './promotion.entity';
 
 @Entity('promotion_packages')
-@Index(['promotionId', 'packageId'], { unique: true })
+@Index(['promotionId', 'packageId', 'tierOrder'], { unique: true })
 export class PromotionPackage extends BaseTimeEntity {
   @Column('integer', { name: 'promotion_id' })
   promotionId!: number;
 
   @Column('integer', { name: 'package_id' })
   packageId!: number;
+
+  @Column('integer', { name: 'tier_order' })
+  tierOrder!: number;
+
+  @Column('decimal', {
+    name: 'discount_percentage',
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => Number(value),
+    },
+  })
+  discountPercentage!: number;
 
   @ManyToOne(() => Promotion, (promotion) => promotion.promotionPackages, {
     onDelete: 'CASCADE',
@@ -23,4 +35,3 @@ export class PromotionPackage extends BaseTimeEntity {
   @JoinColumn({ name: 'package_id' })
   package!: Package;
 }
-

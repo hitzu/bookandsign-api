@@ -3,12 +3,11 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 
 import { Package } from '../packages/entities/package.entity';
 import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
@@ -37,12 +36,27 @@ import { ContractPromotion } from './entities/contract-promotion.entity';
 import { Event } from '../events/entities/event.entity';
 import { Extra } from '../extras/entities/extra.entity';
 import { EXTRA_STATUS } from '../extras/types/extras-status.types';
+import {
+  ActiveTierInfo,
+  PromotionsService,
+} from '../promotions/promotions.service';
+import {
+  Promotion,
+  PROMOTION_TYPE,
+} from '../promotions/entities/promotion.entity';
+
+interface RecalculateTotalsRepos {
+  contractPackagesRepo: Repository<ContractPackage>;
+  contractExtrasRepo: Repository<ContractExtra>;
+  contractsRepo: Repository<Contract>;
+}
 
 @Injectable()
 export class ContractsService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly paymentsService: PaymentsService,
+    private readonly promotionsService: PromotionsService,
     @InjectRepository(Contract)
     private readonly contractsRepository: Repository<Contract>,
     @InjectRepository(Slot)
@@ -59,30 +73,47 @@ export class ContractsService {
     private readonly contractSlotsRepository: Repository<ContractSlot>,
     @InjectRepository(Event)
     private readonly eventsRepository: Repository<Event>,
-  ) { }
+  ) {}
 
-  private async recalculateTotals(contractId: number): Promise<void> {
+  private async recalculateTotals(
+    contractId: number,
+    repos: RecalculateTotalsRepos = {
+      contractPackagesRepo: this.contractPackagesRepository,
+      contractExtrasRepo: this.contractExtrasRepository,
+      contractsRepo: this.contractsRepository,
+    },
+  ): Promise<void> {
     const [items, extras] = await Promise.all([
-      this.contractPackagesRepository.find({
-        where: { contractId },
-      }),
-      this.contractExtrasRepository.find({
-        where: { contractId },
-      }),
+      repos.contractPackagesRepo.find({ where: { contractId } }),
+      repos.contractExtrasRepo.find({ where: { contractId } }),
     ]);
-    const itemsSubtotal = items.reduce(
+    const itemsGross = items.reduce(
       (sum, item) => sum + item.quantity * item.basePriceSnapshot,
       0,
     );
-    const extrasSubtotal = extras.reduce(
+    const itemsFinal = items.reduce(
+      (sum, item) =>
+        sum +
+        (item.finalPriceSnapshot ?? item.quantity * item.basePriceSnapshot),
+      0,
+    );
+    const extrasGross = extras.reduce(
       (sum, extra) => sum + extra.quantity * extra.basePriceSnapshot,
       0,
     );
-    const subtotal = itemsSubtotal + extrasSubtotal;
-    await this.contractsRepository.update(contractId, {
+    const extrasFinal = extras.reduce(
+      (sum, extra) =>
+        sum +
+        (extra.finalPriceSnapshot ?? extra.quantity * extra.basePriceSnapshot),
+      0,
+    );
+    const subtotal = itemsGross + extrasGross;
+    const discountTotal = itemsGross - itemsFinal + (extrasGross - extrasFinal);
+    const total = subtotal - discountTotal;
+    await repos.contractsRepo.update(contractId, {
       subtotal,
-      discountTotal: 0,
-      total: subtotal,
+      discountTotal,
+      total,
     });
   }
 
@@ -104,65 +135,202 @@ export class ContractsService {
       throw new ConflictException(EXCEPTION_RESPONSE.SLOT_NOT_AVAILABLE);
     }
 
-    const resolvedExtras = await this.resolveExtrasForContract(
-      dto.extras,
-      dto.brandId ?? null,
+    const brandId = dto.brandId ?? null;
+
+    const contractId = await this.dataSource.transaction(
+      async (manager: EntityManager) => {
+        const contractsRepo = manager.getRepository(Contract);
+        const contractPackagesRepo = manager.getRepository(ContractPackage);
+        const contractExtrasRepo = manager.getRepository(ContractExtra);
+        const contractSlotsRepo = manager.getRepository(ContractSlot);
+        const contractPromotionsRepo = manager.getRepository(ContractPromotion);
+        const packagesRepo = manager.getRepository(Package);
+        const extrasRepo = manager.getRepository(Extra);
+
+        const resolvedExtras = await this.resolveExtrasForContract(
+          extrasRepo,
+          dto.extras,
+          brandId,
+        );
+
+        const activePromotion =
+          brandId != null
+            ? await this.promotionsService.getActivePromotionForBrand(brandId)
+            : null;
+
+        const contract = contractsRepo.create({
+          userId: dto.userId,
+          brandId,
+          clientName: dto.clientName,
+          clientPhone: dto.clientPhone,
+          clientEmail: dto.clientEmail,
+          sku: dto.sku,
+          token: randomUUID(),
+          status: CONTRACT_STATUS.CONFIRMED,
+          slot,
+        });
+        const savedContract = await contractsRepo.save(contract);
+
+        const {
+          packagesByClientRef,
+          appliedAmountByPromotionId: packageApplied,
+        } = await this.setItems(
+          contractPackagesRepo,
+          packagesRepo,
+          savedContract.id,
+          dto.packages,
+          activePromotion,
+        );
+
+        const extraApplied = await this.setExtras(
+          contractExtrasRepo,
+          savedContract.id,
+          brandId,
+          dto.extras,
+          resolvedExtras,
+          packagesByClientRef,
+        );
+
+        const mergedApplied = new Map<number, number>();
+        for (const [promotionId, amount] of packageApplied) {
+          mergedApplied.set(
+            promotionId,
+            (mergedApplied.get(promotionId) ?? 0) + amount,
+          );
+        }
+        for (const [promotionId, amount] of extraApplied) {
+          mergedApplied.set(
+            promotionId,
+            (mergedApplied.get(promotionId) ?? 0) + amount,
+          );
+        }
+        await this.saveContractPromotions(
+          contractPromotionsRepo,
+          savedContract.id,
+          mergedApplied,
+        );
+
+        const contractSlot = contractSlotsRepo.create({
+          contractId: savedContract.id,
+          slotId: dto.slotId,
+          purpose: CONTRACT_SLOT_PURPOSE.EVENT,
+        });
+        await contractSlotsRepo.save(contractSlot);
+
+        await this.recalculateTotals(savedContract.id, {
+          contractPackagesRepo,
+          contractExtrasRepo,
+          contractsRepo,
+        });
+
+        return savedContract.id;
+      },
     );
 
-    const contract = this.contractsRepository.create({
-      userId: dto.userId,
-      brandId: dto.brandId ?? null,
-      clientName: dto.clientName,
-      clientPhone: dto.clientPhone,
-      clientEmail: dto.clientEmail,
-      subtotal: dto.subtotal,
-      discountTotal: dto.discountTotal,
-      total: dto.total,
-      sku: dto.sku,
-      token: randomUUID(),
-      status: CONTRACT_STATUS.CONFIRMED,
-      slot,
+    const savedContract = await this.contractsRepository.findOne({
+      where: { id: contractId },
     });
-    const savedContract = await this.contractsRepository.save(contract);
-
-    await this.setItems(savedContract.id, dto.packages);
-    await this.setExtras(savedContract.id, dto.extras, resolvedExtras);
-
-    const contractSlot = this.contractSlotsRepository.create({
-      contractId: savedContract.id,
-      slotId: dto.slotId,
-      purpose: CONTRACT_SLOT_PURPOSE.EVENT,
-    });
-    await this.contractSlotsRepository.save(contractSlot);
-
     return plainToInstance(ContractDto, savedContract, {
       excludeExtraneousValues: true,
     });
   }
 
-  async setItems(contractId: number, dto: AddItemDto[]): Promise<void> {
-    const packages = await this.packagesRepository.findBy({
+  private async setItems(
+    contractPackagesRepo: Repository<ContractPackage>,
+    packagesRepo: Repository<Package>,
+    contractId: number,
+    dto: AddItemDto[],
+    activePromotion: Promotion | null,
+  ): Promise<{
+    packagesByClientRef: Map<string, ContractPackage>;
+    appliedAmountByPromotionId: Map<number, number>;
+  }> {
+    const packagesByClientRef = new Map<string, ContractPackage>();
+    const appliedAmountByPromotionId = new Map<number, number>();
+    if (!dto.length) {
+      return { packagesByClientRef, appliedAmountByPromotionId };
+    }
+
+    const packages = await packagesRepo.findBy({
       id: In(dto.map((p) => p.packageId)),
     });
     const packageById = new Map(packages.map((p) => [p.id, p]));
 
-    await Promise.all(
-      dto.map(async (packageInfo) => {
-        const pkg = packageById.get(packageInfo.packageId);
-        if (!pkg) {
-          throw new NotFoundException('Package not found');
-        }
-        const itemToSave = this.contractPackagesRepository.create({
-          contractId,
-          packageId: packageInfo.packageId,
-          quantity: packageInfo.quantity,
-          promotionId: packageInfo.promotionId,
-          nameSnapshot: pkg.name,
-          basePriceSnapshot: pkg.basePrice || 0,
-        });
-        await this.contractPackagesRepository.save(itemToSave);
-      }),
-    );
+    for (const packageInfo of dto) {
+      const pkg = packageById.get(packageInfo.packageId);
+      if (!pkg) {
+        throw new NotFoundException('Package not found');
+      }
+      const basePrice = pkg.basePrice || 0;
+      const { promotionId, discountPercentage, finalPrice } =
+        this.computeFlatPackageDiscount(
+          activePromotion,
+          basePrice,
+          packageInfo.quantity,
+        );
+
+      const itemToSave = contractPackagesRepo.create({
+        contractId,
+        packageId: packageInfo.packageId,
+        quantity: packageInfo.quantity,
+        promotionId,
+        nameSnapshot: pkg.name,
+        basePriceSnapshot: basePrice,
+        discountPercentageSnapshot: discountPercentage,
+        finalPriceSnapshot: finalPrice,
+      });
+      const saved = await contractPackagesRepo.save(itemToSave);
+      if (packageInfo.clientRef) {
+        packagesByClientRef.set(packageInfo.clientRef, saved);
+      }
+      if (promotionId != null) {
+        const appliedAmount = basePrice * packageInfo.quantity - finalPrice;
+        appliedAmountByPromotionId.set(
+          promotionId,
+          (appliedAmountByPromotionId.get(promotionId) ?? 0) + appliedAmount,
+        );
+      }
+    }
+    return { packagesByClientRef, appliedAmountByPromotionId };
+  }
+
+  /**
+   * Applies the brand's flat promotion (type PERCENTAGE or FIXED) to a
+   * package row. BONUS promotions have no defined package-level discount
+   * semantics yet, so they resolve to no discount here — they only drive the
+   * per-extra tiers handled in setExtras.
+   */
+  private computeFlatPackageDiscount(
+    promotion: Promotion | null,
+    basePrice: number,
+    quantity: number,
+  ): {
+    promotionId: number | null;
+    discountPercentage: number;
+    finalPrice: number;
+  } {
+    const gross = basePrice * quantity;
+    if (!promotion) {
+      return { promotionId: null, discountPercentage: 0, finalPrice: gross };
+    }
+
+    if (promotion.type === PROMOTION_TYPE.PERCENTAGE) {
+      const discountPercentage = Math.min(Math.max(promotion.value, 0), 100);
+      const finalPrice = gross * (1 - discountPercentage / 100);
+      return { promotionId: promotion.id, discountPercentage, finalPrice };
+    }
+
+    if (promotion.type === PROMOTION_TYPE.FIXED) {
+      const discountAmount = Math.min(
+        Math.max(promotion.value, 0) * quantity,
+        gross,
+      );
+      const finalPrice = gross - discountAmount;
+      const discountPercentage = gross > 0 ? (discountAmount / gross) * 100 : 0;
+      return { promotionId: promotion.id, discountPercentage, finalPrice };
+    }
+
+    return { promotionId: null, discountPercentage: 0, finalPrice: gross };
   }
 
   addItem(contractId: number, dto: AddItemDto): void {
@@ -170,33 +338,124 @@ export class ContractsService {
     //pending
   }
 
-  async setExtras(
+  /**
+   * Persists each extra with a server-computed discount. The discount tier
+   * consumed depends on (a) which ContractPackage the extra is tied to via
+   * `packageClientRef`/`clientRef`, and (b) how many extras were already
+   * assigned, in request order, to that same ContractPackage under the same
+   * promotion. The client never supplies a discount or promotionId — both are
+   * resolved here.
+   */
+  private async setExtras(
+    contractExtrasRepo: Repository<ContractExtra>,
     contractId: number,
+    brandId: number | null,
     dto: AddExtraDto[] | undefined,
     resolvedExtras: Map<number, Extra>,
-  ): Promise<void> {
+    packagesByClientRef: Map<string, ContractPackage>,
+  ): Promise<Map<number, number>> {
+    const appliedAmountByPromotionId = new Map<number, number>();
     if (!dto?.length) {
-      return;
+      return appliedAmountByPromotionId;
     }
 
-    await Promise.all(
-      dto.map(async (extraInfo) => {
-        const extra = resolvedExtras.get(extraInfo.extraId);
-        if (!extra) {
-          throw new NotFoundException(EXCEPTION_RESPONSE.EXTRA_NOT_FOUND);
-        }
-
-        const extraToSave = this.contractExtrasRepository.create({
-          contractId,
-          extraId: extraInfo.extraId,
-          quantity: extraInfo.quantity,
-          promotionId: extraInfo.promotionId,
-          nameSnapshot: extra.name,
-          basePriceSnapshot: extra.price || 0,
-        });
-        await this.contractExtrasRepository.save(extraToSave);
-      }),
+    const packageIds = Array.from(
+      new Set(
+        Array.from(packagesByClientRef.values()).map((pkg) => pkg.packageId),
+      ),
     );
+    const tierMapByPackageId: Map<number, ActiveTierInfo> =
+      brandId != null
+        ? await this.promotionsService.getActiveTierMapForBrand(
+            brandId,
+            packageIds,
+          )
+        : new Map<number, ActiveTierInfo>();
+
+    const tierPositionByContractPackage = new Map<number, number>();
+
+    for (const extraInfo of dto) {
+      const extra = resolvedExtras.get(extraInfo.extraId);
+      if (!extra) {
+        throw new NotFoundException(EXCEPTION_RESPONSE.EXTRA_NOT_FOUND);
+      }
+
+      const contractPackage = extraInfo.packageClientRef
+        ? packagesByClientRef.get(extraInfo.packageClientRef)
+        : undefined;
+
+      let promotionId: number | null = null;
+      let discountPercentage = 0;
+
+      const tierInfo = contractPackage
+        ? tierMapByPackageId.get(contractPackage.packageId)
+        : undefined;
+
+      if (contractPackage && tierInfo) {
+        const currentCount =
+          tierPositionByContractPackage.get(contractPackage.id) ?? 0;
+        const nextPosition = currentCount + 1;
+        tierPositionByContractPackage.set(contractPackage.id, nextPosition);
+
+        const tier = tierInfo.tiers.find((t) => t.order === nextPosition);
+        if (tier) {
+          promotionId = tierInfo.promotionId;
+          discountPercentage = tier.discountPercentage;
+        }
+      }
+
+      const basePrice = extra.price || 0;
+      const finalPrice =
+        basePrice * extraInfo.quantity * (1 - discountPercentage / 100);
+
+      const extraToSave = contractExtrasRepo.create({
+        contractId,
+        extraId: extraInfo.extraId,
+        contractPackageId: contractPackage?.id ?? null,
+        promotionId,
+        nameSnapshot: extra.name,
+        basePriceSnapshot: basePrice,
+        discountPercentageSnapshot: discountPercentage,
+        finalPriceSnapshot: finalPrice,
+        quantity: extraInfo.quantity,
+      });
+      await contractExtrasRepo.save(extraToSave);
+
+      if (promotionId != null) {
+        const grossAmount = basePrice * extraInfo.quantity;
+        const appliedAmount = grossAmount - finalPrice;
+        appliedAmountByPromotionId.set(
+          promotionId,
+          (appliedAmountByPromotionId.get(promotionId) ?? 0) + appliedAmount,
+        );
+      }
+    }
+
+    return appliedAmountByPromotionId;
+  }
+
+  /**
+   * Writes one audit row per distinct promotion actually applied to this
+   * contract (across both packages and extras), aggregating the total amount
+   * discounted under that promotion.
+   */
+  private async saveContractPromotions(
+    contractPromotionsRepo: Repository<ContractPromotion>,
+    contractId: number,
+    appliedAmountByPromotionId: Map<number, number>,
+  ): Promise<void> {
+    for (const [promotionId, appliedAmount] of appliedAmountByPromotionId) {
+      const promotion = await this.promotionsService.findOne(promotionId);
+      const contractPromotion = contractPromotionsRepo.create({
+        contractId,
+        promotionId,
+        nameSnapshot: promotion.name,
+        typeSnapshot: promotion.type,
+        valueSnapshot: promotion.value,
+        appliedAmount,
+      });
+      await contractPromotionsRepo.save(contractPromotion);
+    }
   }
 
   async updateItemQuantity(
@@ -548,6 +807,7 @@ export class ContractsService {
   }
 
   private async resolveExtrasForContract(
+    extrasRepo: Repository<Extra>,
     dto: AddExtraDto[] | undefined,
     brandId: number | null,
   ): Promise<Map<number, Extra>> {
@@ -561,7 +821,7 @@ export class ContractsService {
       );
     }
 
-    const extras = await this.extrasRepository.findBy({
+    const extras = await extrasRepo.findBy({
       id: In(dto.map((extra) => extra.extraId)),
     });
     const extraById = new Map(extras.map((extra) => [extra.id, extra]));
@@ -575,9 +835,7 @@ export class ContractsService {
         throw new BadRequestException('Extra is inactive');
       }
       if (extra.brandId !== brandId) {
-        throw new BadRequestException(
-          'Extra is not available for this brand',
-        );
+        throw new BadRequestException('Extra is not available for this brand');
       }
     });
 

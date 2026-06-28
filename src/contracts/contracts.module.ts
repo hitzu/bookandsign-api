@@ -15,10 +15,12 @@ import { ContractPreparationProfile } from './entities/contract-preparation-prof
 import { ContractsPreparationProfileService } from './preparation-profile/contracts-preparation-profile.service';
 import { PrepProfileUploadsService } from './preparation-profile/prep-profile-uploads.service';
 import { Event } from '../events/entities/event.entity';
+import { PromotionsModule } from '../promotions/promotions.module';
 
 @Module({
   imports: [
     PaymentsModule,
+    PromotionsModule,
     TypeOrmModule.forFeature([
       Contract,
       ContractExtra,
@@ -38,4 +40,4 @@ import { Event } from '../events/entities/event.entity';
     PrepProfileUploadsService,
   ],
 })
-export class ContractsModule { }
+export class ContractsModule {}

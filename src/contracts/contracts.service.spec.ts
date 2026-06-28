@@ -14,7 +14,10 @@ import { PackageFactory } from '../../test/factories/packages/package.factory';
 import { SlotFactory } from '../../test/factories/slots/slot.factory';
 import { UserFactory } from '../../test/factories/user/user.factory';
 import { ExtraFactory } from '../../test/factories/extras/extra.factory';
+import { PromotionFactory } from '../../test/factories/promotions/promotion.factory';
+import { PromotionPackageFactory } from '../../test/factories/promotions/promotion-package.factory';
 import { PaymentsService } from '../payments/payments.service';
+import { PromotionsService } from '../promotions/promotions.service';
 import { ContractsService } from './contracts.service';
 import { AddExtraDto } from './dto/add-extra.dto';
 import { AddItemDto } from './dto/add-item.dto';
@@ -27,6 +30,13 @@ import { Payment } from '../payments/entities/payment.entity';
 import { CONTRACT_STATUS } from './types/contract-status.types';
 import { PAYMENT_METHOD } from './types/payment-method.types';
 import { Package } from '../packages/entities/package.entity';
+import { Promotion } from '../promotions/entities/promotion.entity';
+import { PromotionPackage } from '../promotions/entities/promotion-package.entity';
+import {
+  PROMOTION_STATUS,
+  PROMOTION_TYPE,
+} from '../promotions/entities/promotion.entity';
+import { ContractPromotion } from './entities/contract-promotion.entity';
 import { Slot } from '../slots/entities/slot.entity';
 import { SLOT_PERIOD } from '../slots/types/slot-period.types';
 import { SLOT_STATUS } from '../slots/types/slot-status.types';
@@ -50,13 +60,24 @@ describe('ContractsService', () => {
   let slotFactory: SlotFactory;
   let userFactory: UserFactory;
   let eventFactory: EventFactory;
+  let promotionFactory: PromotionFactory;
+  let promotionPackageFactory: PromotionPackageFactory;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ContractsService,
         PaymentsService,
+        PromotionsService,
         { provide: DataSource, useValue: TestDataSource },
+        {
+          provide: getRepositoryToken(Promotion),
+          useValue: TestDataSource.getRepository(Promotion),
+        },
+        {
+          provide: getRepositoryToken(PromotionPackage),
+          useValue: TestDataSource.getRepository(PromotionPackage),
+        },
         {
           provide: getRepositoryToken(Contract),
           useValue: TestDataSource.getRepository(Contract),
@@ -122,6 +143,8 @@ describe('ContractsService', () => {
     slotFactory = new SlotFactory(TestDataSource);
     userFactory = new UserFactory(TestDataSource);
     eventFactory = new EventFactory(TestDataSource);
+    promotionFactory = new PromotionFactory(TestDataSource);
+    promotionPackageFactory = new PromotionPackageFactory(TestDataSource);
   });
 
   describe('list', () => {
@@ -536,6 +559,392 @@ describe('ContractsService', () => {
     });
   });
 
+  describe('createContract with tiered promotions', () => {
+    it('should apply tiers in request order and fall back to full price once tiers run out', async () => {
+      // Arrange
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const pkg = await packageFactory.createForBrand(brand, {
+        basePrice: 1000,
+      });
+      const extra = await extraFactory.createForBrand(brand, {
+        price: 200,
+        status: EXTRA_STATUS.ACTIVE,
+      });
+      const promotion = await promotionFactory.createForBrand(brand, {
+        status: PROMOTION_STATUS.ACTIVE,
+      });
+      await promotionPackageFactory.createTier(promotion, pkg, 1, 100);
+      await promotionPackageFactory.createTier(promotion, pkg, 2, 50);
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        brandId: brand.id,
+        sku: 'SKU-TIERS-001',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        packages: [{ packageId: pkg.id, quantity: 1, clientRef: 'pkg-1' }],
+        extras: [
+          { extraId: extra.id, quantity: 1, packageClientRef: 'pkg-1' },
+          { extraId: extra.id, quantity: 1, packageClientRef: 'pkg-1' },
+          { extraId: extra.id, quantity: 1, packageClientRef: 'pkg-1' },
+        ],
+      };
+
+      // Act
+      const result = await service.createContract(dto);
+
+      // Assert
+      const savedExtras = await contractExtrasRepo.find({
+        where: { contractId: result.id },
+        order: { id: 'ASC' },
+      });
+      expect(savedExtras).toHaveLength(3);
+      expect(savedExtras[0]?.discountPercentageSnapshot).toBe(100);
+      expect(savedExtras[0]?.finalPriceSnapshot).toBe(0);
+      expect(savedExtras[1]?.discountPercentageSnapshot).toBe(50);
+      expect(savedExtras[1]?.finalPriceSnapshot).toBe(100);
+      expect(savedExtras[2]?.discountPercentageSnapshot).toBe(0);
+      expect(savedExtras[2]?.finalPriceSnapshot).toBe(200);
+      expect(savedExtras[0]?.promotionId).toBe(promotion.id);
+      expect(savedExtras[1]?.promotionId).toBe(promotion.id);
+      expect(savedExtras[2]?.promotionId).toBeNull();
+
+      const updatedContract = await contractsRepo.findOne({
+        where: { id: result.id },
+      });
+      // itemsSubtotal(1000) + extrasGross(200*3=600) = 1600
+      // discount amounts: 200 (100%) + 100 (50%) + 0 (0%) = 300
+      expect(updatedContract?.subtotal).toBe(1600);
+      expect(updatedContract?.discountTotal).toBe(300);
+      expect(updatedContract?.total).toBe(1300);
+    });
+
+    it('should not link an extra to a package and apply no discount when packageClientRef is missing', async () => {
+      // Arrange
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const pkg = await packageFactory.createForBrand(brand, {
+        basePrice: 1000,
+      });
+      const extra = await extraFactory.createForBrand(brand, {
+        price: 200,
+        status: EXTRA_STATUS.ACTIVE,
+      });
+      const promotion = await promotionFactory.createForBrand(brand, {
+        status: PROMOTION_STATUS.ACTIVE,
+      });
+      await promotionPackageFactory.createTier(promotion, pkg, 1, 100);
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        brandId: brand.id,
+        sku: 'SKU-TIERS-002',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        packages: [{ packageId: pkg.id, quantity: 1, clientRef: 'pkg-1' }],
+        extras: [{ extraId: extra.id, quantity: 1 }],
+      };
+
+      // Act
+      const result = await service.createContract(dto);
+
+      // Assert
+      const savedExtras = await contractExtrasRepo.find({
+        where: { contractId: result.id },
+      });
+      expect(savedExtras[0]?.contractPackageId).toBeNull();
+      expect(savedExtras[0]?.discountPercentageSnapshot).toBe(0);
+      expect(savedExtras[0]?.finalPriceSnapshot).toBe(200);
+    });
+
+    it('should keep tier counters independent per package within the same contract', async () => {
+      // Arrange
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const basico = await packageFactory.createForBrand(brand, {
+        basePrice: 500,
+      });
+      const plus = await packageFactory.createForBrand(brand, {
+        basePrice: 1500,
+      });
+      const extra = await extraFactory.createForBrand(brand, {
+        price: 300,
+        status: EXTRA_STATUS.ACTIVE,
+      });
+      const promotion = await promotionFactory.createForBrand(brand, {
+        status: PROMOTION_STATUS.ACTIVE,
+      });
+      await promotionPackageFactory.createTier(promotion, basico, 1, 100);
+      await promotionPackageFactory.createTier(promotion, plus, 1, 100);
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        brandId: brand.id,
+        sku: 'SKU-TIERS-003',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        packages: [
+          { packageId: basico.id, quantity: 1, clientRef: 'basico' },
+          { packageId: plus.id, quantity: 1, clientRef: 'plus' },
+        ],
+        extras: [
+          { extraId: extra.id, quantity: 1, packageClientRef: 'basico' },
+          { extraId: extra.id, quantity: 1, packageClientRef: 'plus' },
+        ],
+      };
+
+      // Act
+      const result = await service.createContract(dto);
+
+      // Assert
+      const savedExtras = await contractExtrasRepo.find({
+        where: { contractId: result.id },
+        order: { id: 'ASC' },
+      });
+      expect(savedExtras[0]?.discountPercentageSnapshot).toBe(100);
+      expect(savedExtras[1]?.discountPercentageSnapshot).toBe(100);
+    });
+
+    it('should ignore client-supplied subtotal/discountTotal/total and persist server-computed totals', async () => {
+      // Arrange
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const pkg = await packageFactory.createForBrand(brand, {
+        basePrice: 1000,
+      });
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        brandId: brand.id,
+        sku: 'SKU-TIERS-004',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        subtotal: 1,
+        discountTotal: 999,
+        total: 1,
+        packages: [{ packageId: pkg.id, quantity: 1, clientRef: 'pkg-1' }],
+      };
+
+      // Act
+      const result = await service.createContract(dto);
+
+      // Assert
+      const updatedContract = await contractsRepo.findOne({
+        where: { id: result.id },
+      });
+      expect(updatedContract?.subtotal).toBe(1000);
+      expect(updatedContract?.discountTotal).toBe(0);
+      expect(updatedContract?.total).toBe(1000);
+    });
+  });
+
+  describe('createContract with brand-level package discount', () => {
+    it('should apply a percentage discount to the package base price', async () => {
+      // Arrange
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const pkg = await packageFactory.createForBrand(brand, {
+        basePrice: 1000,
+      });
+      await promotionFactory.createForBrand(brand, {
+        status: PROMOTION_STATUS.ACTIVE,
+        type: PROMOTION_TYPE.PERCENTAGE,
+        value: 10,
+      });
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        brandId: brand.id,
+        sku: 'SKU-PKG-DISCOUNT-001',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        packages: [{ packageId: pkg.id, quantity: 1 }],
+      };
+
+      // Act
+      const result = await service.createContract(dto);
+
+      // Assert
+      const savedItems = await contractPackagesRepo.find({
+        where: { contractId: result.id },
+      });
+      expect(savedItems[0]?.discountPercentageSnapshot).toBe(10);
+      expect(savedItems[0]?.finalPriceSnapshot).toBe(900);
+
+      const updatedContract = await contractsRepo.findOne({
+        where: { id: result.id },
+      });
+      expect(updatedContract?.subtotal).toBe(1000);
+      expect(updatedContract?.discountTotal).toBe(100);
+      expect(updatedContract?.total).toBe(900);
+    });
+
+    it('should apply a fixed discount per unit, capped at the gross amount', async () => {
+      // Arrange
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const pkg = await packageFactory.createForBrand(brand, {
+        basePrice: 1000,
+      });
+      await promotionFactory.createForBrand(brand, {
+        status: PROMOTION_STATUS.ACTIVE,
+        type: PROMOTION_TYPE.FIXED,
+        value: 100,
+      });
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        brandId: brand.id,
+        sku: 'SKU-PKG-DISCOUNT-002',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        packages: [{ packageId: pkg.id, quantity: 2 }],
+      };
+
+      // Act
+      const result = await service.createContract(dto);
+
+      // Assert
+      const savedItems = await contractPackagesRepo.find({
+        where: { contractId: result.id },
+      });
+      // 100 off per unit * 2 units = 200 off a 2000 gross
+      expect(savedItems[0]?.finalPriceSnapshot).toBe(1800);
+      expect(savedItems[0]?.discountPercentageSnapshot).toBe(10);
+    });
+
+    it('should not apply any package discount when the active promotion is type BONUS', async () => {
+      // Arrange
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const pkg = await packageFactory.createForBrand(brand, {
+        basePrice: 1000,
+      });
+      await promotionFactory.createForBrand(brand, {
+        status: PROMOTION_STATUS.ACTIVE,
+        type: PROMOTION_TYPE.BONUS,
+        value: 1,
+      });
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        brandId: brand.id,
+        sku: 'SKU-PKG-DISCOUNT-003',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        packages: [{ packageId: pkg.id, quantity: 1 }],
+      };
+
+      // Act
+      const result = await service.createContract(dto);
+
+      // Assert
+      const savedItems = await contractPackagesRepo.find({
+        where: { contractId: result.id },
+      });
+      expect(savedItems[0]?.discountPercentageSnapshot).toBe(0);
+      expect(savedItems[0]?.finalPriceSnapshot).toBe(1000);
+    });
+
+    it('should combine the package discount and the extra tier discount into a single contract total and a single ContractPromotion row', async () => {
+      // Arrange
+      const user = await userFactory.create();
+      const brand = await brandFactory.create();
+      const pkg = await packageFactory.createForBrand(brand, {
+        basePrice: 1000,
+      });
+      const extra = await extraFactory.createForBrand(brand, {
+        price: 200,
+        status: EXTRA_STATUS.ACTIVE,
+      });
+      const promotion = await promotionFactory.createForBrand(brand, {
+        status: PROMOTION_STATUS.ACTIVE,
+        type: PROMOTION_TYPE.PERCENTAGE,
+        value: 10,
+      });
+      await promotionPackageFactory.createTier(promotion, pkg, 1, 100);
+      const slot = await slotFactory.create({
+        status: SLOT_STATUS.RESERVED,
+        period: SLOT_PERIOD.AM_BLOCK,
+      });
+
+      const dto: CreateContractFromSlotsDto = {
+        userId: user.id,
+        slotId: slot.id,
+        brandId: brand.id,
+        sku: 'SKU-PKG-DISCOUNT-004',
+        clientName: 'Ana',
+        clientPhone: null,
+        clientEmail: null,
+        packages: [{ packageId: pkg.id, quantity: 1, clientRef: 'pkg-1' }],
+        extras: [{ extraId: extra.id, quantity: 1, packageClientRef: 'pkg-1' }],
+      };
+
+      // Act
+      const result = await service.createContract(dto);
+
+      // Assert: package 10% off (1000 -> 900), extra 100% off (200 -> 0)
+      const updatedContract = await contractsRepo.findOne({
+        where: { id: result.id },
+      });
+      expect(updatedContract?.subtotal).toBe(1200);
+      expect(updatedContract?.discountTotal).toBe(300);
+      expect(updatedContract?.total).toBe(900);
+
+      const contractPromotionsRepo =
+        TestDataSource.getRepository(ContractPromotion);
+      const promotions = await contractPromotionsRepo.find({
+        where: { contractId: result.id },
+      });
+      expect(promotions).toHaveLength(1);
+      expect(promotions[0]?.promotionId).toBe(promotion.id);
+      expect(promotions[0]?.appliedAmount).toBe(300);
+    });
+  });
+
   describe('getDetail', () => {
     it('should throw if contract is not found', async () => {
       await expect(service.getDetail(999999)).rejects.toBeInstanceOf(
@@ -651,7 +1060,9 @@ describe('ContractsService', () => {
         }),
       );
 
-      const pkg = await packageFactory.createForBrand(brand, { basePrice: 250 });
+      const pkg = await packageFactory.createForBrand(brand, {
+        basePrice: 250,
+      });
       await contractPackagesRepo.save(
         contractPackagesRepo.create({
           contractId: contract.id,
@@ -719,7 +1130,9 @@ describe('ContractsService', () => {
         }),
       );
 
-      const pkg = await packageFactory.createForBrand(brand, { basePrice: 100 });
+      const pkg = await packageFactory.createForBrand(brand, {
+        basePrice: 100,
+      });
       const item = await contractPackagesRepo.save(
         contractPackagesRepo.create({
           contractId: contract.id,
@@ -794,9 +1207,9 @@ describe('ContractsService', () => {
 
     it('should throw NotFoundException if contract is not found', async () => {
       const user = await userFactory.create();
-      await expect(
-        service.finalize(999999, user.id),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.finalize(999999, user.id)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('should throw ConflictException if contract is cancelled', async () => {
@@ -849,7 +1262,9 @@ describe('ContractsService', () => {
     it('should soft-delete contract, contract slots, item snapshots, extra snapshots, payments, and associated slots', async () => {
       const user = await userFactory.create();
       const brand = await brandFactory.create();
-      const pkg = await packageFactory.createForBrand(brand, { basePrice: 120 });
+      const pkg = await packageFactory.createForBrand(brand, {
+        basePrice: 120,
+      });
       const extra = await extraFactory.createForBrand(brand, {
         name: 'Upgrade back',
         price: 500,

@@ -1,11 +1,11 @@
 meta {
-  name: set promotion packages (bulk)
+  name: 02 - set package tiers (bulk)
   type: http
-  seq: 7
+  seq: 2
 }
 
 post {
-  url: {{base_url}}/promotions/1/packages/bulk
+  url: {{base_url}}/promotions/{{promotion_id}}/packages/bulk
   body: json
   auth: inherit
 }
@@ -18,14 +18,14 @@ body:json {
   {
     "packages": [
       {
-        "packageId": 1,
+        "packageId": {{package_basico_id}},
         "tiers": [
           { "order": 1, "discountPercentage": 100 },
           { "order": 2, "discountPercentage": 50 }
         ]
       },
       {
-        "packageId": 2,
+        "packageId": {{package_plus_id}},
         "tiers": [
           { "order": 1, "discountPercentage": 100 },
           { "order": 2, "discountPercentage": 100 }
@@ -33,6 +33,12 @@ body:json {
       }
     ]
   }
+}
+
+vars:pre-request {
+  package_basico_id: 25
+  package_plus_id: 26
+  promotion_id: 6
 }
 
 settings {

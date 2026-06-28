@@ -1,5 +1,5 @@
 import { Expose, Type } from 'class-transformer';
-import { IsNumber, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 import { ExtraResponseDto } from '../../extras/dto/extra-response.dto';
 import { PromotionDto } from '../../promotions/dto/promotion.dto';
@@ -28,6 +28,20 @@ export class ContractExtraDto {
   @Expose()
   @IsNumber()
   basePriceSnapshot!: number;
+
+  @Expose()
+  @IsNumber()
+  @IsOptional()
+  contractPackageId?: number | null;
+
+  @Expose()
+  @IsNumber()
+  discountPercentageSnapshot!: number;
+
+  @Expose()
+  @IsNumber()
+  @IsOptional()
+  finalPriceSnapshot?: number | null;
 
   @Expose()
   @Type(() => ExtraResponseDto)

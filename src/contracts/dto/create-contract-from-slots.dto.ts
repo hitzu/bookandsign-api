@@ -34,14 +34,23 @@ export class CreateContractFromSlotsDto {
   @IsOptional()
   clientEmail?: string | null;
 
+  /**
+   * subtotal/discountTotal/total are no longer trusted from the client — the
+   * server always recomputes them from package/extra snapshots and resolved
+   * promotion tiers. Kept optional here only so legacy callers sending these
+   * fields don't fail validation; the values are ignored.
+   */
   @IsNumber()
-  subtotal!: number;
+  @IsOptional()
+  subtotal?: number;
 
   @IsNumber()
-  discountTotal!: number;
+  @IsOptional()
+  discountTotal?: number;
 
   @IsNumber()
-  total!: number;
+  @IsOptional()
+  total?: number;
 
   @IsArray()
   @ValidateNested({ each: true })

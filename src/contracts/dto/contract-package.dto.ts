@@ -1,5 +1,5 @@
 import { Expose, Type } from 'class-transformer';
-import { IsNumber, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { PackageResponseDto } from '../../packages/dto/package-response.dto';
 import { PromotionDto } from '../../promotions/dto/promotion.dto';
 
@@ -27,6 +27,15 @@ export class ContractPackageDto {
   @Expose()
   @IsNumber()
   basePriceSnapshot!: number;
+
+  @Expose()
+  @IsNumber()
+  discountPercentageSnapshot!: number;
+
+  @Expose()
+  @IsNumber()
+  @IsOptional()
+  finalPriceSnapshot?: number | null;
 
   @Expose()
   @Type(() => PackageResponseDto)

@@ -14,7 +14,7 @@ import { ApiTags } from '@nestjs/swagger';
 
 import { CreatePromotionDto } from './dto/create-promotion.dto';
 import { FindPromotionsQueryDto } from './dto/find-promotions-query.dto';
-import { SetPromotionPackagesDto } from './dto/set-promotion-packages.dto';
+import { SetPromotionPackageTiersDto } from './dto/set-promotion-package-tiers.dto';
 import { UpdatePromotionDto } from './dto/update-promotion.dto';
 import { PromotionsService } from './promotions.service';
 import { PromotionDto } from './dto/promotion.dto';
@@ -63,7 +63,7 @@ export class PromotionsController {
   setPackages(
     @Param('id', ParseIntPipe) id: number,
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
-    dto: SetPromotionPackagesDto,
+    dto: SetPromotionPackageTiersDto,
   ) {
     return this.promotionsService.setPackages(id, dto);
   }

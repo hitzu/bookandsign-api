@@ -1,5 +1,6 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import {
+  IsArray,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -8,6 +9,7 @@ import {
 } from 'class-validator';
 
 import { PROMOTION_STATUS, PROMOTION_TYPE } from '../entities/promotion.entity';
+import { PromotionPackageViewDto } from './promotion-package-tier-view.dto';
 
 export class PromotionDto {
   @Expose()
@@ -36,4 +38,10 @@ export class PromotionDto {
   @IsEnum(PROMOTION_STATUS)
   @IsOptional()
   status?: PROMOTION_STATUS;
+
+  @Expose()
+  @IsArray()
+  @IsOptional()
+  @Type(() => PromotionPackageViewDto)
+  packages?: PromotionPackageViewDto[];
 }

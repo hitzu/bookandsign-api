@@ -6,7 +6,7 @@ meta {
 
 get {
   url: {{base_url}}/terms?scope=global
-  body: json
+  body: none
   auth: inherit
 }
 
@@ -16,12 +16,6 @@ params:query {
 
 headers {
   Authorization: Bearer {{token}}
-}
-
-body:json {
-  {
-    "packagesId": [2,3,4,5]
-  }
 }
 
 settings {

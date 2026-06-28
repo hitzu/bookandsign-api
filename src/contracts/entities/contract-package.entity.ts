@@ -31,6 +31,30 @@ export class ContractPackage extends BaseTimeEntity {
   })
   basePriceSnapshot!: number;
 
+  @Column('decimal', {
+    name: 'discount_percentage_snapshot',
+    default: 0,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => Number(value),
+    },
+  })
+  discountPercentageSnapshot: number = 0;
+
+  /**
+   * Null means no discount was computed for this row (e.g. legacy rows, or
+   * packages created outside the promotion flow) — treat as full price.
+   */
+  @Column('decimal', {
+    name: 'final_price_snapshot',
+    nullable: true,
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => (value == null ? null : Number(value)),
+    },
+  })
+  finalPriceSnapshot: number | null = null;
+
   @Column('integer', { default: 1 })
   quantity: number = 1;
 
