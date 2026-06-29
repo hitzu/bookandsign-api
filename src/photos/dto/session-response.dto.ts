@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { EventThemeDto } from 'src/events/dto/event-theme/event-theme.dto';
 
 // ── Existing DTOs (legacy endpoints) ─────────────────────────────────────────
 
@@ -84,9 +83,6 @@ export class SessionEventDto {
 
   @ApiPropertyOptional({ enum: ['finished', 'active'] })
   status?: 'finished' | 'active';
-
-  @ApiPropertyOptional({ type: EventThemeDto, nullable: true })
-  eventTheme?: EventThemeDto | null;
 }
 
 export class SessionPhotoItemDto {

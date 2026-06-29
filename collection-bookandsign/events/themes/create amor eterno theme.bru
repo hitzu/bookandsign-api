@@ -1,0 +1,27 @@
+meta {
+  name: create amor eterno theme
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{base_url}}/events/themes
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "key": "amor-eterno",
+    "name": "Amor Eterno"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -4,10 +4,13 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Header,
+  Headers,
   Param,
   ParseIntPipe,
   Patch,
   Post,
+  Res,
   ValidationPipe,
 } from '@nestjs/common';
 import {
@@ -15,17 +18,23 @@ import {
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiHeader,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { Public } from '../auth/decorators/public.decorator';
 import { CreateEventDto } from './dto/create-event.dto';
 import { BulkPhrasesDto } from './dto/event-phases/bulk-phrases.dto';
 import { PhraseByEventTokenDto } from './dto/event-phases/phrase-by-event-token.dto';
+import { CreateEventThemeDto } from './dto/event-theme/create-event-theme.dto';
+import { EventThemeDto } from './dto/event-theme/event-theme.dto';
+import { PublicEventThemeResponseDto } from './dto/event-theme/public-event-theme.dto';
 import { EventResponseDto } from './dto/event-response.dto';
 import { EventTypeDto } from './dto/event-types/event-types.dto';
 import { ServiceTypeDto } from './dto/service-types/service-types.dto';
@@ -94,8 +103,29 @@ export class EventsController {
   @Get('themes')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get themes events' })
+  @ApiOkResponse({
+    description: 'Event themes list',
+    type: [EventThemeDto],
+  })
   getEventThemes() {
     return this.eventTheme.listEventThemes()
+  }
+
+  @Post('themes')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create an event theme' })
+  @ApiBody({ type: CreateEventThemeDto })
+  @ApiCreatedResponse({
+    description: 'Event theme created successfully',
+    type: EventThemeDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid request body' })
+  @ApiConflictResponse({ description: 'Event theme key already exists' })
+  createEventTheme(
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: CreateEventThemeDto,
+  ) {
+    return this.eventTheme.createEventTheme(dto);
   }
 
   @Get('by-key/:key')
@@ -158,6 +188,40 @@ export class EventsController {
   @ApiParam({ name: 'token', type: String, description: 'Event token (UUID)' })
   listPhrasesByEventToken(@Param('token') token: string) {
     return this.eventPhraseService.listPhrasesByEventToken(token);
+  }
+
+  @Get(':token/theme')
+  @Public()
+  @Header('Cache-Control', 'public, max-age=604800, stale-while-revalidate=2592000')
+  @ApiOperation({ summary: 'Get public event theme by event token' })
+  @ApiParam({ name: 'token', type: String, description: 'Event token (UUID)' })
+  @ApiHeader({
+    name: 'If-None-Match',
+    required: false,
+    description: 'Previously received event theme ETag',
+  })
+  @ApiOkResponse({
+    description: 'Event theme found',
+    type: PublicEventThemeResponseDto,
+  })
+  @ApiResponse({ status: 304, description: 'Event theme not modified' })
+  @ApiNotFoundResponse({ description: 'Event not found' })
+  async getPublicThemeByEventToken(
+    @Param('token') token: string,
+    @Headers('if-none-match') ifNoneMatch: string | undefined,
+    @Res() response: Response,
+  ): Promise<void> {
+    const result = await this.eventTheme.getPublicThemeByEventToken(token);
+
+    response.setHeader('Cache-Control', result.cacheControl);
+    response.setHeader('ETag', result.etag);
+
+    if (this.eventTheme.isMatchingEtag(ifNoneMatch, result.etag)) {
+      response.status(HttpStatus.NOT_MODIFIED).send();
+      return;
+    }
+
+    response.status(HttpStatus.OK).json(result.body);
   }
 
   @Get(':token')

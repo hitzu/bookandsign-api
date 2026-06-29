@@ -1,0 +1,26 @@
+meta {
+  name: get public event theme 304
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/events/{{event_token}}/theme
+  body: none
+  auth: inherit
+}
+
+headers {
+  If-None-Match: {{event_theme_etag}}
+  ~Authorization: Bearer {{token}}
+}
+
+vars:pre-request {
+  event_token: db69c995-b30b-40b4-85e7-c01a79eff1a1
+  event_theme_etag: "event-theme-replace-with-etag-from-previous-response"
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

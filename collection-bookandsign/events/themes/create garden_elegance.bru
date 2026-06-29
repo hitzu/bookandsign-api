@@ -1,0 +1,39 @@
+meta {
+  name: create garden_elegance
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/events/themes
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+      "key": "garden_elegance",
+      "name": "jardín elegante",
+      "version": "2026-06-28T00:00:00.000Z",
+      "tokens": {
+        "text":        "#1F2A22",
+        "primary":     "#1F6B43",
+        "surface":     "#FFFDF7",
+        "fontBody":    "DM Sans",
+        "onPrimary":   "#F7DFA4",
+        "secondary":   "#C8A45D",
+        "textMuted":   "#6F7A6A",
+        "background":  "#F8F3EA",
+        "fontHeading": "Cormorant Garamond"
+      }
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

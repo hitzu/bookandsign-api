@@ -1,0 +1,24 @@
+meta {
+  name: get public event theme
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/events/{{event_token}}/theme
+  body: none
+  auth: inherit
+}
+
+headers {
+  ~Authorization: Bearer {{token}}
+}
+
+vars:pre-request {
+  event_token: 76510a31-3df9-48c6-bfd5-98f99cd01477
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

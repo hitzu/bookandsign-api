@@ -14,7 +14,6 @@ describe('SessionsCache', () => {
         honoreesNames: 'Alex y Sam',
         date: '2026-05-04T06:00:00',
         albumPhase: 'Nuestro album',
-        eventTheme: null,
       },
     } satisfies SessionResponseDto);
     cache.setGallery('event-token', {
@@ -23,7 +22,6 @@ describe('SessionsCache', () => {
         honoreesNames: 'Alex y Sam',
         date: '2026-05-04T06:00:00',
         albumPhase: 'Nuestro album',
-        eventTheme: null,
       },
       sessions: [],
     } satisfies GalleryResponseDto);

@@ -307,7 +307,7 @@ export class SessionsService {
   async getSession(sessionToken: string): Promise<SessionResponseDto> {
     const session = await this.sessionRepository.findOne({
       where: { sessionToken },
-      relations: ['event', 'event.eventTheme'],
+      relations: ['event'],
     });
     if (!session) {
       throw new NotFoundException(EXCEPTION_RESPONSE.SESSION_NOT_FOUND);
@@ -349,7 +349,6 @@ export class SessionsService {
             : '',
         albumPhase: session.event?.albumPhrase ?? '',
         status: eventStatus,
-        eventTheme: session.event?.eventTheme
       },
     };
 
@@ -410,7 +409,6 @@ export class SessionsService {
             : '',
         albumPhase: event.albumPhrase ?? '',
         status: eventStatus,
-        eventTheme: event.eventTheme
       },
       sessions: sessions.map((s) => ({
         sessionToken: s.sessionToken,
