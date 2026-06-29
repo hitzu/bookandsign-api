@@ -145,9 +145,13 @@ export class PromotionsService {
       return { message: 'Package tiers set for promotion successfully' };
     } catch (error) {
       this.logger.error(error);
-      throw new BadRequestException(
-        `${error}`,
-      );
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new BadRequestException(`${error}`);
     }
   }
 

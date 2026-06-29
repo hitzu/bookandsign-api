@@ -129,7 +129,7 @@ export class TermsService {
         queryBuilder.leftJoinAndSelect('brandTerm.brand', 'brand');
       }
 
-      queryBuilder.orderBy('id', 'ASC')
+      queryBuilder.orderBy('term.id', 'ASC');
 
       const terms = await queryBuilder.getMany();
       return plainToInstance(TermDto, terms, { excludeExtraneousValues: true });

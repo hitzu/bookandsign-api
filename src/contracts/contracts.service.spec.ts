@@ -573,6 +573,8 @@ describe('ContractsService', () => {
       });
       const promotion = await promotionFactory.createForBrand(brand, {
         status: PROMOTION_STATUS.ACTIVE,
+        type: PROMOTION_TYPE.BONUS,
+        value: 1,
       });
       await promotionPackageFactory.createTier(promotion, pkg, 1, 100);
       await promotionPackageFactory.createTier(promotion, pkg, 2, 50);
@@ -639,6 +641,8 @@ describe('ContractsService', () => {
       });
       const promotion = await promotionFactory.createForBrand(brand, {
         status: PROMOTION_STATUS.ACTIVE,
+        type: PROMOTION_TYPE.BONUS,
+        value: 1,
       });
       await promotionPackageFactory.createTier(promotion, pkg, 1, 100);
       const slot = await slotFactory.create({
@@ -686,6 +690,8 @@ describe('ContractsService', () => {
       });
       const promotion = await promotionFactory.createForBrand(brand, {
         status: PROMOTION_STATUS.ACTIVE,
+        type: PROMOTION_TYPE.BONUS,
+        value: 1,
       });
       await promotionPackageFactory.createTier(promotion, basico, 1, 100);
       await promotionPackageFactory.createTier(promotion, plus, 1, 100);
