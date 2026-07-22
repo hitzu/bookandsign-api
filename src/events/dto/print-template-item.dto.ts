@@ -1,8 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class PrintTemplateItemDto {
+  @Expose()
+  @ApiProperty({ example: 300 })
+  @IsNumber()
+  @IsOptional()
+  dpi?: number;
+
   @Expose()
   @ApiProperty({ example: 'polaroid' })
   @IsString()
@@ -30,4 +36,22 @@ export class PrintTemplateItemDto {
   @IsString()
   @IsOptional()
   logo: string;
+
+  @Expose()
+  @ApiProperty({ example: '6x4' })
+  @IsString()
+  @IsOptional()
+  print_format?: string;
+
+  @Expose()
+  @ApiProperty({ example: 6 })
+  @IsNumber()
+  @IsOptional()
+  paper_width_in?: number;
+
+  @Expose()
+  @ApiProperty({ example: 4 })
+  @IsNumber()
+  @IsOptional()
+  paper_height_in?: number;
 }
