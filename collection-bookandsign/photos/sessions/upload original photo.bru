@@ -1,0 +1,47 @@
+meta {
+  name: upload original photo
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{session_original_presigned_url}}
+  body: json
+  auth: none
+}
+
+headers {
+  content-type: {{session_photo_mime}}
+}
+
+script:pre-request {
+  /**
+   * Uploads the full-size capture to the original signed URL.
+   * Enable Bruno Developer Mode and set session_original_file_path.
+   */
+  const { readFileSync } = require('fs');
+  const path = require('path');
+
+  const inputPath = bru.getVar('session_original_file_path');
+  if (!inputPath) {
+    throw new Error('Missing env var: session_original_file_path');
+  }
+
+  const absolutePath = path.isAbsolute(inputPath)
+    ? inputPath
+    : path.join(bru.cwd(), inputPath);
+
+  const fileBuffer = readFileSync(absolutePath);
+  req.setHeader('Content-Type', bru.getVar('session_photo_mime') || 'image/jpeg');
+  req.setHeader('Content-Length', String(fileBuffer.length));
+  req.setBody(fileBuffer);
+}
+
+vars:pre-request {
+  session_photo_mime: image/jpeg
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

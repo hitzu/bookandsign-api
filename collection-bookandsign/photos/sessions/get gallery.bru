@@ -1,13 +1,24 @@
 meta {
   name: get gallery
   type: http
-  seq: 5
+  seq: 11
 }
 
 get {
   url: {{base_url}}/sessions/gallery/{{event_token}}
   body: none
   auth: none
+}
+
+script:post-response {
+  if (!Array.isArray(res.body?.sessions)) {
+    throw new Error('Expected gallery response with sessions array');
+  }
+
+  const missingCoverMinimized = res.body.sessions.some((session) => session.coverPhoto && !session.coverPhotoMinimized);
+  if (missingCoverMinimized) {
+    throw new Error('Expected sessions with coverPhoto to include coverPhotoMinimized');
+  }
 }
 
 vars:pre-request {

@@ -20,6 +20,18 @@ export class PhotoResponseDto {
   publicUrl!: string | null;
 
   @Expose()
+  @ApiProperty({ type: String, nullable: true })
+  @IsOptional()
+  @IsString()
+  minimizedStoragePath!: string | null;
+
+  @Expose()
+  @ApiProperty({ type: String, nullable: true })
+  @IsOptional()
+  @IsString()
+  minimizedPublicUrl!: string | null;
+
+  @Expose()
   @ApiProperty({ enum: ['processing', 'ready', 'error'] })
   @IsIn(['processing', 'ready', 'error'])
   status!: 'processing' | 'ready' | 'error';

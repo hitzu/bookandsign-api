@@ -25,7 +25,6 @@ import { Public } from '../auth/decorators/public.decorator';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { ConfirmPhotoDto } from './dto/confirm-photo.dto';
 import { PresignedUploadDto, PresignedUploadResponseDto } from './dto/presigned-upload.dto';
-import { ConfirmGifDto } from './dto/session-gif.dto';
 import {
   ClearSessionsCacheResponseDto,
   GalleryResponseDto,
@@ -129,16 +128,4 @@ export class SessionsController {
     return this.sessionsService.confirmPhotoV2(dto);
   }
 
-  @Post('gif/confirm')
-  @Public()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Confirm a session GIF uploaded to Supabase' })
-  @ApiBody({ type: ConfirmGifDto })
-  @ApiOkResponse({ schema: { example: { ok: true } } })
-  @ApiNotFoundResponse({ description: 'Session not found' })
-  confirmGif(
-    @Body(new ValidationPipe({ whitelist: true })) dto: ConfirmGifDto,
-  ): Promise<{ ok: boolean }> {
-    return this.sessionsService.confirmGifUpload(dto);
-  }
 }

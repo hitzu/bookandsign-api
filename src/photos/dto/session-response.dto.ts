@@ -90,6 +90,9 @@ export class SessionPhotoItemDto {
   url!: string;
 
   @ApiProperty()
+  minimizedUrl!: string;
+
+  @ApiProperty()
   position!: number;
 }
 

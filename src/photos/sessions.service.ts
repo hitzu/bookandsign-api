@@ -9,7 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { plainToInstance } from 'class-transformer';
-import { MoreThan, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 import { formatDateTimeInTimeZone } from '../common/utils/format-datetime-in-time-zone';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
@@ -24,6 +24,7 @@ import {
   ListSessionsResponseDto,
   SessionDetailResponseDto,
   SessionListItemDto,
+  SessionPhotoItemDto,
   SessionPhotoDto,
   SessionResponseDto,
 } from './dto/session-response.dto';
@@ -31,7 +32,6 @@ import { SessionUploadUrlResponseDto } from './dto/create-session-upload-url.dto
 import { ConfirmPhotoDto } from './dto/confirm-photo.dto';
 import { PresignedUploadDto, PresignedUploadResponseDto } from './dto/presigned-upload.dto';
 import { PhotoResponseDto } from './dto/photo-response.dto';
-import { ConfirmGifDto } from './dto/session-gif.dto';
 import { PhotosService } from './photos.service';
 import { ClearedSessionsCacheCounts, SessionsCache } from './sessions.cache';
 
@@ -44,7 +44,6 @@ const ALLOWED_MIMES: Record<string, string> = {
 };
 const SESSION_UPLOAD_MIME_EXTENSIONS: Record<string, string> = {
   'image/jpeg': 'jpg',
-  'image/gif': 'gif',
 };
 
 @Injectable()
@@ -317,7 +316,7 @@ export class SessionsService {
     const cached = this.cache.getSession(sessionToken);
     if (
       cached &&
-      !cached.photos.some((photo) => this.isGifPath(photo.url)) &&
+      cached.photos.every((photo) => this.hasUsableSessionPhotoItem(photo)) &&
       cached.event.status === eventStatus
     ) {
       return cached;
@@ -332,9 +331,12 @@ export class SessionsService {
       order: { createdAt: 'ASC' },
     });
 
-    const photoItems = photos
-      .filter((photo) => !this.isGifPath(photo.storagePath))
-      .map((p) => ({ url: p.publicUrl ?? '', position: p.id }));
+    const photoItems: SessionPhotoItemDto[] = [];
+    for (const photo of photos) {
+      if (this.hasBothPhotoVariants(photo) && !this.isGifPath(photo.storagePath)) {
+        photoItems.push(this.toSessionPhotoItem(photo));
+      }
+    }
 
     const result: SessionResponseDto = {
       sessionToken: session.sessionToken,
@@ -366,14 +368,18 @@ export class SessionsService {
     const cached = this.cache.getGallery(eventToken);
     if (
       cached &&
-      !cached.sessions.some((session) => this.isGifPath(session.coverPhoto)) &&
+      cached.sessions.every(
+        (session) =>
+          session.coverPhoto?.length > 0 &&
+          !this.isGifPath(session.coverPhoto),
+      ) &&
       cached.event.status === eventStatus
     ) {
       return cached;
     }
 
     const sessions = await this.sessionRepository.find({
-      where: { eventId: event.id, status: 'complete', photoCount: MoreThan(0) },
+      where: { eventId: event.id },
       order: { createdAt: 'DESC' },
     });
 
@@ -389,15 +395,24 @@ export class SessionsService {
       : [];
 
     const firstPhotoBySession = new Map<number, Photo>();
+    const usablePhotoCountBySession = new Map<number, number>();
     for (const photo of coverPhotos) {
-      if (
-        photo.sessionId &&
-        !firstPhotoBySession.has(photo.sessionId) &&
-        !this.isGifPath(photo.storagePath)
-      ) {
+      if (!photo.sessionId) continue;
+      if (!this.hasUsableGalleryPhoto(photo)) continue;
+
+      usablePhotoCountBySession.set(
+        photo.sessionId,
+        (usablePhotoCountBySession.get(photo.sessionId) ?? 0) + 1,
+      );
+
+      if (!firstPhotoBySession.has(photo.sessionId)) {
         firstPhotoBySession.set(photo.sessionId, photo);
       }
     }
+
+    const visibleSessions = sessions.filter(
+      (session) => session.photoCount > 0 || firstPhotoBySession.has(session.id),
+    );
 
     const result: GalleryResponseDto = {
       event: {
@@ -410,10 +425,10 @@ export class SessionsService {
         albumPhase: event.albumPhrase ?? '',
         status: eventStatus,
       },
-      sessions: sessions.map((s) => ({
+      sessions: visibleSessions.map((s) => ({
         sessionToken: s.sessionToken,
-        coverPhoto: firstPhotoBySession.get(s.id)?.publicUrl ?? '',
-        photoCount: s.photoCount,
+        coverPhoto: this.toGalleryCoverPhoto(firstPhotoBySession.get(s.id)),
+        photoCount: Math.max(s.photoCount, usablePhotoCountBySession.get(s.id) ?? 0),
       })),
     };
 
@@ -436,7 +451,7 @@ export class SessionsService {
     const bucket = this.resolveBucket();
     const extension = SESSION_UPLOAD_MIME_EXTENSIONS[dto.mime];
     if (!extension) {
-      throw new BadRequestException('Only image/jpeg and image/gif are allowed');
+      throw new BadRequestException('Only image/jpeg is allowed');
     }
 
 
@@ -448,18 +463,29 @@ export class SessionsService {
     });
 
     if (!session) {
+      if (!dto.eventToken) {
+        throw new BadRequestException('eventToken is required when creating a session');
+      }
       session = await this.createSession(dto.sessionToken, dto.eventToken)
     }
 
-    const storagePath = `photobooth/${session.event!.id}/${randomUUID()}.${extension}`;
-    const presignedUrl = await this.photosService.createStorageUploadUrl(bucket, storagePath);
+    const eventId = session.event?.id ?? session.eventId;
+    const fileId = randomUUID();
+    const storagePath = `photobooth/${eventId}/${fileId}.${extension}`;
+    const minimizedStoragePath = `photobooth/${eventId}/minimized/${fileId}.${extension}`;
+    const [presignedUrl, minimizedPresignedUrl] = await Promise.all([
+      this.photosService.createStorageUploadUrl(bucket, storagePath),
+      this.photosService.createStorageUploadUrl(bucket, minimizedStoragePath),
+    ]);
 
     const photo = await this.photoRepository.save(
       this.photoRepository.create({
-        eventId: session.event!.id,
+        eventId,
         sessionId: session.id,
         storagePath,
+        minimizedStoragePath,
         publicUrl: null,
+        minimizedPublicUrl: null,
         consentAt: new Date(),
         status: PhotoStatus.PROCESSING,
       }),
@@ -467,8 +493,14 @@ export class SessionsService {
 
     return {
       photoId: photo.id,
-      presignedUrl,
-      photoPath: `${bucket}/${storagePath}`,
+      original: {
+        presignedUrl,
+        photoPath: `${bucket}/${storagePath}`,
+      },
+      minimized: {
+        presignedUrl: minimizedPresignedUrl,
+        photoPath: `${bucket}/${minimizedStoragePath}`,
+      },
     };
   }
 
@@ -477,9 +509,13 @@ export class SessionsService {
     if (!photo) throw new NotFoundException('Photo not found');
 
     if (photo.status === PhotoStatus.READY) return { ok: true };
+    if (!photo.minimizedStoragePath) {
+      throw new BadRequestException('Photo is missing minimized storage path');
+    }
 
     const bucket = this.resolveBucket();
     photo.publicUrl = this.photosService.getPublicUrl(bucket, photo.storagePath);
+    photo.minimizedPublicUrl = this.photosService.getPublicUrl(bucket, photo.minimizedStoragePath);
     photo.status = PhotoStatus.READY;
     await this.photoRepository.save(photo);
 
@@ -507,20 +543,52 @@ export class SessionsService {
     return { ok: true };
   }
 
-  async confirmGifUpload(dto: ConfirmGifDto): Promise<{ ok: boolean }> {
-    const session = await this.sessionRepository.findOne({
-      where: { sessionToken: dto.sessionToken },
-    });
-    if (!session) {
-      throw new NotFoundException(EXCEPTION_RESPONSE.SESSION_NOT_FOUND);
-    }
-
-    this.cache.invalidateSession(session.sessionToken);
-    return { ok: true };
-  }
-
   private isGifPath(path: string | null | undefined): boolean {
     return path?.toLowerCase().endsWith('.gif') ?? false;
+  }
+
+  private hasBothPhotoVariants(photo: Photo): photo is Photo & {
+    publicUrl: string;
+    minimizedPublicUrl: string;
+  } {
+    return Boolean(photo.publicUrl && photo.minimizedPublicUrl);
+  }
+
+  private hasUsableGalleryPhoto(photo: Photo): photo is Photo & { publicUrl: string } {
+    return Boolean(
+      photo.publicUrl &&
+      !this.isGifPath(photo.storagePath) &&
+      !this.isGifPath(photo.publicUrl),
+    );
+  }
+
+  private toGalleryCoverPhoto(photo: Photo | undefined): string {
+    if (!photo?.publicUrl) return '';
+    if (photo.minimizedPublicUrl && !this.isGifPath(photo.minimizedPublicUrl)) {
+      return photo.minimizedPublicUrl;
+    }
+
+    return photo.publicUrl;
+  }
+
+  private hasUsableSessionPhotoItem(photo: SessionPhotoItemDto): boolean {
+    return Boolean(
+      photo.url &&
+      photo.minimizedUrl &&
+      !this.isGifPath(photo.url) &&
+      !this.isGifPath(photo.minimizedUrl),
+    );
+  }
+
+  private toSessionPhotoItem(photo: Photo & {
+    publicUrl: string;
+    minimizedPublicUrl: string;
+  }): SessionPhotoItemDto {
+    return {
+      url: photo.publicUrl,
+      minimizedUrl: photo.minimizedPublicUrl,
+      position: photo.id,
+    };
   }
 
   private resolveBucket(): string {

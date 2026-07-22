@@ -1,5 +1,5 @@
 meta {
-  name: get session photos 
+  name: get session photos
   type: http
   seq: 10
 }
@@ -11,7 +11,18 @@ get {
 }
 
 vars:pre-request {
-  session_token: f7a84189-39c4-46e3-acba-43ba1c9c0769
+  session_token: c9d2e3f4-3100-4000-8000-cabbccddeeff
+}
+
+script:post-response {
+  if (!Array.isArray(res.body?.photos)) {
+    throw new Error('Expected session response with photos array');
+  }
+  
+  const missingMinimizedUrl = res.body.photos.some((photo) => photo.url && !photo.minimizedUrl);
+  if (missingMinimizedUrl) {
+    throw new Error('Expected every returned photo to include minimizedUrl');
+  }
 }
 
 settings {

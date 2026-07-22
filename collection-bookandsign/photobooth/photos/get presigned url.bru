@@ -1,7 +1,7 @@
 meta {
   name: get presigned url
   type: http
-  seq: 6
+  seq: 2
 }
 
 post {
@@ -13,25 +13,27 @@ post {
 body:json {
   {
     "sessionToken": "{{session_token}}",
-    "mime": "{{session_photo_mime}}"
+    "mime": "{{session_photo_mime}}",
+    "eventToken": "{{event_token}}"
   }
+}
+
+vars:pre-request {
+  session_token: c9d2e3f4-3100-4000-8000-cabbccddeeff
+  session_photo_mime: image/jpeg
+  event_token: 2f8e2465-24d8-4e07-b671-bdfc0b3dd39e
 }
 
 script:post-response {
   if (!res.body?.photoId || !res.body?.original?.presignedUrl || !res.body?.minimized?.presignedUrl) {
     throw new Error('Expected photoId, original.presignedUrl and minimized.presignedUrl');
   }
-
+  
   bru.setVar('session_photo_id', String(res.body.photoId));
   bru.setVar('session_original_presigned_url', res.body.original.presignedUrl);
   bru.setVar('session_original_photo_path', res.body.original.photoPath);
   bru.setVar('session_minimized_presigned_url', res.body.minimized.presignedUrl);
   bru.setVar('session_minimized_photo_path', res.body.minimized.photoPath);
-}
-
-vars:pre-request {
-  session_token: c1d2e3f4-0000-4000-8000-cabbccddeeff
-  session_photo_mime: image/jpeg
 }
 
 settings {

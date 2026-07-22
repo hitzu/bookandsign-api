@@ -19,6 +19,12 @@ export class Photo extends BaseTimeEntity {
   @Column('varchar', { name: 'public_url', length: 1024, nullable: true })
   publicUrl!: string | null;
 
+  @Column('varchar', { name: 'minimized_storage_path', length: 512, nullable: true })
+  minimizedStoragePath!: string | null;
+
+  @Column('varchar', { name: 'minimized_public_url', length: 1024, nullable: true })
+  minimizedPublicUrl!: string | null;
+
   @Column('timestamptz', { name: 'consent_at' })
   consentAt!: Date;
 

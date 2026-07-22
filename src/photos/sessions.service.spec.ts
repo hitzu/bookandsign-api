@@ -100,7 +100,7 @@ describe('SessionsService', () => {
     );
   });
 
-  it('should create a processing photo row for GIF uploads via photos/presigned using the server bucket', async () => {
+  it('should create one processing photo row and presigned URLs for both JPEG variants', async () => {
     const session = {
       id: 7,
       sessionToken: '5c95cf10-7e7e-4101-aa24-b7a4d3145df4',
@@ -111,8 +111,10 @@ describe('SessionsService', () => {
       id: 99,
       eventId: 12,
       sessionId: 7,
-      storagePath: 'photobooth/12/uuid-123.gif',
+      storagePath: 'photobooth/12/uuid-123.jpg',
+      minimizedStoragePath: 'photobooth/12/minimized/uuid-123.jpg',
       publicUrl: null,
+      minimizedPublicUrl: null,
       consentAt: new Date(),
       status: PhotoStatus.PROCESSING,
     } as Photo;
@@ -124,26 +126,38 @@ describe('SessionsService', () => {
 
     const result = await service.getPresignedUploadUrl({
       sessionToken: session.sessionToken,
-      mime: 'image/gif',
+      mime: 'image/jpeg',
     });
 
     expect(photosService.createStorageUploadUrl).toHaveBeenCalledWith(
       'prod',
-      'photobooth/12/uuid-123.gif',
+      'photobooth/12/uuid-123.jpg',
+    );
+    expect(photosService.createStorageUploadUrl).toHaveBeenCalledWith(
+      'prod',
+      'photobooth/12/minimized/uuid-123.jpg',
     );
     expect(photoRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         eventId: 12,
         sessionId: 7,
-        storagePath: 'photobooth/12/uuid-123.gif',
+        storagePath: 'photobooth/12/uuid-123.jpg',
+        minimizedStoragePath: 'photobooth/12/minimized/uuid-123.jpg',
         publicUrl: null,
+        minimizedPublicUrl: null,
         status: PhotoStatus.PROCESSING,
       }),
     );
     expect(result).toEqual({
       photoId: 99,
-      presignedUrl: 'https://signed.example/upload',
-      photoPath: 'prod/photobooth/12/uuid-123.gif',
+      original: {
+        presignedUrl: 'https://signed.example/upload',
+        photoPath: 'prod/photobooth/12/uuid-123.jpg',
+      },
+      minimized: {
+        presignedUrl: 'https://signed.example/upload',
+        photoPath: 'prod/photobooth/12/minimized/uuid-123.jpg',
+      },
     });
   });
 
@@ -179,7 +193,8 @@ describe('SessionsService', () => {
       'local',
       'photobooth/12/uuid-123.jpg',
     );
-    expect(result.photoPath).toBe('local/photobooth/12/uuid-123.jpg');
+    expect(result.original.photoPath).toBe('local/photobooth/12/uuid-123.jpg');
+    expect(result.minimized.photoPath).toBe('local/photobooth/12/minimized/uuid-123.jpg');
   });
 
   it('should reject unsupported mimes for photos/presigned', async () => {
@@ -197,22 +212,34 @@ describe('SessionsService', () => {
         sessionToken: session.sessionToken,
         mime: 'image/png',
       }),
-    ).rejects.toEqual(new BadRequestException('Only image/jpeg and image/gif are allowed'));
+    ).rejects.toEqual(new BadRequestException('Only image/jpeg is allowed'));
   });
 
-  it('should confirm a GIF photo row without changing the confirm contract', async () => {
+  it('should reject GIF uploads via photos/presigned', async () => {
+    await expect(
+      service.getPresignedUploadUrl({
+        sessionToken: '5c95cf10-7e7e-4101-aa24-b7a4d3145df4',
+        mime: 'image/gif',
+      }),
+    ).rejects.toEqual(new BadRequestException('Only image/jpeg is allowed'));
+  });
+
+  it('should confirm both photo variants and increment photoCount once', async () => {
     const photo = {
       id: 42,
       eventId: 12,
       sessionId: 7,
-      storagePath: 'photobooth/12/gif-upload.gif',
+      storagePath: 'photobooth/12/upload.jpg',
+      minimizedStoragePath: 'photobooth/12/minimized/upload.jpg',
       publicUrl: null,
+      minimizedPublicUrl: null,
       consentAt: new Date(),
       status: PhotoStatus.PROCESSING,
     } as Photo;
     const savedPhoto = {
       ...photo,
-      publicUrl: 'https://public.example/local/photobooth/12/gif-upload.gif',
+      publicUrl: 'https://public.example/local/photobooth/12/upload.jpg',
+      minimizedPublicUrl: 'https://public.example/local/photobooth/12/minimized/upload.jpg',
       status: PhotoStatus.READY,
     } as Photo;
     const session = {
@@ -224,7 +251,7 @@ describe('SessionsService', () => {
       },
     } as Session;
 
-    photoRepository.findOne.mockResolvedValueOnce(photo).mockResolvedValueOnce(savedPhoto);
+    photoRepository.findOne.mockResolvedValue(photo);
     photoRepository.save.mockResolvedValue(savedPhoto);
     sessionRepository.findOne.mockResolvedValue(session);
     sessionRepository.increment.mockResolvedValue({ affected: 1 });
@@ -233,10 +260,24 @@ describe('SessionsService', () => {
 
     expect(photosService.getPublicUrl).toHaveBeenCalledWith(
       'local',
-      'photobooth/12/gif-upload.gif',
+      'photobooth/12/upload.jpg',
     );
+    expect(photosService.getPublicUrl).toHaveBeenCalledWith(
+      'local',
+      'photobooth/12/minimized/upload.jpg',
+    );
+    expect(sessionRepository.increment).toHaveBeenCalledTimes(1);
     expect(cache.invalidateSession).toHaveBeenCalledWith(session.sessionToken);
     expect(cache.invalidateGallery).toHaveBeenCalledWith(session.event!.token);
+  });
+
+  it('should not increment photoCount for an already READY photo', async () => {
+    photoRepository.findOne.mockResolvedValue({ id: 42, status: PhotoStatus.READY } as Photo);
+
+    await expect(service.confirmPhotoV2({ photoId: 42 })).resolves.toEqual({ ok: true });
+
+    expect(sessionRepository.increment).not.toHaveBeenCalled();
+    expect(photoRepository.save).not.toHaveBeenCalled();
   });
 
   it('should not invalidate gallery cache when the updated session is still active', async () => {
@@ -245,13 +286,16 @@ describe('SessionsService', () => {
       eventId: 12,
       sessionId: 7,
       storagePath: 'photobooth/12/active-upload.jpg',
+      minimizedStoragePath: 'photobooth/12/minimized/active-upload.jpg',
       publicUrl: null,
+      minimizedPublicUrl: null,
       consentAt: new Date(),
       status: PhotoStatus.PROCESSING,
     } as Photo;
     const savedPhoto = {
       ...photo,
       publicUrl: 'https://public.example/local/photobooth/12/active-upload.jpg',
+      minimizedPublicUrl: 'https://public.example/local/photobooth/12/minimized/active-upload.jpg',
       status: PhotoStatus.READY,
     } as Photo;
     const session = {
@@ -307,6 +351,7 @@ describe('SessionsService', () => {
         id: 1,
         storagePath: 'photobooth/12/uuid-123.jpg',
         publicUrl: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+        minimizedPublicUrl: 'https://public.example/local/photobooth/12/minimized/uuid-123.jpg',
       },
       {
         id: 2,
@@ -323,6 +368,7 @@ describe('SessionsService', () => {
 
     expect(result.photos).toEqual([
       {
+        minimizedUrl: 'https://public.example/local/photobooth/12/minimized/uuid-123.jpg',
         url: 'https://public.example/local/photobooth/12/uuid-123.jpg',
         position: 1,
       },
@@ -377,6 +423,7 @@ describe('SessionsService', () => {
       photos: [
         {
           url: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+          minimizedUrl: 'https://public.example/local/photobooth/12/minimized/uuid-123.jpg',
           position: 1,
         },
       ],
@@ -421,6 +468,7 @@ describe('SessionsService', () => {
         id: 1,
         storagePath: 'photobooth/12/uuid-123.jpg',
         publicUrl: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+        minimizedPublicUrl: 'https://public.example/local/photobooth/12/minimized/uuid-123.jpg',
       },
     ] as Photo[];
 
@@ -472,6 +520,7 @@ describe('SessionsService', () => {
         id: 1,
         storagePath: 'photobooth/12/uuid-123.jpg',
         publicUrl: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+        minimizedPublicUrl: 'https://public.example/local/photobooth/12/minimized/uuid-123.jpg',
       },
       {
         id: 2,
@@ -505,6 +554,7 @@ describe('SessionsService', () => {
 
     expect(result.photos).toEqual([
       {
+        minimizedUrl: 'https://public.example/local/photobooth/12/minimized/uuid-123.jpg',
         url: 'https://public.example/local/photobooth/12/uuid-123.jpg',
         position: 1,
       },
@@ -512,7 +562,8 @@ describe('SessionsService', () => {
     expect(photoRepository.find).toHaveBeenCalled();
   });
 
-  it('should skip GIFs and omit event.status before the cutoff when choosing the gallery cover photo', async () => {
+  it('should prefer the minimized URL for the gallery cover photo', async () => {
+    // Arrange
     const event = {
       id: 12,
       token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
@@ -540,6 +591,7 @@ describe('SessionsService', () => {
         sessionId: 7,
         storagePath: 'photobooth/12/uuid-123.jpg',
         publicUrl: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+        minimizedPublicUrl: 'https://public.example/local/photobooth/12/minimized/uuid-123.jpg',
       },
     ] as Photo[];
     const queryBuilder = {
@@ -555,16 +607,174 @@ describe('SessionsService', () => {
     sessionRepository.find.mockResolvedValue(sessions);
     photoRepository.createQueryBuilder.mockReturnValue(queryBuilder);
 
+    // Act
     const result = await service.getGallery(event.token);
 
+    // Assert
     expect(result.event.status).toBeUndefined();
     expect(result.sessions).toEqual([
       {
         sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
-        coverPhoto: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+        coverPhoto: 'https://public.example/local/photobooth/12/minimized/uuid-123.jpg',
         photoCount: 2,
       },
     ]);
+  });
+
+  it('should include sessions with ready photos even when the session is not completed and photoCount is stale', async () => {
+    // Arrange
+    const event = {
+      id: 12,
+      token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
+      serviceStartsAt: new Date('2026-05-04T12:00:00.000Z'),
+      honoreesNames: 'Alex y Sam',
+      albumPhrase: 'Nuestro album',
+      eventTheme: null,
+    };
+    const sessions = [
+      {
+        id: 7,
+        sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+        status: 'active',
+        photoCount: 0,
+      },
+    ] as Session[];
+    const coverPhotos = [
+      {
+        id: 1,
+        sessionId: 7,
+        storagePath: 'photobooth/12/uuid-123.jpg',
+        publicUrl: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+        minimizedPublicUrl: 'https://public.example/local/photobooth/12/minimized/uuid-123.jpg',
+      },
+    ] as Photo[];
+    const queryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue(coverPhotos),
+    };
+
+    eventsService.getByToken.mockResolvedValue(event);
+    eventsService.getPublicEventStatus.mockReturnValue(undefined);
+    sessionRepository.find.mockResolvedValue(sessions);
+    photoRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+    // Act
+    const result = await service.getGallery(event.token);
+
+    // Assert
+    expect(sessionRepository.find).toHaveBeenCalledWith({
+      where: { eventId: event.id },
+      order: { createdAt: 'DESC' },
+    });
+    expect(result.sessions).toEqual([
+      {
+        sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+        coverPhoto: 'https://public.example/local/photobooth/12/minimized/uuid-123.jpg',
+        photoCount: 1,
+      },
+    ]);
+  });
+
+  it('should fallback to the original URL when a minimized gallery cover is missing', async () => {
+    // Arrange
+    const event = {
+      id: 12,
+      token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
+      serviceStartsAt: new Date('2026-05-04T12:00:00.000Z'),
+      honoreesNames: 'Alex y Sam',
+      albumPhrase: 'Nuestro album',
+      eventTheme: null,
+    };
+    const sessions = [
+      {
+        id: 7,
+        sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+        status: 'active',
+        photoCount: 0,
+      },
+    ] as Session[];
+    const coverPhotos = [
+      {
+        id: 1,
+        sessionId: 7,
+        storagePath: 'photobooth/12/uuid-123.jpg',
+        publicUrl: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+        minimizedPublicUrl: null,
+      },
+    ] as Photo[];
+    const queryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue(coverPhotos),
+    };
+
+    eventsService.getByToken.mockResolvedValue(event);
+    eventsService.getPublicEventStatus.mockReturnValue(undefined);
+    sessionRepository.find.mockResolvedValue(sessions);
+    photoRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+    // Act
+    const result = await service.getGallery(event.token);
+
+    // Assert
+    expect(result.sessions).toEqual([
+      {
+        sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+        coverPhoto: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+        photoCount: 1,
+      },
+    ]);
+  });
+
+  it('should not return coverPhotoMinimized in gallery session items', async () => {
+    // Arrange
+    const event = {
+      id: 12,
+      token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
+      serviceStartsAt: new Date('2026-05-04T12:00:00.000Z'),
+      honoreesNames: 'Alex y Sam',
+      albumPhrase: 'Nuestro album',
+      eventTheme: null,
+    };
+    const sessions = [
+      {
+        id: 7,
+        sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
+        photoCount: 1,
+      },
+    ] as Session[];
+    const coverPhotos = [
+      {
+        id: 1,
+        sessionId: 7,
+        storagePath: 'photobooth/12/uuid-123.jpg',
+        publicUrl: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+        minimizedPublicUrl: 'https://public.example/local/photobooth/12/minimized/uuid-123.jpg',
+      },
+    ] as Photo[];
+    const queryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      addOrderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue(coverPhotos),
+    };
+
+    eventsService.getByToken.mockResolvedValue(event);
+    eventsService.getPublicEventStatus.mockReturnValue(undefined);
+    sessionRepository.find.mockResolvedValue(sessions);
+    photoRepository.createQueryBuilder.mockReturnValue(queryBuilder);
+
+    // Act
+    const result = await service.getGallery(event.token);
+
+    // Assert
+    expect(result.sessions[0]).not.toHaveProperty('coverPhotoMinimized');
   });
 
   it('should return event.status finished in the gallery response after the cutoff', async () => {
@@ -595,6 +805,7 @@ describe('SessionsService', () => {
   });
 
   it('should return an empty gallery cover photo when only GIF assets exist', async () => {
+    // Arrange
     const event = {
       id: 12,
       token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
@@ -631,8 +842,10 @@ describe('SessionsService', () => {
     sessionRepository.find.mockResolvedValue(sessions);
     photoRepository.createQueryBuilder.mockReturnValue(queryBuilder);
 
+    // Act
     const result = await service.getGallery(event.token);
 
+    // Assert
     expect(result.sessions).toEqual([
       {
         sessionToken: '9abfe43e-30d9-4614-a0b2-c4ef6ed3a76f',
@@ -643,6 +856,7 @@ describe('SessionsService', () => {
   });
 
   it('should bypass a cached gallery when event.status became finished after caching', async () => {
+    // Arrange
     const event = {
       id: 12,
       token: '6f01177a-d7ef-4342-a6e1-618da5230a06',
@@ -664,6 +878,7 @@ describe('SessionsService', () => {
         sessionId: 7,
         storagePath: 'photobooth/12/uuid-123.jpg',
         publicUrl: 'https://public.example/local/photobooth/12/uuid-123.jpg',
+        minimizedPublicUrl: 'https://public.example/local/photobooth/12/minimized/uuid-123.jpg',
       },
     ] as Photo[];
     const queryBuilder = {
@@ -695,8 +910,10 @@ describe('SessionsService', () => {
     sessionRepository.find.mockResolvedValue(sessions);
     photoRepository.createQueryBuilder.mockReturnValue(queryBuilder);
 
+    // Act
     const result = await service.getGallery(event.token);
 
+    // Assert
     expect(result.event.status).toBe('finished');
     expect(photoRepository.createQueryBuilder).toHaveBeenCalled();
   });
