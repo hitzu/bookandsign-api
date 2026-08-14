@@ -4,11 +4,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { AppDataSource as TestDataSource } from '../config/database/data-source';
 import { EXCEPTION_RESPONSE } from '../config/errors/exception-response.config';
 import { ContractFactory } from '../../test/factories/contracts/contract.factory';
 import { EventFactory } from '../../test/factories/events/event.factory';
+import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 import { Event } from './entities/event.entity';
 import { EventsService } from './events.service';
 import { EventTypeFactory } from '../../test/factories/events/event-type.factory'
@@ -45,6 +49,26 @@ describe('EventsService', () => {
 
     service = module.get<EventsService>(EventsService);
     eventFactory = new EventFactory(TestDataSource);
+  });
+
+  describe('printTemplates DTO validation', () => {
+    it('should accept any valid JSON shape for create and update payloads', async () => {
+      const printTemplates = [
+        { template_id: 'polaroid', settings: { copies: 2, enabled: true } },
+        { arbitrary: ['nested', 123, null, { ok: true }] },
+      ];
+
+      const createDto = plainToInstance(CreateEventDto, {
+        contractId: 1,
+        key: 'json-templates-create',
+        eventTypeId: 1,
+        printTemplates,
+      });
+      const updateDto = plainToInstance(UpdateEventDto, { printTemplates });
+
+      await expect(validate(createDto)).resolves.toEqual([]);
+      await expect(validate(updateDto)).resolves.toEqual([]);
+    });
   });
 
   describe('create', () => {

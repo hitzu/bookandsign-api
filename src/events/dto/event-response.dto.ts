@@ -1,9 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import { IsArray, IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsDate, IsNumber, IsOptional, IsString } from 'class-validator';
 import { EventThemeDto } from './event-theme/event-theme.dto';
 import { ServiceTypeDto } from './service-types/service-types.dto';
-import { PrintTemplateItemDto } from './print-template-item.dto';
+import type { JsonValue } from './json-value';
 
 export class EventResponseDto {
   @Expose()
@@ -115,11 +115,13 @@ export class EventResponseDto {
   decorativeIcon?: string | null;
 
   @Expose()
-  @ApiPropertyOptional({ type: [PrintTemplateItemDto], nullable: true })
-  @IsArray()
+  @ApiPropertyOptional({
+    type: Object,
+    description: 'Any valid JSON payload for print templates.',
+    nullable: true,
+  })
   @IsOptional()
-  @Type(() => PrintTemplateItemDto)
-  printTemplates?: PrintTemplateItemDto[] | null;
+  printTemplates?: JsonValue;
 
   @Expose()
   @ApiProperty()

@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-  IsArray,
   IsDate,
   IsInt,
   IsNumber,
@@ -10,9 +9,8 @@ import {
   IsUrl,
   Max,
   Min,
-  ValidateNested,
 } from 'class-validator';
-import { PrintTemplateItemDto } from './print-template-item.dto';
+import type { JsonValue } from './json-value';
 
 export class CreateEventDto {
   @ApiProperty({ type: Number, description: 'Contract id' })
@@ -109,15 +107,16 @@ export class CreateEventDto {
   eventThemeId?: number;
 
   @ApiPropertyOptional({
-    type: [PrintTemplateItemDto],
-    description: 'Ordered array of subproducts to print. Order = print order.',
+    type: Object,
+    description: 'Any valid JSON payload for print templates.',
     nullable: true,
+    example: [
+      { template_id: 'polaroid' },
+      { template_id: 'polaroid' },
+    ],
   })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => PrintTemplateItemDto)
   @IsOptional()
-  printTemplates?: PrintTemplateItemDto[] | null;
+  printTemplates?: JsonValue;
 
   @ApiPropertyOptional({
     type: String,

@@ -4,7 +4,7 @@ import { BaseTimeEntity } from '../../common/entities/base-time.entity';
 import { UseDto } from '../../common/dto/use-dto.decorator';
 import { Contract } from '../../contracts/entities/contract.entity';
 import { EventResponseDto } from '../dto/event-response.dto';
-import { PrintTemplateItemDto } from '../dto/print-template-item.dto';
+import type { JsonValue } from '../dto/json-value';
 import { EventTheme } from './event-themes.entity';
 import { EventType } from './event-type.entity';
 import { ServiceType } from './service-type.entity';
@@ -63,7 +63,7 @@ export class Event extends BaseTimeEntity {
   decorativeIcon!: string | null;
 
   @Column('jsonb', { name: 'print_templates', nullable: true })
-  printTemplates!: PrintTemplateItemDto[] | null;
+  printTemplates!: JsonValue;
 
   @ManyToOne(() => EventType, (eventType) => eventType.events)
   @JoinColumn({ name: 'event_type_id' })
