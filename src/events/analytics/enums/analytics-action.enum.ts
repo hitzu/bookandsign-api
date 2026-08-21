@@ -32,4 +32,6 @@ export enum AnalyticsAction {
   FIESTA_PHOTO_DOWNLOADED = 'fiesta_photo_downloaded',
   PHOTOBOOTH_SESSION_COMPLETED = 'photobooth_session_completed',
   PHOTOBOOTH_SESSION_STARTED = 'photobooth_session_started',
+  SESSION_SOCIAL_CTA_VIEWED = 'session_social_cta_viewed',
+  POST_ACTION_CTA_VIEWED = 'post_action_cta_viewed',
 }
