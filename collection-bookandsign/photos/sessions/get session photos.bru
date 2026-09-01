@@ -10,19 +10,19 @@ get {
   auth: none
 }
 
+vars:pre-request {
+  session_token: a37c7674-63ff-4513-8ef3-95aaf03eb485
+}
+
 script:post-response {
   if (!Array.isArray(res.body?.photos)) {
     throw new Error('Expected session response with photos array');
   }
-
+  
   const missingMinimizedUrl = res.body.photos.some((photo) => photo.url && !photo.minimizedUrl);
   if (missingMinimizedUrl) {
     throw new Error('Expected every returned photo to include minimizedUrl');
   }
-}
-
-vars:pre-request {
-  session_token: f7a84189-39c4-46e3-acba-43ba1c9c0769
 }
 
 settings {
