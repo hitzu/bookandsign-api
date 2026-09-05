@@ -12,10 +12,10 @@ export class ContractPreparationProfile extends BaseTimeEntity {
   @Column('integer', { name: 'contract_id' })
   contractId!: number;
 
-  @Column('jsonb', { default: () => "'{}'::jsonb" })
+  @Column('jsonb', { default: () => "'{}'" })
   answers: ContractPreparationProfileAnswers = {};
 
-  @Column('jsonb', { default: () => "'{}'::jsonb" })
+  @Column('jsonb', { default: () => "'{}'" })
   locked: ContractPreparationProfileLocked = {};
 
   @OneToOne(() => Contract, { nullable: false })
