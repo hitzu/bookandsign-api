@@ -2,13 +2,14 @@
 name: pipeline-main
 
 on:
+  pull_request:
   push:
     branches:
       - main
   workflow_dispatch:
 
 concurrency:
-  group: pipeline-main
+  group: pipeline-main-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -62,6 +63,34 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Run the full migration chain against an empty database
+        env:
+          NODE_ENV: ci
+        run: pnpm run db:run
+
+      - name: Show applied migrations
+        env:
+          NODE_ENV: ci
+        run: pnpm run db:status
+
+      - name: Verify the schema converges with the entity model
+        env:
+          NODE_ENV: ci
+        run: |
+          set +e
+          output=$(pnpm run db:gen 2>&1)
+          set -e
+          echo "$output"
+          if echo "$output" | grep -q "No changes in database schema were found"; then
+            echo "::notice::Migration-built schema matches the entity model."
+            exit 0
+          fi
+          echo "::error::The migration chain and the entity model disagree. \
+          A migration was generated against a database that the chain had just \
+          built, which means the two paths to the schema have diverged. \
+          Run 'pnpm run db:gen' locally and add the missing migration."
+          exit 1
+
       - name: Build
         run: pnpm run build
 
@@ -78,6 +107,7 @@ jobs:
 
   migrate:
     name: migrate
+    if: github.event_name != 'pull_request'
     needs: test
     runs-on: ubuntu-latest
     environment: production
@@ -145,6 +175,7 @@ jobs:
 
   deploy:
     name: deploy
+    if: github.event_name != 'pull_request'
     needs: migrate
     runs-on: ubuntu-latest
     environment: production
