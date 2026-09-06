@@ -1,6 +1,9 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import { Repository } from 'typeorm';
 
+import { CreateEventThemeDto } from './dto/event-theme/create-event-theme.dto';
 import { Event } from './entities/event.entity';
 import { EventTheme } from './entities/event-themes.entity';
 import { EventThemeService } from './event-theme.service';
@@ -15,6 +18,15 @@ const amorEternoTokens = {
   surface: '#fce7f3',
   fontHeading: 'Futura',
   fontBody: 'Inter',
+};
+
+const amorEternoImages = {
+  splashLogo: {
+    path: 'themes/amor-eterno/splash.png',
+    url: 'https://cdn.example.com/themes/amor-eterno/splash.png',
+    alt: 'Amor Eterno',
+    mime: 'image/png',
+  },
 };
 
 describe('EventThemeService', () => {
@@ -43,6 +55,112 @@ describe('EventThemeService', () => {
       eventRepository as unknown as Repository<Event>,
       { setContext: jest.fn(), error: jest.fn() } as any,
     );
+  });
+
+  describe('images DTO validation', () => {
+    it('accepts a valid splash-screen logo entry', async () => {
+      const dto = plainToInstance(CreateEventThemeDto, {
+        key: 'amor-eterno',
+        name: 'Amor Eterno',
+        images: {
+          splashLogo: {
+            path: 'themes/amor-eterno/splash.png',
+            url: 'https://cdn.example.com/themes/amor-eterno/splash.png',
+          },
+        },
+      });
+
+      await expect(validate(dto)).resolves.toEqual([]);
+    });
+
+    it('accepts an empty images object', async () => {
+      const dto = plainToInstance(CreateEventThemeDto, {
+        key: 'amor-eterno',
+        name: 'Amor Eterno',
+        images: {},
+      });
+
+      await expect(validate(dto)).resolves.toEqual([]);
+    });
+
+    it('rejects an entry missing the required path', async () => {
+      const dto = plainToInstance(CreateEventThemeDto, {
+        key: 'amor-eterno',
+        name: 'Amor Eterno',
+        images: {
+          splashLogo: {
+            url: 'https://cdn.example.com/themes/amor-eterno/splash.png',
+          },
+        },
+      });
+
+      const errors = await validate(dto);
+
+      expect(errors.some((error) => error.property === 'images')).toBe(true);
+    });
+
+    it('rejects an entry missing the required url', async () => {
+      const dto = plainToInstance(CreateEventThemeDto, {
+        key: 'amor-eterno',
+        name: 'Amor Eterno',
+        images: {
+          splashLogo: {
+            path: 'themes/amor-eterno/splash.png',
+          },
+        },
+      });
+
+      const errors = await validate(dto);
+
+      expect(errors.some((error) => error.property === 'images')).toBe(true);
+    });
+
+    it('rejects an entry with an unknown field', async () => {
+      const dto = plainToInstance(CreateEventThemeDto, {
+        key: 'amor-eterno',
+        name: 'Amor Eterno',
+        images: {
+          splashLogo: {
+            path: 'themes/amor-eterno/splash.png',
+            url: 'https://cdn.example.com/themes/amor-eterno/splash.png',
+            foo: 'bar',
+          },
+        },
+      });
+
+      const errors = await validate(dto);
+
+      expect(errors.some((error) => error.property === 'images')).toBe(true);
+    });
+
+    it('rejects an array value for images', async () => {
+      const dto = plainToInstance(CreateEventThemeDto, {
+        key: 'amor-eterno',
+        name: 'Amor Eterno',
+        images: [
+          {
+            path: 'themes/amor-eterno/splash.png',
+            url: 'https://cdn.example.com/themes/amor-eterno/splash.png',
+          },
+        ],
+      });
+
+      const errors = await validate(dto);
+
+      expect(errors.some((error) => error.property === 'images')).toBe(true);
+    });
+
+    it('rejects a scalar value for images', async () => {
+      const dto = plainToInstance(CreateEventThemeDto, {
+        key: 'amor-eterno',
+        name: 'Amor Eterno',
+        images: 'not-a-map',
+      });
+
+      const errors = await validate(dto);
+
+      expect(errors.some((error) => error.property === 'images')).toBe(true);
+    });
   });
 
   it('creates an event theme with persisted tokens', async () => {
@@ -123,6 +241,7 @@ describe('EventThemeService', () => {
         name: 'Amor Eterno',
         updatedAt: new Date('2026-06-21T10:00:00.000Z'),
         tokens: amorEternoTokens,
+        images: amorEternoImages,
       },
     });
 
@@ -137,6 +256,7 @@ describe('EventThemeService', () => {
         name: 'Amor Eterno',
         version: '2026-06-21T10:00:00.000Z',
         tokens: amorEternoTokens,
+        images: amorEternoImages,
       },
     });
     expect(result.etag).toMatch(/^"event-theme-.+"$/);

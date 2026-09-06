@@ -101,6 +101,7 @@ export class EventThemeService {
       name: eventTheme.name,
       version: eventTheme.updatedAt.toISOString(),
       tokens: eventTheme.tokens,
+      images: eventTheme.images,
     };
   }
 

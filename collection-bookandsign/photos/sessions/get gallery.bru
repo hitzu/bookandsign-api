@@ -10,19 +10,19 @@ get {
   auth: none
 }
 
+vars:pre-request {
+  event_token: 4aabc31e-7382-4ba6-9f5d-fe47d0dcf79a
+}
+
 script:post-response {
   if (!Array.isArray(res.body?.sessions)) {
     throw new Error('Expected gallery response with sessions array');
   }
-
+  
   const missingCoverMinimized = res.body.sessions.some((session) => session.coverPhoto && !session.coverPhotoMinimized);
   if (missingCoverMinimized) {
     throw new Error('Expected sessions with coverPhoto to include coverPhotoMinimized');
   }
-}
-
-vars:pre-request {
-  event_token: 0f3c8b47-b0b6-4f56-9d0b-46977e787384
 }
 
 settings {

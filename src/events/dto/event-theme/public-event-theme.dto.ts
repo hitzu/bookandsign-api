@@ -1,6 +1,9 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, ApiPropertyOptional, getSchemaPath } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsOptional, IsString } from 'class-validator';
+
+import { ThemeImageAssetDto } from './theme-images.dto';
+import type { ThemeImageMap } from './theme-images.dto';
 
 export class EventThemeTokensDto {
   @Expose()
@@ -85,6 +88,7 @@ export class EventThemeTokensDto {
   surfaceShadow?: string;
 }
 
+@ApiExtraModels(ThemeImageAssetDto)
 export class PublicEventThemeDto {
   @ApiProperty({ example: 12 })
   id!: number;
@@ -100,6 +104,13 @@ export class PublicEventThemeDto {
 
   @ApiPropertyOptional({ type: EventThemeTokensDto, nullable: true })
   tokens?: EventThemeTokensDto | null;
+
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: { $ref: getSchemaPath(ThemeImageAssetDto) },
+    nullable: true,
+  })
+  images?: ThemeImageMap | null;
 }
 
 export class PublicEventThemeResponseDto {
